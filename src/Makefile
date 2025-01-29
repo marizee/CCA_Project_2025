@@ -15,12 +15,12 @@ PROG = scalar_vector_32 vector_vector_32
 CC = gcc
 
 CFLAGS  = -c#                       # Stop after compilation, then produce .o
-CFLAGS += -Wall -Wextra #-Werror#    # Ggives almost all C warnings and considers them to be errors
+CFLAGS += -Wall -Wextra -Werror#    # Gives almost all C warnings and considers them to be errors
 CFLAGS += -g#                       # Useful for gdb
 CFLAGS += -O3#                      # No optimisation mode for compiler
-CFLAGS += -march=native				# Enable AVX 
+CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
-#CFLAGS += -Wpedantic
+CFLAGS += -Wpedantic
 CFLAGS += -Wconversion -Wsign-conversion
 CFLAGS += -Wcast-qual -Wcast-align
 CFLAGS += -Wundef -Wunused
