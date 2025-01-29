@@ -6,8 +6,8 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o vector_vector_32.o
-PROG = scalar_vector_32 vector_vector_32
+OBJ = scalar_vector_32.o vector_vector_32.o gather.o
+PROG = scalar_vector_32 vector_vector_32 gather
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -53,4 +53,7 @@ scalar_vector_32: scalar_vector_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 vector_vector_32: vector_vector_32.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+gather:gather.o
 	$(CC) -o $@ $^ $(LFLAGS)
