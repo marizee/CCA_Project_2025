@@ -23,11 +23,15 @@ void print_reg_64(char* nom, __m256i reg) {
     printf("\n");
 }
 
+// TODO missing documentation, everywhere! say what input/output is,
+// and possible constraints
 void seq_scalar_vector(uint32_t b, uint64_t* a, uint32_t n, uint64_t* res) {
     for (uint32_t i=0; i<n; i++){
         res[i] = a[i]*b;
     }
 }
+
+// FIXME try loop-unrolled version, both for simd / without simd
 
 void simd_scalar_vector(uint32_t b, uint64_t* a, uint32_t n, uint64_t* res) {
     /* might be better to call broadcast rather than set1 */

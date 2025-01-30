@@ -32,6 +32,7 @@ void seq_vector_vector(uint64_t* b, uint64_t* a, uint32_t n, uint64_t* res) {
 
 void simd_vector_vector(uint64_t* b, uint64_t* a, uint32_t n, uint64_t* res) {
 
+    // FIXME bound on n / multiple of 4
     for (uint32_t i=0; i<n; i+=4) {
         __m256i va = _mm256_load_si256((const __m256i *)&a[i]);
         __m256i vb = _mm256_load_si256((const __m256i *)&b[i]);
@@ -57,6 +58,7 @@ int main(int arc, char** argv) {
         uint32_t n = 1 << i;
 
         /* didn't manage to use 32 bits integers */
+        // FIXME let's not use alignment
         __attribute__ ((aligned (32))) uint64_t a[n]; // aligned 256 bits
         __attribute__ ((aligned (32))) uint64_t b[n]; // aligned 256 bits
         __attribute__ ((aligned (32))) uint64_t res[n]; // aligned 256 bits
