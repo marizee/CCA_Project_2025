@@ -8,6 +8,7 @@
 
 OBJ = scalar_vector_32.o vector_vector_32.o gather.o
 PROG = scalar_vector_32 vector_vector_32 gather
+FUN = naive_load.o simd_add.o seq_vector_vector.o
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -34,10 +35,10 @@ LFLAGS  = -fwhole-program#
 compil: mkdir_obj all
 
 mkdir_obj:
-	test -d obj || mkdir obj
+	@test -d obj || mkdir obj
 
 clean:
-	-rm -r obj *~ Makefile.bak $(PROG) *.o 2> /dev/null || true
+	-rm -r obj *~ Makefile.bak $(PROG) *.i *.o 2> /dev/null || true
 
 # Rules with automatic variables
 # --------------------------------------------------------------------------------------------------
@@ -47,6 +48,11 @@ all : $(OBJ) $(PROG)
 %.o : %.c
 	$(CC) -o $@ $(CFLAGS) $^
 
+obj/%.o : %.c
+	$(CC) -o $@ $(CFLAGS) -save-temps -fverbose-asm $^
+
+asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
+
 # Rules for the mains
 # --------------------------------------------------------------------------------------------------
 scalar_vector_32: scalar_vector_32.o
@@ -55,5 +61,5 @@ scalar_vector_32: scalar_vector_32.o
 vector_vector_32: vector_vector_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-gather:gather.o
+gather: gather.o
 	$(CC) -o $@ $^ $(LFLAGS)
