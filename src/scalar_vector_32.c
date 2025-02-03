@@ -25,13 +25,24 @@ void print_reg_64(char* nom, __m256i reg) {
 
 // TODO missing documentation, everywhere! say what input/output is,
 // and possible constraints
-void seq_scalar_vector(uint32_t b, uint64_t* a, uint32_t n, uint64_t* res) {
+static inline void seq_scalar_vector(uint32_t b, uint64_t* a, uint32_t n, uint64_t* res) {
     for (uint32_t i=0; i<n; i++){
         res[i] = a[i]*b;
     }
 }
 
-// FIXME try loop-unrolled version, both for simd / without simd
+
+// FIXME try loop-unrolled version, both for simd / without simd,
+// unrolling is like this:
+void seq_scalar_vector_unrolled(uint32_t b, uint64_t* a, uint32_t n, uint64_t* res) {
+    for (uint32_t i=0; i+3<n; i+=4){
+        res[i+0] = a[i+0]*b;
+        res[i+1] = a[i+1]*b;
+        res[i+2] = a[i+2]*b;
+        res[i+3] = a[i+3]*b;
+    }
+    // TODO boucle pour i restants
+}
 
 void simd_scalar_vector(uint32_t b, uint64_t* a, uint32_t n, uint64_t* res) {
     /* might be better to call broadcast rather than set1 */
@@ -59,10 +70,11 @@ void simd_scalar_vector(uint32_t b, uint64_t* a, uint32_t n, uint64_t* res) {
 int main(int arc, char** argv) {
 
     printf("n\tseq\tsimd\n");
-    for (int i=1; i<15; i++) {
+    for (int i=1; i<20; i++) {
         uint32_t n = 1 << i;
 
         /* didn't manage to use 32 bits integers */
+        // FIXME malloc / _nmod_vec_init
         __attribute__ ((aligned (32))) uint64_t a[n]; // aligned 256 bits
         __attribute__ ((aligned (32))) uint64_t res[n]; // aligned 256 bits
 
@@ -74,7 +86,10 @@ int main(int arc, char** argv) {
         double mean_seq = 0.0, mean_simd = 0.0;
         for (int k = 0; k<1000; k++) {
             start = clock();
-            seq_scalar_vector(b,a,n,res);
+            for (long i = 0; i < 1000; i++)
+            {
+                seq_scalar_vector(b,a,n,res);
+            }
             end = clock();
             mean_seq += ((double) (end - start)) / CLOCKS_PER_SEC;
 
@@ -83,7 +98,10 @@ int main(int arc, char** argv) {
             //printf("\n\n");
 
             start = clock();
-            simd_scalar_vector(b,a,n,res);
+            for (long i = 0; i < 1000; i++)
+            {
+                simd_scalar_vector(b,a,n,res);
+            }
             end = clock();
             mean_simd += ((double) (end - start)) / CLOCKS_PER_SEC;
 
@@ -91,7 +109,8 @@ int main(int arc, char** argv) {
             //for (uint32_t i=0; i<n; i++) { printf("%ld ", res[i]);}
             //printf("\n");
         }
-        printf("%d\t%.4fs\t%.4fs\n", n, mean_seq, mean_simd);
+        // FIXME diviser par nb iterations
+        printf("%d\t%.4es\t%.4es\n", n, mean_seq/1000, mean_simd/1000);
     }
     return 0;
 }

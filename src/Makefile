@@ -16,8 +16,8 @@ CC = gcc
 
 CFLAGS  = -c#                       # Stop after compilation, then produce .o
 CFLAGS += -Wall -Wextra -Werror#    # Gives almost all C warnings and considers them to be errors
-#CFLAGS += -g#                       # Useful for gdb  FIXME
-CFLAGS += -O2#                      # No optimisation mode for compiler  FIXME
+#CFLAGS += -g#                       # Useful for gdb  FIXME enlever -g au moins pour les benchmarks
+CFLAGS += -O2#                      # No optimisation mode for compiler  FIXME Careful! O3 actives auto-vectorization
 CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
 CFLAGS += -Wpedantic
@@ -25,9 +25,6 @@ CFLAGS += -Wconversion -Wsign-conversion
 CFLAGS += -Wcast-qual -Wcast-align
 CFLAGS += -Wundef -Wunused
 CFLAGS += -Wdouble-promotion
-
-# to output assembly  FIXME
-#CFLAGS += -S -fverbose-asm
 
 LFLAGS  = -fwhole-program#
 
