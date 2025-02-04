@@ -6,9 +6,9 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o vector_vector_32.o gather.o
-PROG = scalar_vector_32 vector_vector_32 gather
-FUN = naive_load.o simd_add.o seq_vector_vector.o
+OBJ = scalar_vector_32.o test_flint.o profile.o  #vector_vector_32.o gather.o
+PROG = test_flint profile #vector_vector_32 gather
+#FUN = naive_load.o simd_add.o seq_vector_vector.o
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -16,8 +16,8 @@ FUN = naive_load.o simd_add.o seq_vector_vector.o
 CC = gcc
 
 CFLAGS  = -c#                       # Stop after compilation, then produce .o
-CFLAGS += -Wall -Wextra -Werror#    # Gives almost all C warnings and considers them to be errors
-CFLAGS += -g#                       # Useful for gdb
+CFLAGS += -Wall -Wextra#		    # Gives almost all C warnings and considers them to be errors
+#CFLAGS += -g#                       # Useful for gdb
 CFLAGS += -O3#                      # No optimisation mode for compiler
 CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
@@ -26,8 +26,12 @@ CFLAGS += -Wconversion -Wsign-conversion
 CFLAGS += -Wcast-qual -Wcast-align
 CFLAGS += -Wundef -Wunused
 CFLAGS += -Wdouble-promotion
+#CFLAGS += -fopt-info
+
 
 LFLAGS  = -fwhole-program#
+LFLAGS += -lflint -lgmp -lmpfr -lpthread
+
 
 # Rules (here they are used such as simple shell scripts)
 # --------------------------------------------------------------------------------------------------
@@ -55,11 +59,14 @@ asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
 
 # Rules for the mains
 # --------------------------------------------------------------------------------------------------
-scalar_vector_32: scalar_vector_32.o
+test_flint: test_flint.o scalar_vector_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-vector_vector_32: vector_vector_32.o
+profile: profile.o scalar_vector_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-gather: gather.o
-	$(CC) -o $@ $^ $(LFLAGS)
+#vector_vector_32: vector_vector_32.o
+#    $(CC) -o $@ $^ $(LFLAGS)
+# 
+#gather: gather.o
+#    $(CC) -o $@ $^ $(LFLAGS)
