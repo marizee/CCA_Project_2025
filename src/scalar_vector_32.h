@@ -14,6 +14,6 @@ void seq_scalar_vector(nn_ptr res, ulong b, nn_ptr vec, slong len, nmod_t mod) ;
 void seq_scalar_vector_unrolled(nn_ptr res, ulong b, nn_ptr vec, slong len, nmod_t mod) ;
 
 void simd_scalar_vector(nn_ptr res, ulong b, nn_ptr vec, slong len, nmod_t) ;
-
+void simd_scalar_vector_unrolled(nn_ptr res, ulong b, nn_ptr vec, slong len, nmod_t mod) ;
 
 #endif

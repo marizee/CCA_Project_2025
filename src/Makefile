@@ -19,7 +19,7 @@ CFLAGS  = -c#                       # Stop after compilation, then produce .o
 CFLAGS += -Wall -Wextra#		    # Gives almost all C warnings and considers them to be errors
 #CFLAGS += -g#                       # Useful for gdb
 CFLAGS += -O3#                      # No optimisation mode for compiler
-CFLAGS += -march=native#            # Enable AVX 
+CFLAGS += -march=native#            # Enable AVX
 CFLAGS += -Wno-unused-parameter# 
 CFLAGS += -Wpedantic
 CFLAGS += -Wconversion -Wsign-conversion
