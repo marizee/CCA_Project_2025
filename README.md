@@ -1,11 +1,19 @@
 # CCA_Project_2025
 
 
+## Dump
+
+- [Modular SIMD arithmetic in Mathemagix](https://arxiv.org/pdf/1407.3383)
+- [Intel HEXL: Accelerating Homomorphic Encryption with Intel AVX512-IFMA52](https://arxiv.org/pdf/2103.16400)
+
+- [prefetch info](https://stackoverflow.com/questions/48994494/how-to-properly-use-prefetch-instructions)
+
+
 ## 31/01 - 07/02
 
 ### TODO
 
-- [ ] timings with flint profiler (pb with struct `flint_rand_t state` for random)
+- [x] timings with flint profiler (without modulo)
 
 Seq:
 - [X] use flint types
@@ -13,7 +21,7 @@ Seq:
 - [X] seq function without auto-vect
 
 Intrinsics:
-- [ ] loop-unrolling for simd function (how??)
+- [X] loop-unrolling for simd function
 - [X] use avx512 in simd function with #if defined(__AVX512F__), #else, #endif
 - [ ] modulo in simd function
 - [ ] test avx512 -> pb: flint not installed

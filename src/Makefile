@@ -6,7 +6,7 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o test_flint.o profile.o  #vector_vector_32.o gather.o
+OBJ = scalar_vector_32.o test_flint.o profile.o #vector_vector_32.o gather.o
 PROG = test_flint profile #vector_vector_32 gather
 #FUN = naive_load.o simd_add.o seq_vector_vector.o
 

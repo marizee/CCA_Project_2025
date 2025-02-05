@@ -17,11 +17,9 @@
 
 int main()
 {
-    slong len = 2048;
+    slong len = 1 << 27;
     flint_bitcnt_t bits = 31;
-    flint_rand_t state;
-    state->__gmp_state = NULL;
-    //FLINT_TEST_INIT(state); // ko
+    FLINT_TEST_INIT(state);
 
     nmod_t mod;
     ulong n, b;
@@ -47,51 +45,55 @@ int main()
     if (b==0) b++;
 
     // print parameters for debug
-    //printf("mod=%ld, b=%ld\n", mod.n, b);
+    //printf("mod.n=%ld, mod.ninv=%ld, mod.norm=%ld, b=%ld\n", mod.n, mod.ninv, mod.norm, b);
+    //printf("50 mod n=%ld\n", 50*mod.ninv);
     //printf("vec=");
     //_nmod_vec_print_pretty(vec, len, mod);
 
     
     // tests
     clock_t start, end;
-    double tseq, tseq_unr, tsimd;
+    double tseq, tseq_unr, tsimd, tsimd_unr;
 
     start = clock();
     seq_scalar_vector(res,b,vec,len,mod);
     end = clock();
     tseq = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("seq=\t%.5es\n", tseq);
+    printf("seq=\t\t%.5es\n", tseq);
 
     start = clock();
     seq_scalar_vector_unrolled(res2,b,vec,len,mod);
     end = clock();
     tseq_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("unr=\t%.5es\n", tseq_unr);
+    printf("unr=\t\t%.5es\n", tseq_unr);
 
     start = clock();
     simd_scalar_vector(res3, b, vec, len, mod);
     //_nmod_vec_print_pretty(res3, len, mod);
     end = clock();
     tsimd = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("simd=\t%.5es\n", tsimd);
+    printf("simd=\t\t%.5es\n", tsimd);
 
-    //simd_scalar_vector_unrolled(res4, b, vec, len, mod);
+    start = clock();
+    simd_scalar_vector_unrolled(res4, b, vec, len, mod);
     //_nmod_vec_print_pretty(res4, len, mod);
-
+    end = clock();
+    tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("simd_unr=\t%.5es\n", tsimd_unr);
     
     // checks
     int check1 = _nmod_vec_equal(res, res2, len);
-    int check2 = 1;//_nmod_vec_equal(res2, res3, len);
+    int check2 = _nmod_vec_equal(res3, res4, len);
     if (!check1 || !check2)
         printf("ff\n");
     else 
-        printf("OK! seq == seq_unr\n");
+        printf("OK!\n");
 
     _nmod_vec_clear(vec);
     _nmod_vec_clear(res);
     _nmod_vec_clear(res2);
     _nmod_vec_clear(res3);
     _nmod_vec_clear(res4);
-    //FLINT_TEST_CLEAR(state); // ko
+    FLINT_TEST_CLEAR(state);
     return 0;
 }
