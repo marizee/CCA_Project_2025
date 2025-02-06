@@ -8,7 +8,7 @@
 
 OBJ = scalar_vector_32.o test_flint.o profile.o #vector_vector_32.o gather.o
 PROG = test_flint profile #vector_vector_32 gather
-#FUN = naive_load.o simd_add.o seq_vector_vector.o
+FUN = naive_load.o simd_add.o seq_vector_vector.o
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -16,10 +16,8 @@ PROG = test_flint profile #vector_vector_32 gather
 CC = gcc
 
 CFLAGS  = -c#                       # Stop after compilation, then produce .o
-CFLAGS += -Wall -Wextra#		    # Gives almost all C warnings and considers them to be errors
-#CFLAGS += -g#                       # Useful for gdb
-CFLAGS += -O3#                      # No optimisation mode for compiler
-CFLAGS += -march=native#            # Enable AVX
+CFLAGS += -Wall -Wextra -Werror#    # Gives almost all C warnings and considers them to be errors
+CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
 CFLAGS += -Wpedantic
 CFLAGS += -Wconversion -Wsign-conversion
@@ -29,6 +27,11 @@ CFLAGS += -Wdouble-promotion
 #CFLAGS += -fopt-info
 
 
+DFLAGS  = -g#                       # Useful for gdb
+DFLAGS += -O0#                      # No optimisation mode for compiler
+
+RFLAGS  = -O3#                      # Full optimisation mode of compiler
+
 LFLAGS  = -fwhole-program#
 LFLAGS += -lflint -lgmp -lmpfr -lpthread
 
@@ -36,13 +39,17 @@ LFLAGS += -lflint -lgmp -lmpfr -lpthread
 # Rules (here they are used such as simple shell scripts)
 # --------------------------------------------------------------------------------------------------
 
-compil: mkdir_obj all
+compil: mkdir_obj mkdir_debug all
 
 mkdir_obj:
 	@test -d obj || mkdir obj
 
+mkdir_debug:
+	@test -d debug || mkdir debug
+	@test -d debug/obj || mkdir debug/obj
+
 clean:
-	-rm -r obj *~ Makefile.bak $(PROG) *.i *.o 2> /dev/null || true
+	-rm -r obj debug *~ Makefile.bak $(PROG) *.i *.o 2> /dev/null || true
 
 # Rules with automatic variables
 # --------------------------------------------------------------------------------------------------
@@ -50,10 +57,10 @@ clean:
 all : $(OBJ) $(PROG)
 
 %.o : %.c
-	$(CC) -o $@ $(CFLAGS) $^
+	$(CC) -o $@ $(CFLAGS) $(DFLAGS) $^
 
 obj/%.o : %.c
-	$(CC) -o $@ $(CFLAGS) -save-temps -fverbose-asm $^
+	$(CC) -o $@ $(CFLAGS) $(RFLAGS) -save-temps -fverbose-asm $^
 
 asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
 
@@ -65,8 +72,11 @@ test_flint: test_flint.o scalar_vector_32.o
 profile: profile.o scalar_vector_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-#vector_vector_32: vector_vector_32.o
-#    $(CC) -o $@ $^ $(LFLAGS)
-# 
-#gather: gather.o
-#    $(CC) -o $@ $^ $(LFLAGS)
+#scalar_vector_32: obj/scalar_vector_32.o
+#	$(CC) -o $@ $^ $(LFLAGS)
+
+#vector_vector_32: obj/vector_vector_32.o
+#	$(CC) -o $@ $^ $(LFLAGS)
+
+#gather: obj/gather.o
+#	$(CC) -o $@ $^ $(LFLAGS)
