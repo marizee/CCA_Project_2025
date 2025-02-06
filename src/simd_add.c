@@ -10,7 +10,13 @@ typedef long long i64;
 
 // #define MOD_P
 
-void naive_load(u32* a, u32* b, u32 n, u32 p, u32* res) {
+/**
+ *  Compute the sum of two vectors of the same size.
+ *  It assume their size n is a multiple of 4.
+ *  If MOD_P is defined, the operation id done mod p, assuming a and b are
+ *  already mod p.
+ */
+void simd_add(u32* a, u32* b, u32 n, u32 p, u32* res) {
 	#ifdef MOD_P
 	u64 tab[4] = { p, p, p, p };
 	__m256i vp = _mm256_load_si256 ((const __m256i *)tab);
