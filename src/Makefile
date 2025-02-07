@@ -18,12 +18,13 @@ CC = gcc
 CFLAGS  = -c#                       # Stop after compilation, then produce .o
 CFLAGS += -Wall -Wextra #-Werror#    # Gives almost all C warnings and considers them to be errors
 CFLAGS += -march=native#            # Enable AVX 
-CFLAGS += -Wno-unused-parameter# 
-CFLAGS += -Wpedantic
-CFLAGS += -Wconversion -Wsign-conversion
-CFLAGS += -Wcast-qual -Wcast-align
-CFLAGS += -Wundef -Wunused
-CFLAGS += -Wdouble-promotion
+CFLAGS += -I/dsk/l1/vneiger/include/flint
+#CFLAGS += -Wno-unused-parameter# 
+#CFLAGS += -Wpedantic
+#CFLAGS += -Wconversion -Wsign-conversion
+#CFLAGS += -Wcast-qual -Wcast-align
+#CFLAGS += -Wundef -Wunused
+#CFLAGS += -Wdouble-promotion
 #CFLAGS += -fopt-info
 
 
@@ -33,7 +34,7 @@ DFLAGS += -O3#                      # No optimisation mode for compiler
 RFLAGS  = -O3#                      # Full optimisation mode of compiler
 
 LFLAGS  = -fwhole-program#
-LFLAGS += -lflint -lgmp -lmpfr -lpthread
+LFLAGS += -L/dsk/l1/vneiger/lib -lflint -lgmp -lmpfr -lpthread
 
 
 # Rules (here they are used such as simple shell scripts)
