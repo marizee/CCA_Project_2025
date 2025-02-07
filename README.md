@@ -27,3 +27,7 @@ Intrinsics:
 - [ ] test avx512 -> pb: flint not installed
 
 Remark: machines CCA => only ppti-gpu-4 is usable (gpu-1: dossier etu inexistant, gpu-5: existe pas, gpu-3: pas avx512)
+
+- machine 1 : CPU xxx
+- machine 2 : CPU xxx
+- machine ppti: Intel® Xeon® Gold 6248 Processor  (Cascade Lake)
