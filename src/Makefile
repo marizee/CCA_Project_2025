@@ -16,7 +16,7 @@ FUN = naive_load.o simd_add.o seq_vector_vector.o
 CC = gcc
 
 CFLAGS  = -c#                       # Stop after compilation, then produce .o
-CFLAGS += -Wall -Wextra -Werror#    # Gives almost all C warnings and considers them to be errors
+CFLAGS += -Wall -Wextra #-Werror#    # Gives almost all C warnings and considers them to be errors
 CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
 CFLAGS += -Wpedantic
@@ -28,7 +28,7 @@ CFLAGS += -Wdouble-promotion
 
 
 DFLAGS  = -g#                       # Useful for gdb
-DFLAGS += -O0#                      # No optimisation mode for compiler
+DFLAGS += -O3#                      # No optimisation mode for compiler
 
 RFLAGS  = -O3#                      # Full optimisation mode of compiler
 

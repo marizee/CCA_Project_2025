@@ -28,6 +28,6 @@ Intrinsics:
 
 Remark: machines CCA => only ppti-gpu-4 is usable (gpu-1: dossier etu inexistant, gpu-5: existe pas, gpu-3: pas avx512)
 
-- machine 1 : CPU xxx
+- machine 1 : Intel(R) Core(TM) Ultra 5 125H
 - machine 2 : CPU xxx
 - machine ppti: Intel® Xeon® Gold 6248 Processor  (Cascade Lake)
