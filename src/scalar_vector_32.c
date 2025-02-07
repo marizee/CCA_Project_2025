@@ -61,7 +61,7 @@ void simd_scalar_vector(nn_ptr res, ulong b, nn_ptr vec, slong len, nmod_t mod)
     for (i=0; i+7 < len; i+=8)
     {
         __m512i va = _mm512_loadu_si512((const __m512i *)&vec[i]);
-        __m512i prod = _mm512_mul_epu32(va, vb);
+        __m512i prod = _mm512_mul_epu32(vb, va);
         _mm512_storeu_si512 ((__m512i *)&res[i], prod);
     }
 
@@ -102,14 +102,10 @@ void simd_scalar_vector_unrolled(nn_ptr res, ulong b, nn_ptr vec, slong len, nmo
 
     for (i=0; i+31 < len; i+=32)
     {
-        _mm512_storeu_si512((__m512i *)&res[i+ 0], _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec[i+ 0]), vb));
-        _mm512_storeu_si512((__m512i *)&res[i+ 4], _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec[i+ 4]), vb));
-        _mm512_storeu_si512((__m512i *)&res[i+ 8], _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec[i+ 8]), vb));
-        _mm512_storeu_si512((__m512i *)&res[i+12], _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec[i+12]), vb));
-        _mm512_storeu_si512((__m512i *)&res[i+16], _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec[i+16]), vb));
-        _mm512_storeu_si512((__m512i *)&res[i+20], _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec[i+20]), vb));
-        _mm512_storeu_si512((__m512i *)&res[i+24], _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec[i+24]), vb));
-        _mm512_storeu_si512((__m512i *)&res[i+28], _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec[i+28]), vb));
+        _mm512_storeu_si512((__m512i *)&res[i+ 0], _mm512_mul_epu32(vb, _mm512_loadu_si512((const __m512i *)&vec[i+ 0])));
+        _mm512_storeu_si512((__m512i *)&res[i+ 8], _mm512_mul_epu32(vb, _mm512_loadu_si512((const __m512i *)&vec[i+ 8])));
+        _mm512_storeu_si512((__m512i *)&res[i+16], _mm512_mul_epu32(vb, _mm512_loadu_si512((const __m512i *)&vec[i+16])));
+        _mm512_storeu_si512((__m512i *)&res[i+24], _mm512_mul_epu32(vb, _mm512_loadu_si512((const __m512i *)&vec[i+24])));
     }
 
     // when n is not a multiple of 32
