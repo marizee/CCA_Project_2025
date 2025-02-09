@@ -23,7 +23,16 @@ void print_reg_64(char* nom, __m256i reg)
 __attribute__((optimize("-fno-tree-vectorize")))
 void seq_scalar_vector(nn_ptr res, ulong b, nn_ptr vec, slong len)
 {
-    // computes sequential scalar-vector product of at most 32 bits integers.
+    // computes scalar-vector product of at most 32 bits integers.
+    for (slong i=0; i < len; i++)
+    {
+        res[i] = b*vec[i];
+    }
+}
+
+void seq_scalar_vector_vectorized(nn_ptr res, ulong b, nn_ptr vec, slong len)
+{
+    // computes scalar-vector product of at most 32 bits integers with auto-vectorization.
     for (slong i=0; i < len; i++)
     {
         res[i] = b*vec[i];

@@ -6,8 +6,8 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o test_flint.o profile.o #vector_vector_32.o gather.o
-PROG = test_flint profile #vector_vector_32 gather
+OBJ = scalar_vector_32.o test_flint.o profile.o
+PROG = test_flint profile
 #FUN = naive_load.o simd_add.o seq_vector_vector.o
 
 # Tools and parameters definitions
@@ -71,11 +71,3 @@ test_flint: test_flint.o scalar_vector_32.o
 profile: profile.o scalar_vector_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-#scalar_vector_32: obj/scalar_vector_32.o
-#	$(CC) -o $@ $^ $(LFLAGS)
-
-#vector_vector_32: obj/vector_vector_32.o
-#	$(CC) -o $@ $^ $(LFLAGS)
-
-#gather: obj/gather.o
-#	$(CC) -o $@ $^ $(LFLAGS)

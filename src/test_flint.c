@@ -17,24 +17,26 @@
 
 int main()
 {
-    slong len = 1 << 27;
-    flint_bitcnt_t bits = 31;
+    slong len = 10;
+    flint_bitcnt_t bits = 10;
+
     FLINT_TEST_INIT(state);
 
-    nmod_t mod;
+    //nmod_t mod;
     ulong n, b;
-    nn_ptr vec, res, res2, res3, res4;
+    nn_ptr vec, res, res1, res2, res3, res4;
 
     // init modulus structure
     n = n_randbits(state, (uint32_t)bits);
     if (n == UWORD(0)) n++;
-    nmod_init(&mod, n);
+    //nmod_init(&mod, n);
 
     // init vector
     vec = _nmod_vec_init(len);
     for (slong i = 0; i < len; i++)
         vec[i] = n_randint(state, n);
     res = _nmod_vec_init(len);
+    res1 = _nmod_vec_init(len);
     res2 = _nmod_vec_init(len);
     res3 = _nmod_vec_init(len);
     res4 = _nmod_vec_init(len);
@@ -53,13 +55,19 @@ int main()
     
     // tests
     clock_t start, end;
-    double tseq, tseq_unr, tsimd, tsimd_unr;
+    double tseq, tseqv, tseq_unr, tsimd, tsimd_unr;
 
     start = clock();
     seq_scalar_vector(res,b,vec,len);
     end = clock();
     tseq = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("seq=\t\t%.5es\n", tseq);
+
+    start = clock();
+    seq_scalar_vector_vectorized(res1,b,vec,len);
+    end = clock();
+    tseqv = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("seqv=\t\t%.5es\n", tseqv);
 
     start = clock();
     seq_scalar_vector_unrolled(res2,b,vec,len);
@@ -81,16 +89,20 @@ int main()
     tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("simd_unr=\t%.5es\n", tsimd_unr);
     
+
+
     // checks
     int check1 = _nmod_vec_equal(res, res2, len);
     int check2 = _nmod_vec_equal(res3, res4, len);
-    if (!check1 || !check2)
+    int check3 = _nmod_vec_equal(res, res3, len);
+    if (!check1 || !check2 || !check3)
         printf("ff\n");
     else 
         printf("OK!\n");
 
     _nmod_vec_clear(vec);
     _nmod_vec_clear(res);
+    _nmod_vec_clear(res1);
     _nmod_vec_clear(res2);
     _nmod_vec_clear(res3);
     _nmod_vec_clear(res4);
