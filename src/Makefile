@@ -8,7 +8,7 @@
 
 OBJ = scalar_vector_32.o test_flint.o profile.o #vector_vector_32.o gather.o
 PROG = test_flint profile #vector_vector_32 gather
-FUN = naive_load.o simd_add.o seq_vector_vector.o
+#FUN = naive_load.o simd_add.o seq_vector_vector.o
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -17,6 +17,7 @@ CC = gcc
 
 CFLAGS  = -c#                       # Stop after compilation, then produce .o
 CFLAGS += -Wall -Wextra #-Werror#    # Gives almost all C warnings and considers them to be errors
+CFLAGS += -O3
 CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
 CFLAGS += -Wpedantic
@@ -26,15 +27,13 @@ CFLAGS += -Wundef -Wunused
 CFLAGS += -Wdouble-promotion
 #CFLAGS += -fopt-info
 
-
-DFLAGS  = -g#                       # Useful for gdb
-DFLAGS += -O3#                      # No optimisation mode for compiler
-
-RFLAGS  = -O3#                      # Full optimisation mode of compiler
-
 LFLAGS  = -fwhole-program#
 LFLAGS += -lflint -lgmp -lmpfr -lpthread
 
+#DFLAGS  = -g#                       # Useful for gdb
+#DFLAGS += -O3#                      # No optimisation mode for compiler
+#
+#RFLAGS  = -O3#                      # Full optimisation mode of compiler
 
 # Rules (here they are used such as simple shell scripts)
 # --------------------------------------------------------------------------------------------------
@@ -57,7 +56,7 @@ clean:
 all : $(OBJ) $(PROG)
 
 %.o : %.c
-	$(CC) -o $@ $(CFLAGS) $(DFLAGS) $^
+	$(CC) -o $@ $(CFLAGS) $^
 
 obj/%.o : %.c
 	$(CC) -o $@ $(CFLAGS) $(RFLAGS) -save-temps -fverbose-asm $^

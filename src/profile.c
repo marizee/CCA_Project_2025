@@ -27,7 +27,8 @@ void sample(void * arg, ulong count)
     nmod_t mod;
     ulong n, b;
     nn_ptr vec, res;
-    slong i,j;
+    ulong i;
+    slong j;
 
     vec = _nmod_vec_init(length);
     res = _nmod_vec_init(length);
@@ -35,7 +36,7 @@ void sample(void * arg, ulong count)
     for (i = 0; i < count; i++)
     {
         // init modulus
-        n = n_randbits(state, bits);
+        n = n_randbits(state, (uint32_t)bits);
         if (n == UWORD(0)) n++;
         nmod_init(&mod, n);
         
@@ -46,7 +47,7 @@ void sample(void * arg, ulong count)
 
         prof_start();
         for (slong j = 0; j < 100; j++)
-            seq_scalar_vector(res,b,vec,length,mod);
+            seq_scalar_vector(res,b,vec,length);
         prof_stop();
     }
     
@@ -66,7 +67,8 @@ void sample_unrolled(void * arg, ulong count)
     nmod_t mod;
     ulong n, b;
     nn_ptr vec, res;
-    slong i,j;
+    ulong i;
+    slong j;
 
     vec = _nmod_vec_init(length);
     res = _nmod_vec_init(length);
@@ -74,7 +76,7 @@ void sample_unrolled(void * arg, ulong count)
     for (i = 0; i < count; i++)
     {
         // init modulus
-        n = n_randbits(state, bits);
+        n = n_randbits(state, (uint32_t)bits);
         if (n == UWORD(0)) n++;
         nmod_init(&mod, n);
         
@@ -85,7 +87,7 @@ void sample_unrolled(void * arg, ulong count)
         
         prof_start();
         for (slong j = 0; j < 100; j++)
-            seq_scalar_vector_unrolled(res,b,vec,length,mod);
+            seq_scalar_vector_unrolled(res,b,vec,length);
         prof_stop();
     }
     
@@ -105,7 +107,8 @@ void sample_simd(void * arg, ulong count)
     nmod_t mod;
     ulong n, b;
     nn_ptr vec, res;
-    slong i,j;
+    ulong i;
+    slong j;
 
     vec = _nmod_vec_init(length);
     res = _nmod_vec_init(length);
@@ -113,7 +116,7 @@ void sample_simd(void * arg, ulong count)
     for (i = 0; i < count; i++)
     {
         // init modulus
-        n = n_randbits(state, bits);
+        n = n_randbits(state, (uint32_t)bits);
         if (n == UWORD(0)) n++;
         nmod_init(&mod, n);
         
@@ -124,7 +127,7 @@ void sample_simd(void * arg, ulong count)
         
         prof_start();
         for (slong j = 0; j < 100; j++)
-            simd_scalar_vector(res,b,vec,length,mod);
+            simd2_scalar_vector(res,b,vec,length);
         prof_stop();
     }
     
@@ -144,7 +147,8 @@ void sample_simd_unrolled(void * arg, ulong count)
     nmod_t mod;
     ulong n, b;
     nn_ptr vec, res;
-    slong i,j;
+    ulong i;
+    slong j;
 
     vec = _nmod_vec_init(length);
     res = _nmod_vec_init(length);
@@ -152,7 +156,7 @@ void sample_simd_unrolled(void * arg, ulong count)
     for (i = 0; i < count; i++)
     {
         // init modulus
-        n = n_randbits(state, bits);
+        n = n_randbits(state, (uint32_t)bits);
         if (n == UWORD(0)) n++;
         nmod_init(&mod, n);
         
@@ -163,7 +167,7 @@ void sample_simd_unrolled(void * arg, ulong count)
         
         prof_start();
         for (slong j = 0; j < 100; j++)
-            simd_scalar_vector_unrolled(res,b,vec,length,mod);
+            simd2_scalar_vector_unrolled(res,b,vec,length);
         prof_stop();
     }
     

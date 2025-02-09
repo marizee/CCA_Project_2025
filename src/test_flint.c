@@ -56,26 +56,26 @@ int main()
     double tseq, tseq_unr, tsimd, tsimd_unr;
 
     start = clock();
-    seq_scalar_vector(res,b,vec,len,mod);
+    seq_scalar_vector(res,b,vec,len);
     end = clock();
     tseq = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("seq=\t\t%.5es\n", tseq);
 
     start = clock();
-    seq_scalar_vector_unrolled(res2,b,vec,len,mod);
+    seq_scalar_vector_unrolled(res2,b,vec,len);
     end = clock();
     tseq_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("unr=\t\t%.5es\n", tseq_unr);
 
     start = clock();
-    simd_scalar_vector(res3, b, vec, len, mod);
+    simd2_scalar_vector(res3, b, vec, len);
     //_nmod_vec_print_pretty(res3, len, mod);
     end = clock();
     tsimd = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("simd=\t\t%.5es\n", tsimd);
 
     start = clock();
-    simd_scalar_vector_unrolled(res4, b, vec, len, mod);
+    simd2_scalar_vector_unrolled(res4, b, vec, len);
     //_nmod_vec_print_pretty(res4, len, mod);
     end = clock();
     tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
