@@ -6,8 +6,8 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o test_flint.o profile.o
-PROG = test_flint profile
+OBJ = scalar_vector_32.o test_flint.o profile_cl.o profile_sec.o profile_sec2.o
+PROG = test_flint profile_cl profile_sec profile_sec2
 #FUN = naive_load.o simd_add.o seq_vector_vector.o
 
 # Tools and parameters definitions
@@ -20,11 +20,11 @@ CFLAGS += -Wall -Wextra #-Werror#    # Gives almost all C warnings and considers
 CFLAGS += -O3
 CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
-CFLAGS += -Wpedantic
-CFLAGS += -Wconversion -Wsign-conversion
-CFLAGS += -Wcast-qual -Wcast-align
-CFLAGS += -Wundef -Wunused
-CFLAGS += -Wdouble-promotion
+#CFLAGS += -Wpedantic
+#CFLAGS += -Wconversion -Wsign-conversion
+#CFLAGS += -Wcast-qual -Wcast-align
+#CFLAGS += -Wundef -Wunused
+#CFLAGS += -Wdouble-promotion
 #CFLAGS += -fopt-info
 
 LFLAGS  = -fwhole-program#
@@ -68,6 +68,11 @@ asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
 test_flint: test_flint.o scalar_vector_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profile: profile.o scalar_vector_32.o
+profile_cl: profile_cl.o scalar_vector_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
+profile_sec: profile_sec.o scalar_vector_32.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+profile_sec2: profile_sec2.o scalar_vector_32.o
+	$(CC) -o $@ $^ $(LFLAGS)
