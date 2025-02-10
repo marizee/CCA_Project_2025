@@ -50,3 +50,28 @@ Remark: machines CCA => only ppti-gpu-4 is usable (gpu-1: dossier etu inexistant
 - machine 1 : Intel(R) Core(TM) Ultra 5 125H
 - machine 2 : CPU xxx
 - machine ppti: Intel® Xeon® Gold 6248 Processor  (Cascade Lake)
+
+## General notes
+
+### Compile time
+
+- Compilation options: -O3 turns on all optimizations from -O2. (See: [Options that control optimization](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html)
+Compile sequential function with `-fno-tree-vectorize`
+
+- Loop-unrolling: can help the auto-vectorization...
+
+
+### Understand timings
+
+The number of cycles per limb of a function can be approximated by looking at the cpu clock speed:
+X GHz => X billion cycles per second (See: [What is clock speed?](https://www.intel.com/content/www/us/en/gaming/resources/cpu-clock-speed.html).
+
+Then we look at the throughput of the simd instructions we call, for a given cpu generation (See: [uops.info](https://uops.info/table.html).
+
+Finally, we do a cross-multiplication with the number of operations performed by the measured function.
+
+This does not take in account the latency or any other factor.
+
+Ex: scalar-vector product of at most 32 bits integer with 4,5 GHz CPU and 16 384 elements
+=> we except $\approx 3.64 \times 10^{-6}$
+
