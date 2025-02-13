@@ -12,7 +12,6 @@ PROG = test_flint profile_cl profile_sec profile_sec2
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
-
 CC = gcc
 
 CFLAGS  = -c#                       # Stop after compilation, then produce .o
@@ -20,6 +19,7 @@ CFLAGS += -Wall -Wextra #-Werror#    # Gives almost all C warnings and considers
 CFLAGS += -O3
 CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
+CFLAGS += -I/$(HOME)/include/
 #CFLAGS += -Wpedantic
 #CFLAGS += -Wconversion -Wsign-conversion
 #CFLAGS += -Wcast-qual -Wcast-align
@@ -28,7 +28,7 @@ CFLAGS += -Wno-unused-parameter#
 #CFLAGS += -fopt-info
 
 LFLAGS  = -fwhole-program#
-LFLAGS += -lflint -lgmp -lmpfr -lpthread
+LFLAGS += -L/$(HOME)/lib/ -lflint -lgmp -lmpfr -lpthread
 
 #DFLAGS  = -g#                       # Useful for gdb
 #DFLAGS += -O3#                      # No optimisation mode for compiler
