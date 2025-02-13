@@ -17,15 +17,25 @@ else:
 
 
 parse = datas[4].split()
-fratios.write(f'{parse[0]}\t{parse[2]}\t{parse[3]}\t{parse[4]}\t{parse[5]}\n')
+avx512 = False if len(parse)==6 else True
+
+fratios.write(f'{parse[0]}\t{parse[2]}\t{parse[3]}\t{parse[4]}\t{parse[5]}')
+if avx512:
+    fratios.write(f'\t{parse[6]}\t{parse[7]}\n')
+else:
+    fratios.write("\n")
 
 for row in datas[5:]:
     parse = row.split()
-    ratios = [float(parse[1])/float(parse[i]) for i in range(2,6)]
+    ratios = [float(parse[1])/float(parse[i]) for i in range(2,len(parse))]
     if len(parse[0]) <= 3:
         fratios.write(f'{parse[0]}\t\t\t')
     else:
         fratios.write(f'{parse[0]}\t\t')
-    fratios.write(f'{ratios[0]:.3f}\t\t{ratios[1]:.3f}\t{ratios[2]:.3f}\t{ratios[3]:.3f}\n')
+    fratios.write(f'{ratios[0]:.3f}\t\t{ratios[1]:.3f}\t{ratios[2]:.3f}\t{ratios[3]:.3f}')
+    if avx512:
+        fratios.write(f'\t{ratios[4]:.3f}\t{ratios[5]:.3f}\n')
+    else:
+        fratios.write("\n")
 
 fratios.close()
