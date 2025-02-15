@@ -13,9 +13,9 @@
 
 ### TODO
 
-- [ ] install flint ppti
-- [ ] test avx512
-- [ ] improve profiling: 
+- [X] install flint ppti
+- [X] test avx512
+- [X] improve profiling: 
     * 1 bitsize
     * 1 op/fichier 
     * columns = function
@@ -23,6 +23,9 @@
     * cycle/limb or timing %.3e
 
 - [ ] implem other op
+    [X] dot product -> TODO: fix overflow (See: https://github.com/vneiger/pml/blob/61383d9ae20853fef2179ca585291bb8da74c2fc/flint-extras/nmod_vec_extra/src/nmod_vec_dot_product.c#L205C7-L205C38 ).
+    [ ] butterfly fft
+    [ ] vector-vector product
 
 - [ ] start report
 
@@ -64,9 +67,9 @@ Compile sequential function with `-fno-tree-vectorize`
 ### Understand timings
 
 The number of cycles per limb of a function can be approximated by looking at the cpu clock speed:
-X GHz => X billion cycles per second (See: [What is clock speed?](https://www.intel.com/content/www/us/en/gaming/resources/cpu-clock-speed.html).
+X GHz => X billion cycles per second (See: [What is clock speed?](https://www.intel.com/content/www/us/en/gaming/resources/cpu-clock-speed.html ).
 
-Then we look at the throughput of the simd instructions we call, for a given cpu generation (See: [uops.info](https://uops.info/table.html).
+Then we look at the throughput of the simd instructions we call, for a given cpu generation (See: [uops.info](https://uops.info/table.html ).
 
 Finally, we do a cross-multiplication with the number of operations performed by the measured function.
 
