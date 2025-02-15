@@ -1,0 +1,104 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <stdint.h>
+#include <immintrin.h>
+
+#include <stdbool.h>
+
+#include "flint/flint.h"
+#include "flint/nmod.h"
+#include "flint/nmod_vec.h"
+#include "flint/ulong_extras.h"
+#include "flint/profiler.h"
+
+#include "dot_product_32.h"
+
+
+int main()
+{
+    slong len = 1 << 20;
+    flint_bitcnt_t bits = 18; 
+    FLINT_TEST_INIT(state);
+
+    nmod_t mod;
+    ulong n;
+    nn_ptr vec1, vec2;
+
+    // init modulus structure
+    n = n_randbits(state, (uint32_t)bits);
+    if (n == UWORD(0)) n++;
+    nmod_init(&mod, n);
+
+    // init vector
+    vec1 = _nmod_vec_init(len);
+    vec2 = _nmod_vec_init(len);
+    for (slong i = 0; i < len; i++)
+    {
+        vec1[i] = n_randint(state, n);
+        vec2[i] = n_randint(state, n);
+    }
+
+    // print parameters for debug
+    //printf("mod.n=%ld, mod.ninv=%ld, mod.norm=%ld\n", mod.n, mod.ninv, mod.norm);
+    //printf("vec1=");
+    //_nmod_vec_print_pretty(vec1, len, mod);
+    //printf("vec2=");
+    //_nmod_vec_print_pretty(vec2, len, mod);
+
+    ulong res1=0, res2=0, res3=0, res4=0, res5=0;
+    clock_t start, end;
+    double tseq, tseq_v, tseq_unr, tsimd, tsimd_unr;
+
+    start = clock();
+    seq_dot_product(&res1,vec1,vec2,len);
+    end = clock();
+    //printf("res= %ld\n", res1);
+    tseq = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("seq=\t\t%.5es\n", tseq);
+
+    start = clock();
+    seq_dot_product_vectorized(&res2,vec1,vec2,len);
+    end = clock();
+    //printf("res= %ld\n", res2);
+    tseq_v = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("seq_v=\t\t%.5es\n", tseq_v);
+
+    start = clock();
+    seq_dot_product_unrolled(&res3,vec1,vec2,len);
+    end = clock();
+    //printf("res= %ld\n", res3);
+    tseq_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("seq_unr=\t%.5es\n", tseq_unr);
+
+    start = clock();
+    simd2_dot_product(&res4,vec1,vec2,len);
+    end = clock();
+    //printf("res= %ld\n", res4);
+    tsimd = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("simd=\t\t%.5es\n", tsimd);
+
+    start = clock();
+    simd2_dot_product_unrolled(&res5,vec1,vec2,len);
+    end = clock();
+    //printf("res= %ld\n", res5);
+    tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("simd2_unr=\t%.5es\n", tsimd_unr);
+
+
+    // checks
+    int check11 = (res1 == res2);
+    int check12 = (res2 == res3);
+    int check2 = (res4 == res5);
+    int check3 = (res3 == res4);
+    if (!check11 || !check12 || !check2 || !check3)
+        printf("ff\n");
+    else 
+        printf("OK!\n");
+
+
+    _nmod_vec_clear(vec1);
+    _nmod_vec_clear(vec2);
+    FLINT_TEST_CLEAR(state);
+    return 0;
+}

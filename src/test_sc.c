@@ -48,7 +48,6 @@ int main()
 
     // print parameters for debug
     //printf("mod.n=%ld, mod.ninv=%ld, mod.norm=%ld, b=%ld\n", mod.n, mod.ninv, mod.norm, b);
-    //printf("50 mod n=%ld\n", 50*mod.ninv);
     //printf("vec=");
     //_nmod_vec_print_pretty(vec, len, mod);
 

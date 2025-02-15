@@ -6,8 +6,8 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o test_flint.o profile_cl.o profile_sec.o profile_sec2.o
-PROG = test_flint profile_cl profile_sec profile_sec2
+OBJ = scalar_vector_32.o dot_product_32.o test_sc.o test_dp.o profile_cl.o profile_sec.o profile_sec2.o
+PROG = test_sc test_dp profile_cl profile_sec profile_sec2
 #FUN = naive_load.o simd_add.o seq_vector_vector.o
 
 # Tools and parameters definitions
@@ -59,13 +59,16 @@ all : $(OBJ) $(PROG)
 	$(CC) -o $@ $(CFLAGS) $^
 
 obj/%.o : %.c
-	$(CC) -o $@ $(CFLAGS) $(RFLAGS) -save-temps -fverbose-asm $^
+	$(CC) -o $@ $(CFLAGS) -save-temps -fverbose-asm $^
 
 asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
 
 # Rules for the mains
 # --------------------------------------------------------------------------------------------------
-test_flint: test_flint.o scalar_vector_32.o
+test_sc: test_sc.o scalar_vector_32.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_dp: test_dp.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 profile_cl: profile_cl.o scalar_vector_32.o
