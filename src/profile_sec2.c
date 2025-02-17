@@ -322,20 +322,20 @@ int main(int argc, char** argv)
     
     flint_printf("unit: all measurements in seconds\n");
     flint_printf("profiled: seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled");
-    #if defined(__AVX512F__)
+#if defined(__AVX512F__)
     flint_printf(" | avx512 | avx512 loop-unrolled\n");
-    #else
+#else
     flint_printf("\n");
-    #endif
+#endif
     flint_printf("bitsize: %ld\n\n", info.bits);
     
     flint_printf("len/func\t");
     flint_printf("s-novec\t\ts-autovec\ts-unr\t\tavx2\t\tavx2-unr");
-    #if defined(__AVX512F__)
+#if defined(__AVX512F__)
     flint_printf("\tavx512\t\tavx512unr\n");
-    #else
+#else
     flint_printf("\n");
-    #endif
+#endif
 
 
     for (len = 1; len < 200; ++len)
@@ -348,10 +348,10 @@ int main(int argc, char** argv)
         sample_unrolled(        &info);
         sample_simd2(           &info);
         sample_simd2_unrolled(  &info);
-        #if defined(__AVX512F__)
+#if defined(__AVX512F__)
         sample_simd512(         &info);
         sample_simd512_unrolled(&info);
-        #endif
+#endif
         flint_printf("\n");
     
     }
@@ -366,10 +366,10 @@ int main(int argc, char** argv)
         sample_unrolled(        &info);
         sample_simd2(           &info);
         sample_simd2_unrolled(  &info);
-        #if defined(__AVX512F__)
+#if defined(__AVX512F__)
         sample_simd512(         &info);
         sample_simd512_unrolled(&info);
-        #endif
+#endif
         flint_printf("\n");
     
     }
@@ -384,10 +384,10 @@ int main(int argc, char** argv)
         sample_unrolled(        &info);
         sample_simd2(           &info);
         sample_simd2_unrolled(  &info);
-        #if defined(__AVX512F__)
+#if defined(__AVX512F__)
         sample_simd512(         &info);
         sample_simd512_unrolled(&info);
-        #endif
+#endif
         flint_printf("\n");
 
     }
