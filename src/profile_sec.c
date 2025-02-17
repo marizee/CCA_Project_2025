@@ -1,6 +1,5 @@
 #include "flint/profiler.h"
 #include "flint/ulong_extras.h"
-#include "flint/nmod.h"
 #include "flint/nmod_vec.h"
 #include "flint/flint.h"
 
