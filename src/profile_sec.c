@@ -306,10 +306,10 @@ int main(int argc, char** argv)
     double mins_unrolled[        262];
     double mins_simd2[           262];
     double mins_simd2_unrolled[  262];
-    #if defined(__AVX512F__)
+#if defined(__AVX512F__)
     double mins_simd512[         262];
     double mins_simd512_unrolled[262];
-    #endif
+#endif
     info_t info;
     slong len;
     //flint_bitcnt_t i;
@@ -326,20 +326,20 @@ int main(int argc, char** argv)
     
     flint_printf("unit: all measurements in seconds\n");
     flint_printf("profiled: seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled");
-    #if defined(__AVX512F__)
+#if defined(__AVX512F__)
     flint_printf(" | avx512 | avx512 loop-unrolled\n");
-    #else
+#else
     flint_printf("\n");
-    #endif
+#endif
     flint_printf("bitsize: %ld\n\n", info.bits);
     
     flint_printf("len/func\t");
     flint_printf("s-novec\t\ts-autovec\ts-unr\t\tavx2\t\tavx2-unr");
-    #if defined(__AVX512F__)
+#if defined(__AVX512F__)
     flint_printf("\tavx512\t\tavx512unr\n");
-    #else
+#else
     flint_printf("\n");
-    #endif
+#endif
 
     for (len = 1; len < 200; ++len)
     {
@@ -355,12 +355,12 @@ int main(int argc, char** argv)
         mins_simd2[len-1] = min;
         prof_repeat(&min, &max, sample_simd2_unrolled, (void *) &info);
         mins_simd2_unrolled[len-1] = min;
-        #if defined(__AVX512F__)
+#if defined(__AVX512F__)
         prof_repeat(&min, &max, sample_simd512, (void *) &info);
         mins_simd512[len-1] = min;
         prof_repeat(&min, &max, sample_simd512_unrolled, (void *) &info);
         mins_simd512_unrolled[len-1] = min;
-        #endif
+#endif
 
         flint_printf("%d\t\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e", len,
                     mins[len-1]/1000000,
@@ -368,13 +368,13 @@ int main(int argc, char** argv)
                     mins_unrolled[len-1]/1000000,
                     mins_simd2[len-1]/1000000,
                     mins_simd2_unrolled[len-1]/1000000);
-        #if defined(__AVX512F__)
+#if defined(__AVX512F__)
         flint_printf("\t%3.f\t\t%3.f\n",
-                    mins_simd512[len-1]/1000000,
-                    mins_simd512_unrolled[len-1]/1000000);
-        #else
+                     mins_simd512[len-1]/1000000,
+                     mins_simd512_unrolled[len-1]/1000000);
+#else
         flint_printf("\n");
-        #endif
+#endif
     }
 
     for ( ; len <= 8000; len+=150)
@@ -391,26 +391,26 @@ int main(int argc, char** argv)
         mins_simd2[199 + (len-200)/150] = min;
         prof_repeat(&min, &max, sample_simd2_unrolled, (void *) &info);
         mins_simd2_unrolled[199 + (len-200)/150] = min;
-        #if defined(__AVX512F__)
+#if defined(__AVX512F__)
         prof_repeat(&min, &max, sample_simd512, (void *) &info);
         mins_simd512[199 + (len-200)/150] = min;
         prof_repeat(&min, &max, sample_simd512_unrolled, (void *) &info);
         mins_simd512_unrolled[199 + (len-200)/150] = min;
-        #endif
-    
+#endif
+
         flint_printf("%d\t\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e", len,
-                    mins[199 + (len-200)/150]/1000000,
-                    mins_vec[199 + (len-200)/150]/1000000,
-                    mins_unrolled[199 + (len-200)/150]/1000000,
-                    mins_simd2[199 + (len-200)/150]/1000000,
-                    mins_simd2_unrolled[199 + (len-200)/150]/1000000);
-        #if defined(__AVX512F__)
+                     mins[199 + (len-200)/150]/1000000,
+                     mins_vec[199 + (len-200)/150]/1000000,
+                     mins_unrolled[199 + (len-200)/150]/1000000,
+                     mins_simd2[199 + (len-200)/150]/1000000,
+                     mins_simd2_unrolled[199 + (len-200)/150]/1000000);
+#if defined(__AVX512F__)
         flint_printf("\t%3.f\t\t%3.f\n",
-                    mins_simd512[199 + (len-200)/150]/1000000,
-                    mins_simd512_unrolled[199 + (len-200)/150]/1000000);
-        #else
+                     mins_simd512[199 + (len-200)/150]/1000000,
+                     mins_simd512_unrolled[199 + (len-200)/150]/1000000);
+#else
         flint_printf("\n");
-        #endif
+#endif
     }
 
     for (int i = 13; i < 23; i++)
@@ -426,12 +426,12 @@ int main(int argc, char** argv)
         mins_simd2[239+i] = min;
         prof_repeat(&min, &max, sample_simd2_unrolled, (void *) &info);
         mins_simd2_unrolled[239+i] = min;
-        #if defined(__AVX512F__)
+#if defined(__AVX512F__)
         prof_repeat(&min, &max, sample_simd512, (void *) &info);
         mins_simd512[239+i] = min;
         prof_repeat(&min, &max, sample_simd512_unrolled, (void *) &info);
         mins_simd512_unrolled[239+i] = min;
-        #endif
+#endif
 
     
         flint_printf("%d\t\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e", info.length,
@@ -440,13 +440,13 @@ int main(int argc, char** argv)
                     mins_unrolled[239+i]/1000000,
                     mins_simd2[239+i]/1000000,
                     mins_simd2_unrolled[239+i]/1000000);
-        #if defined(__AVX512F__)
+#if defined(__AVX512F__)
         flint_printf("\t%3.f\t\t%3.f\n",
-                    mins_simd512[239+i]/1000000,
-                    mins_simd512_unrolled[239+i]/1000000);
-        #else
+                     mins_simd512[239+i]/1000000,
+                     mins_simd512_unrolled[239+i]/1000000);
+#else
         flint_printf("\n");
-        #endif
+#endif
 
     }
 
