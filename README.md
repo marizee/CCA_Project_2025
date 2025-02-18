@@ -50,9 +50,11 @@ Intrinsics:
 
 Remark: machines CCA => only ppti-gpu-4 is usable (gpu-1: dossier etu inexistant, gpu-5: existe pas, gpu-3: pas avx512)
 
-- machine 1 : Intel(R) Core(TM) Ultra 5 125H
+- machine 1 : Intel(R) Core(TM) Ultra 5 125H  (Meteor Lake)
 - machine 2 : CPU xxx
-- machine ppti: Intel® Xeon® Gold 6248 Processor  (Cascade Lake)
+- machine ppti: Intel® Xeon® Gold 6248 Processor  (Cascade Lake, AVX512)
+- machine argiope: AMD Ryzen 7 PRO 7840U  (Zen 4, AVX512)
+- machine groebner: Intel(R) Xeon(R) Gold 6354  (IceLake, AVX512)
 
 ## General notes
 
