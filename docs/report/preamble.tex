@@ -1,0 +1,76 @@
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{ragged2e}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{indentfirst}
+\usepackage{lscape}
+\usepackage{titlesec}
+\usepackage[nottoc,numbib]{tocbibind}
+
+
+\geometry{margin=1in}
+
+\colorlet{myGreen}{green!70!black}
+\colorlet{myDGreen}{green!50!black}
+\colorlet{myGray}{white!60!black}
+
+\newcommand{\colNaN}[1]{{\textcolor{black!30}{#1}}}
+\newcommand{\colDisaster}[1]{{\textcolor{red!60}{#1}}}
+\newcommand{\colFailure}[1]{{\textcolor{orange}{#1}}}
+\newcommand{\colWorse}[1]{\textcolor{orange!60}{#1}}
+\newcommand{\colSimilar}[1]{\textcolor{black!60}{#1}}
+\newcommand{\colBetter}[1]{\textcolor{blue!70}{#1}}
+\newcommand{\colSuccess}[1]{\textcolor{black!30!green}{#1}}
+\newcommand{\colAmazing}[1]{\textcolor{green}{#1}}
+
+\hypersetup{
+    colorlinks,
+    linkcolor={blue!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\lstdefinestyle{mystyle}{
+    language=Python,
+    backgroundcolor=\color{white!95!black},   
+    %commentstyle=\color{},
+    %keywordstyle=\color{},
+    %numberstyle=\tiny\color{codegray},
+    %stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    %captionpos=b,                    
+    keepspaces=true,                 
+    %numbers=left,                    
+    %numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4,
+}
+\lstset{
+    style=mystyle,
+    %emph={sage},
+    %emphstyle={\color{myGreen}}
+}
+
+
+
+%\renewcommand\footnoterule{\rule{.4\textwidth}{0.2pt}}
+\renewcommand\footnoterule{\kern-3pt \hrule  \kern 2.6pt}
+\fancyhead[L, C]{}
+\fancyfoot[C]{\thepage}
+\pagestyle{fancy}
+
+\title{Internship report}
+\author{Marie BONBOIRE}
+\date{}
