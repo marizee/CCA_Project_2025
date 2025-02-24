@@ -8,10 +8,46 @@
 
 - ~~[prefetch info](https://stackoverflow.com/questions/48994494/how-to-properly-use-prefetch-instructions)~~
 
+## Machines
 
-## 07/02 - 14/02
+- machine 1 : Intel(R) Core(TM) Ultra 5 125H  (Meteor Lake)
+- machine 2 : CPU xxx
+- machine ppti: Intel® Xeon® Gold 6248 Processor  (Cascade Lake, AVX512)
+- machine argiope: AMD Ryzen 7 PRO 7840U  (Zen 4, AVX512)
+- machine groebner: Intel(R) Xeon(R) Gold 6354  (IceLake, AVX512)
 
-### TODO
+## TODO
+
+### 14/02 - 04/03
+
+- [ ] unroll +/- pour trouver le meilleur pas
+- [ ] verifier que avx2 est mesurée correctement sinon ajouter flag comme sur version sequentielle
+- [ ] generaliser profiler pour mesurer autres fonctions
+
+- [ ] ajouter le modulus: >= 32 bits (ex 45 bits)
+    -> relire articles pour reduction
+
+dot product:
+- faire des versions split_k (avec k constante C) par ex 20 bits.
+    - [ ] style produit normal 
+        r = (lo1 * lo2) + 2^k(lo1 * hi2 + hi1 * lo2) + 2^{2k}(hi1 * hi2)
+    - [ ] style karatsuba 
+        rlo = lo1 * lo2;
+        rhi = hi1 * hi2;
+        rmid = (lo1 + hi1) * (lo2 + hi2) - rlo - rhi;
+        r = rlo + 2^k(rmid) + 2^{2k}(rhi)
+
+Remarques:
+- split26 -> jusqu'à len=1000
+- horizontal sum -> utiliser fonctions de flint (voir fichier Vincent)
+
+
+butterfly fft: (See: https://flintlib.org/doc/ulong_extras.html ).
+- voir tableau
+- commencer avec une seule paire de coeff
+
+___
+### 07/02 - 14/02
 
 - [X] install flint ppti
 - [X] test avx512
@@ -22,18 +58,23 @@
     * rows = vector size 1-200; 200-8000; millions
     * cycle/limb or timing %.3e
 
-- [ ] implem other op
-    [X] dot product -> TODO: fix overflow (See: https://github.com/vneiger/pml/blob/61383d9ae20853fef2179ca585291bb8da74c2fc/flint-extras/nmod_vec_extra/src/nmod_vec_dot_product.c#L205C7-L205C38 ).
-    [ ] butterfly fft
-    [ ] vector-vector product
+- implem other op
+    - [X] dot product -> TODO: fix overflow (See: https://github.com/vneiger/pml/blob/61383d9ae20853fef2179ca585291bb8da74c2fc/flint-extras/nmod_vec_extra/src/nmod_vec_dot_product.c#L205C7-L205C38 ).
+    - [ ] butterfly fft
+    - ~~[ ] vector-vector product~~
 
 - [ ] start report
 
+#### Notes RDV
+
+Pour des multiples de 8, l'auto vec se compare à l'avx512.
+
+Pour scalar-vector, ppti a un meilleur facteur. S'explique par les throughput: ppti 0.5/cycle - groebner 1/cycle - vincent 0.5 à 1/cycle.
+=> avx512 pas encore stable mais en cours d'améliorations (comparer avec vieux proc).
 
 
-## 31/01 - 07/02
-
-### TODO
+___
+### 31/01 - 07/02
 
 - [x] timings with flint profiler (without modulo)
 
@@ -50,11 +91,6 @@ Intrinsics:
 
 Remark: machines CCA => only ppti-gpu-4 is usable (gpu-1: dossier etu inexistant, gpu-5: existe pas, gpu-3: pas avx512)
 
-- machine 1 : Intel(R) Core(TM) Ultra 5 125H  (Meteor Lake)
-- machine 2 : CPU xxx
-- machine ppti: Intel® Xeon® Gold 6248 Processor  (Cascade Lake, AVX512)
-- machine argiope: AMD Ryzen 7 PRO 7840U  (Zen 4, AVX512)
-- machine groebner: Intel(R) Xeon(R) Gold 6354  (IceLake, AVX512)
 
 ## General notes
 
