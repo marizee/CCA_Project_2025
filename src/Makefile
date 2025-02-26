@@ -6,15 +6,20 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o dot_product_32.o test_sc.o test_dp.o profile_cl.o profile_sec.o profile_sec2.o
-PROG = test_sc test_dp profile_cl profile_sec profile_sec2
-#FUN = naive_load.o simd_add.o seq_vector_vector.o
+OBJ = dot_product_32.o test_dp.o
+#OBJ += profile_sec2.o profile_sec2_dot.o
+#OBJ += scalar_vector_32.o dot_product_32.o
+#OBJ += # test_sc.o test_dp.o profile_cl.o profile_sec.o profile_sec2.o
+
+PROG =  test_dp
+#PROG += profile_sec2 profile_sec2_dot
+#PROG += #test_sc test_dp profile_cl profile_sec profile_sec2
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
 CC = gcc
 
-CFLAGS  = -c#                       # Stop after compilation, then produce .o
+CFLAGS = -c#                       # Stop after compilation, then produce .o
 CFLAGS += -Wall -Wextra #-Werror#    # Gives almost all C warnings and considers them to be errors
 CFLAGS += -O3
 CFLAGS += -march=native#            # Enable AVX 
@@ -65,17 +70,29 @@ asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
 
 # Rules for the mains
 # --------------------------------------------------------------------------------------------------
-test_sc: test_sc.o scalar_vector_32.o
-	$(CC) -o $@ $^ $(LFLAGS)
-
 test_dp: test_dp.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profile_cl: profile_cl.o scalar_vector_32.o
+profile_sec2: profile_sec2.o scalar_vector_32.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profile_sec: profile_sec.o scalar_vector_32.o
+profile_sec2_dot: profile_sec2_dot.o scalar_vector_32.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profile_sec2: profile_sec2.o scalar_vector_32.o
-	$(CC) -o $@ $^ $(LFLAGS)
+#
+#scalar_vector_32: scalar_vector_32.o
+#	$(CC) -o $@ $^ $(LFLAGS)
+#
+#test_sc: test_sc.o scalar_vector_32.o
+#	$(CC) -o $@ $^ $(LFLAGS)
+#
+
+#
+#profile_cl: profile_cl.o scalar_vector_32.o
+#	$(CC) -o $@ $^ $(LFLAGS)
+#
+#profile_sec: profile_sec.o scalar_vector_32.o
+#	$(CC) -o $@ $^ $(LFLAGS)
+#
+
+#

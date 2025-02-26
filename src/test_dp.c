@@ -17,18 +17,18 @@
 
 int main()
 {
-    slong len = 1 << 20;
-    flint_bitcnt_t bits = 18; 
+    slong len = 1 << 24;
+    flint_bitcnt_t bits = 20; 
     FLINT_TEST_INIT(state);
 
-    nmod_t mod;
+    //nmod_t mod;
     ulong n;
     nn_ptr vec1, vec2;
 
     // init modulus structure
     n = n_randbits(state, (uint32_t)bits);
     if (n == UWORD(0)) n++;
-    nmod_init(&mod, n);
+    //nmod_init(&mod, n);
 
     // init vector
     vec1 = _nmod_vec_init(len);
@@ -53,7 +53,7 @@ int main()
     start = clock();
     seq_dot_product(&res1,vec1,vec2,len);
     end = clock();
-    //printf("res= %ld\n", res1);
+    //printf("\tres= %ld\n", res1);
     tseq = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("seq=\t\t%.5es\n", tseq);
 
@@ -74,7 +74,7 @@ int main()
     start = clock();
     simd2_dot_product(&res4,vec1,vec2,len);
     end = clock();
-    //printf("res= %ld\n", res4);
+    //printf("\tres= %ld\n", res4);
     tsimd = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("simd=\t\t%.5es\n", tsimd);
 
@@ -85,17 +85,50 @@ int main()
     tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("simd2_unr=\t%.5es\n", tsimd_unr);
 
+#if defined(__AVX512F__)
+    ulong res6=0, res7=0;
+
+    start = clock();
+    simd512_dot_product(&res6,vec1,vec2,len);
+    end = clock();
+    //printf("\tres= %ld\n", res4);
+    tsimd = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("simd=\t\t%.5es\n", tsimd);
+
+    start = clock();
+    simd512_dot_product_unrolled(&res7,vec1,vec2,len);
+    end = clock();
+    //printf("res= %ld\n", res5);
+    tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("simd2_unr=\t%.5es\n", tsimd_unr);
+#endif
 
     // checks
+    // sequentiels
     int check11 = (res1 == res2);
     int check12 = (res2 == res3);
+
+    // simd
     int check2 = (res4 == res5);
+
+    // seq vs simd
     int check3 = (res3 == res4);
-    if (!check11 || !check12 || !check2 || !check3)
+
+#if defined(__AVX512F__)
+    int check22 = (res6 == res7);
+    int check4 = (res4 == res6);
+
+    if (!check11 || !check12 || !check2 || !check3 || !check22 || !check4)
         printf("ff\n");
     else 
         printf("OK!\n");
-
+#else
+    if (!check11 || !check12 || !check2 || !check3)
+        printf("ff\n");
+    else
+        printf("OK!\n");
+#endif
+    //printf("check11=%d; check12=%d; check2=%d; check3=%d\n", check11, check12, check2, check3);
 
     _nmod_vec_clear(vec1);
     _nmod_vec_clear(vec2);

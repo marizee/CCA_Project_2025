@@ -7,18 +7,7 @@
 #include "flint/flint.h"
 #include "flint/nmod_vec.h"
 #include "flint/ulong_extras.h"
-
-
-void print_reg_64(char* nom, __m256i reg) 
-{
-    // prints values of the register assuming they are 64 bits integers.
-
-    printf("%s =\t", nom);
-    for (slong i=0; i<4; i++) {
-        printf("%lld ", reg[i]);
-    }
-    printf("\n");
-}
+#include "flint/machine_vectors.h"
 
 
 __attribute__((optimize("-fno-tree-vectorize")))
@@ -72,18 +61,19 @@ void simd2_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
         __m256i va = _mm256_loadu_si256((const __m256i *)&vec1[i]);
         __m256i vb = _mm256_loadu_si256((const __m256i *)&vec2[i]);
         __m256i prod = _mm256_mul_epu32(va, vb);
+
         sum = _mm256_add_epi64(sum, prod);
+
     }
 
-    // reduce sum vector
-    sum = (__m256i)_mm256_hadd_pd((__m256d)sum, (__m256d)sum);
-    *res = (ulong)sum[0] + (ulong)sum[2];
+    *res = vec4n_horizontal_sum(sum);
 
     // when len is not a multiple of 4
     for ( ; i < len; i++)
     {
         *res += vec1[i]*vec2[i];
     }
+
 }
 
 void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
@@ -113,23 +103,65 @@ void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
     }
 
     // reduce sum vector
-    sum = (__m256i)_mm256_hadd_pd((__m256d)sum, (__m256d)sum);
-    *res = (ulong)sum[0] + (ulong)sum[2];
+    *res = vec4n_horizontal_sum(sum);
 
+    for ( ; i < len; i++)
+    {
+        *res += vec1[i]*vec2[i];
+    }
+
+}
+
+#if defined(__AVX512F__)
+void simd512_dot_product(nn_ptr res, ulong b, nn_ptr vec, slong len)
+{
+    __m256i sum = _mm512_setzero_si512();
+
+    slong i;
+    for (i=0; i+3 < len; i+=4)
+    {
+        __m256i va = _mm512_loadu_si512((const __m512i *)&vec1[i]);
+        __m256i vb = _mm512_loadu_si512((const __m512i *)&vec2[i]);
+        __m256i prod = _mm512_mul_epu32(va, vb);
+
+        sum = _mm512_add_epi64(sum, prod);
+
+    }
+
+    *res = _mm512_reduce_add_epi64(sum);
+
+    // when len is not a multiple of 4
     for ( ; i < len; i++)
     {
         *res += vec1[i]*vec2[i];
     }
 }
 
-#if defined(__AVX512F__)
-void simd512_dot_product(nn_ptr res, ulong b, nn_ptr vec, slong len)
-{
-
-}
-
 void simd512_dot_product_unrolled(nn_ptr res, ulong b, nn_ptr vec, slong len)
 {
+    __m512i sum = _mm512_setzero_si512();
 
+    slong i;    
+    for (i=0; i+31 < len; i+=32)
+    {
+        sum = _mm512_add_epi64(sum, _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec1[i+ 0]), _mm512_loadu_si512((const __m512i *)&vec2[i+ 0])));
+        sum = _mm512_add_epi64(sum, _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec1[i+ 8]), _mm512_loadu_si512((const __m512i *)&vec2[i+ 8])));
+        sum = _mm512_add_epi64(sum, _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec1[i+16]), _mm512_loadu_si512((const __m512i *)&vec2[i+16])));
+        sum = _mm512_add_epi64(sum, _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec1[i+24]), _mm512_loadu_si512((const __m512i *)&vec2[i+24])));
+    }
+
+    // when len is not a multiple of 32
+    for ( ; i+7 < len; i+=8)
+    {
+        sum = _mm512_add_epi64(sum, _mm512_mul_epu32(_mm512_loadu_si256((const __m512i *)&vec1[i]), _mm512_loadu_si512((const __m512i *)&vec2[i])));
+    }
+
+    // reduce sum vector
+    *res = _mm512_reduce_add_epi64(sum)
+
+    for ( ; i < len; i++)
+    {
+        *res += vec1[i]*vec2[i];
+    }
 }
 #endif

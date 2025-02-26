@@ -59,6 +59,7 @@ void seq_scalar_vector_unrolled(nn_ptr res, ulong b, nn_ptr vec, slong len)
     }
 }
 
+// TODO: specify `-mno-avx512f` (uses avx2, but in case of)
 void simd2_scalar_vector(nn_ptr res, ulong b, nn_ptr vec, slong len)
 {
     // computes scalar-vector product of at most 32 bits integers using intrinsics.
