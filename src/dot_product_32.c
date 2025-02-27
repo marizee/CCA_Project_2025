@@ -32,7 +32,7 @@ void seq_dot_product_vectorized(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 void seq_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {
     // loop-unrolling of seq_dot_product.
-    
+
     slong i;
     for (i=0; i+3 < len; i += 4)
     {
@@ -52,7 +52,7 @@ void seq_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 void simd2_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {
     // computes dot product of vectors with at most 32 bits integers using intrinsics.
-    
+
     __m256i sum = _mm256_setzero_si256();
 
     slong i;
@@ -83,7 +83,7 @@ void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
     __m256i sum = _mm256_setzero_si256();
 
 
-    slong i;    
+    slong i;
     for (i=0; i+31 < len; i+=32)
     {
         sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i+ 0]), _mm256_loadu_si256((const __m256i *)&vec2[i+ 0])));
@@ -118,7 +118,7 @@ void simd512_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
     __m512i sum = _mm512_setzero_si512();
 
     slong i;
-    for (i=0; i+3 < len; i+=4)
+    for (i=0; i+7 < len; i+=8)
     {
         __m512i va = _mm512_loadu_si512((const __m512i *)&vec1[i]);
         __m512i vb = _mm512_loadu_si512((const __m512i *)&vec2[i]);
@@ -130,7 +130,7 @@ void simd512_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 
     *res = _mm512_reduce_add_epi64(sum);
 
-    // when len is not a multiple of 4
+    // when len is not a multiple of 8
     for ( ; i < len; i++)
     {
         *res += vec1[i]*vec2[i];
@@ -141,7 +141,7 @@ void simd512_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong le
 {
     __m512i sum = _mm512_setzero_si512();
 
-    slong i;    
+    slong i;
     for (i=0; i+31 < len; i+=32)
     {
         sum = _mm512_add_epi64(sum, _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec1[i+ 0]), _mm512_loadu_si512((const __m512i *)&vec2[i+ 0])));

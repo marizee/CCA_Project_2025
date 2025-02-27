@@ -18,7 +18,7 @@
 int main()
 {
     slong len = 1 << 24;
-    flint_bitcnt_t bits = 20; 
+    flint_bitcnt_t bits = 20;
     FLINT_TEST_INIT(state);
 
     //nmod_t mod;
@@ -53,7 +53,7 @@ int main()
     start = clock();
     seq_dot_product(&res1,vec1,vec2,len);
     end = clock();
-    //printf("\tres= %ld\n", res1);
+    //printf("\tres\t= %ld\n", res1);
     tseq = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("seq=\t\t%.5es\n", tseq);
 
@@ -88,19 +88,21 @@ int main()
 #if defined(__AVX512F__)
     ulong res6=0, res7=0;
 
+    double tsimd512, tsimd512_unr;
+
     start = clock();
     simd512_dot_product(&res6,vec1,vec2,len);
     end = clock();
-    //printf("\tres= %ld\n", res4);
-    tsimd = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("simd=\t\t%.5es\n", tsimd);
+    //printf("\tres512\t= %ld\n", res6);
+    tsimd512 = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("simd512=\t\t%.5es\n", tsimd512);
 
     start = clock();
     simd512_dot_product_unrolled(&res7,vec1,vec2,len);
     end = clock();
-    //printf("res= %ld\n", res5);
-    tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("simd2_unr=\t%.5es\n", tsimd_unr);
+    //printf("\tres512_unr\t= %ld\n", res7);
+    tsimd512_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("simd512_unr=\t%.5es\n", tsimd512_unr);
 #endif
 
     // checks
@@ -119,8 +121,10 @@ int main()
     int check4 = (res4 == res6);
 
     if (!check11 || !check12 || !check2 || !check3 || !check22 || !check4)
-        printf("ff\n");
-    else 
+    {
+	printf("ff\n");
+	//printf("check11=%d; check12=%d; check2=%d; check3=%d; check22=%d; check4=%d\n", check11,check12,check2,check3,check22,check4);
+    }else
         printf("OK!\n");
 #else
     if (!check11 || !check12 || !check2 || !check3)
