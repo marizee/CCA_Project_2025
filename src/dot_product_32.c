@@ -113,16 +113,16 @@ void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 }
 
 #if defined(__AVX512F__)
-void simd512_dot_product(nn_ptr res, ulong b, nn_ptr vec, slong len)
+void simd512_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {
-    __m256i sum = _mm512_setzero_si512();
+    __m512i sum = _mm512_setzero_si512();
 
     slong i;
     for (i=0; i+3 < len; i+=4)
     {
-        __m256i va = _mm512_loadu_si512((const __m512i *)&vec1[i]);
-        __m256i vb = _mm512_loadu_si512((const __m512i *)&vec2[i]);
-        __m256i prod = _mm512_mul_epu32(va, vb);
+        __m512i va = _mm512_loadu_si512((const __m512i *)&vec1[i]);
+        __m512i vb = _mm512_loadu_si512((const __m512i *)&vec2[i]);
+        __m512i prod = _mm512_mul_epu32(va, vb);
 
         sum = _mm512_add_epi64(sum, prod);
 
@@ -137,7 +137,7 @@ void simd512_dot_product(nn_ptr res, ulong b, nn_ptr vec, slong len)
     }
 }
 
-void simd512_dot_product_unrolled(nn_ptr res, ulong b, nn_ptr vec, slong len)
+void simd512_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {
     __m512i sum = _mm512_setzero_si512();
 
@@ -153,11 +153,11 @@ void simd512_dot_product_unrolled(nn_ptr res, ulong b, nn_ptr vec, slong len)
     // when len is not a multiple of 32
     for ( ; i+7 < len; i+=8)
     {
-        sum = _mm512_add_epi64(sum, _mm512_mul_epu32(_mm512_loadu_si256((const __m512i *)&vec1[i]), _mm512_loadu_si512((const __m512i *)&vec2[i])));
+        sum = _mm512_add_epi64(sum, _mm512_mul_epu32(_mm512_loadu_si512((const __m512i *)&vec1[i]), _mm512_loadu_si512((const __m512i *)&vec2[i])));
     }
 
     // reduce sum vector
-    *res = _mm512_reduce_add_epi64(sum)
+    *res = _mm512_reduce_add_epi64(sum);
 
     for ( ; i < len; i++)
     {
