@@ -1,0 +1,216 @@
+#include "flint/profiler.h"
+#include "flint/ulong_extras.h"
+#include "flint/nmod.h"
+#include "flint/nmod_vec.h"
+#include "flint/flint.h"
+
+#include "scalar_vector_32.h"
+#include "dot_product_32.h"
+
+#include <string.h>
+
+
+typedef struct
+{
+   flint_bitcnt_t bits;
+   slong length;
+} info_t;
+
+void scalar_vector(info_t* info, void (*func)(nn_ptr, ulong, nn_ptr, slong))
+{
+    // retrieve function parameters
+    //info_t * info = (info_t *) arg;
+    slong length = info->length;
+    flint_bitcnt_t bits = info->bits;
+    
+    FLINT_TEST_INIT(state);
+    
+    //nmod_t mod;
+    ulong n, b;
+    nn_ptr vec, res;
+    //ulong i;
+    slong j;
+
+    vec = _nmod_vec_init(length);
+    res = _nmod_vec_init(length);
+
+    
+    // init modulus
+    n = n_randbits(state, (uint32_t)bits);
+    if (n == UWORD(0)) n++;
+    //nmod_init(&mod, n);
+    
+    // init scalar and vector
+    b = n_randint(state, n);
+    for (j = 0; j < length; j++)
+        vec[j] = n_randint(state, n);
+    
+    double FLINT_SET_BUT_UNUSED(tcpu), twall;
+
+    TIMEIT_START
+    func(res,b,vec,length);
+    TIMEIT_STOP_VALUES(tcpu, twall)
+
+    printf("\t%.3e", twall);
+    
+    _nmod_vec_clear(res);
+    _nmod_vec_clear(vec);
+    FLINT_TEST_CLEAR(state);
+}
+
+void dot_prod(info_t* info, void (*func)(ulong*, nn_ptr, nn_ptr, slong))
+{
+    // retrieve function parameters
+    //info_t * info = (info_t *) arg;
+    slong length = info->length;
+    flint_bitcnt_t bits = info->bits;
+    
+    FLINT_TEST_INIT(state);
+    
+    //nmod_t mod;
+    ulong n;
+    nn_ptr vec1, vec2;
+    //ulong i;
+    slong j;
+
+    vec1 = _nmod_vec_init(length);
+    vec2 = _nmod_vec_init(length);
+    ulong res=0;
+    
+    // init modulus
+    n = n_randbits(state, (uint32_t)bits);
+    if (n == UWORD(0)) n++;
+    //nmod_init(&mod, n);
+    
+    // init scalar and vector
+    //b = n_randint(state, n);
+    for (j = 0; j < length; j++)
+    {
+        vec1[j] = n_randint(state, n);
+        vec2[j] = n_randint(state, n);
+    }
+    
+    double FLINT_SET_BUT_UNUSED(tcpu), twall;
+    TIMEIT_START
+    func(&res,vec1,vec2,length);
+    TIMEIT_STOP_VALUES(tcpu, twall)
+
+    printf("\t%.3e", twall);
+    
+    _nmod_vec_clear(vec1);
+    _nmod_vec_clear(vec2);
+    FLINT_TEST_CLEAR(state);
+}
+
+int main(int argc, char** argv)
+{
+    info_t info;
+    slong len;
+
+    typedef void (*func) ();
+    typedef void (*timefun) (info_t*, func);
+    const timefun funs[] = {scalar_vector, dot_prod};
+    const func versions[][10] = {
+    {
+        seq_scalar_vector,
+        seq_scalar_vector_vectorized,
+        seq_scalar_vector_unrolled,      
+        simd2_scalar_vector,
+        simd2_scalar_vector_unrolled,
+#if defined(__AVX512F__)
+        simd512_scalar_vector,
+        simd512_scalar_vector_unrolled,
+#endif
+    },
+    {
+        seq_dot_product,
+        seq_dot_product_vectorized,
+        seq_dot_product_unrolled,
+        simd2_dot_product,
+        simd2_dot_product_unrolled,
+#if defined(__AVX512F__)
+        simd512_dot_product,
+        simd512_dot_product_unrolled
+#endif
+    }};
+
+    slong nbv[2];
+#if defined(__AVX512F__)
+    nbv[0] = 7; nbv[1] = 7;
+#else
+    nbv[0] = 5; nbv[1] = 5;
+#endif
+
+    const char* fnames[] = {"scalar-vector product", "dot product"};
+
+    slong idfun;
+    if (argc == 3)
+    {
+        info.bits = (flint_bitcnt_t)atoi(argv[1]);
+        idfun = atoi(argv[2]);
+    }
+    else
+    {
+        flint_printf("ERROR: missing parameter(s).\n");
+        flint_printf("Usage: ./profile_sec2 [bitsize] [idfunc]\n");
+        flint_printf("  - bitsize: max number of bits for the entries;\n");
+        flint_printf("  - idfunc:\n");
+        flint_printf("      #0 --> scalar-vector product\n");
+        flint_printf("      #1 --> dot product\n");
+        return 0;
+    }
+    
+    flint_printf("function: %s\n", fnames[idfun]);
+    flint_printf("unit: all measurements in seconds\n");
+    flint_printf("profiled: seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled");
+#if defined(__AVX512F__)
+    flint_printf(" | avx512 | avx512 loop-unrolled\n");
+#else
+    flint_printf("\n");
+#endif
+    flint_printf("bitsize: %ld\n\n", info.bits);
+    flint_printf("len/func\t");
+
+// TODO: will depends on the function profiled
+    flint_printf("s-novec\t\ts-autovec\ts-unr\t\tavx2\t\tavx2-unr");
+#if defined(__AVX512F__)
+    flint_printf("\tavx512\t\tavx512unr\n");
+#else
+    flint_printf("\n");
+#endif
+
+
+    for (len = 1; len < 200; ++len)
+    {
+        info.length = len;
+
+        flint_printf("%d\t", len);
+        for (slong v=0; v < nbv[idfun]; v++)
+            funs[idfun](&info, versions[idfun][v]);
+        flint_printf("\n");
+    
+    }
+
+    for ( ; len <= 8000; len+=150)
+    {
+        info.length = len;
+
+        flint_printf("%d\t", len);
+        for (slong v=0; v < nbv[idfun]; v++)
+            funs[idfun](&info, versions[idfun][v]);
+        flint_printf("\n");
+    }
+
+    for (int i = 13; i < 23; i++)
+    {
+        info.length = 1 << i;
+
+        flint_printf("%d\t", info.length);
+        for (slong v=0; v < nbv[idfun]; v++)
+            funs[idfun](&info, versions[idfun][v]);
+        flint_printf("\n");
+
+    }
+
+    return 0;
+}

@@ -6,14 +6,12 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = dot_product_32.o test_dp.o
-#OBJ += profile_sec2.o profile_sec2_dot.o
-#OBJ += scalar_vector_32.o dot_product_32.o
-#OBJ += # test_sc.o test_dp.o profile_cl.o profile_sec.o profile_sec2.o
+OBJ = scalar_vector_32.o dot_product_32.o
+OBJ += profile_sec2_new.o
+#OBJ += test_dp.o #test_sc.o
 
-PROG =  test_dp
-#PROG += profile_sec2 profile_sec2_dot
-#PROG += #test_sc test_dp profile_cl profile_sec profile_sec2
+PROG = profile_sec2_new
+#PROG +=  test_dp #test_sc
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -73,26 +71,5 @@ asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
 test_dp: test_dp.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profile_sec2: profile_sec2.o scalar_vector_32.o dot_product_32.o
+profile_sec2_new: profile_sec2_new.o scalar_vector_32.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
-
-profile_sec2_dot: profile_sec2_dot.o scalar_vector_32.o dot_product_32.o
-	$(CC) -o $@ $^ $(LFLAGS)
-
-#
-#scalar_vector_32: scalar_vector_32.o
-#	$(CC) -o $@ $^ $(LFLAGS)
-#
-#test_sc: test_sc.o scalar_vector_32.o
-#	$(CC) -o $@ $^ $(LFLAGS)
-#
-
-#
-#profile_cl: profile_cl.o scalar_vector_32.o
-#	$(CC) -o $@ $^ $(LFLAGS)
-#
-#profile_sec: profile_sec.o scalar_vector_32.o
-#	$(CC) -o $@ $^ $(LFLAGS)
-#
-
-#
