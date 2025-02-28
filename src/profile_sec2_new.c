@@ -102,6 +102,7 @@ void dot_prod(info_t* info, void (*func)(ulong*, nn_ptr, nn_ptr, slong))
     FLINT_TEST_CLEAR(state);
 }
 
+
 int main(int argc, char** argv)
 {
     info_t info;
@@ -110,6 +111,8 @@ int main(int argc, char** argv)
     typedef void (*func) ();
     typedef void (*timefun) (info_t*, func);
     const timefun funs[] = {scalar_vector, dot_prod};
+
+    // all versions of the function
     const func versions[][10] = {
     {
         seq_scalar_vector,
@@ -126,6 +129,8 @@ int main(int argc, char** argv)
         seq_dot_product,
         seq_dot_product_vectorized,
         seq_dot_product_unrolled,
+        split_dot_product,
+        split_kara_dot_product,
         simd2_dot_product,
         simd2_dot_product_unrolled,
 #if defined(__AVX512F__)
@@ -134,15 +139,42 @@ int main(int argc, char** argv)
 #endif
     }};
 
-    slong nbv[2];
+    // number of versions for each function
+    slong nbv[2] = {5, 7};
 #if defined(__AVX512F__)
-    nbv[0] = 7; nbv[1] = 7;
-#else
-    nbv[0] = 5; nbv[1] = 5;
+    nbv[0] += 2; nbv[1] += 2;
 #endif
 
+    // name of the function
     const char* fnames[] = {"scalar-vector product", "dot product"};
 
+    // headers 
+    char header2[][1024] = {
+        "s-novec\t\ts-vec\ts-unr\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\ts-unr\t\tsplit\t\tkara\t\tavx2\t\tavx2u",
+    };
+#if defined(__AVX512F__)
+    strcat(header2[0], "\tavx512\t\tavx512u\n");
+    strcat(header2[1], "\tavx512\t\tavx512u\n");
+#else
+    strcat(header2[0], "\n");
+    strcat(header2[1], "\n");
+#endif
+
+    char header1[][1024] = {
+        "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | split | karatsuba | avx2 | avx2 loop-unrolled",
+    };
+#if defined(__AVX512F__)
+    strcat(header1[0], " | avx512 | avx512 loop-unrolled\n");
+    strcat(header1[1], " | avx512 | avx512 loop-unrolled\n");
+#else
+    strcat(header1[0], "\n");
+    strcat(header1[1], "\n");
+#endif
+
+
+// PRINT PARAMETERS
     slong idfun;
     if (argc == 3)
     {
@@ -162,24 +194,13 @@ int main(int argc, char** argv)
     
     flint_printf("function: %s\n", fnames[idfun]);
     flint_printf("unit: all measurements in seconds\n");
-    flint_printf("profiled: seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled");
-#if defined(__AVX512F__)
-    flint_printf(" | avx512 | avx512 loop-unrolled\n");
-#else
-    flint_printf("\n");
-#endif
+    flint_printf("profiled: %s", header1[idfun]);
     flint_printf("bitsize: %ld\n\n", info.bits);
-    flint_printf("len/func\t");
-
-// TODO: will depends on the function profiled
-    flint_printf("s-novec\t\ts-autovec\ts-unr\t\tavx2\t\tavx2-unr");
-#if defined(__AVX512F__)
-    flint_printf("\tavx512\t\tavx512unr\n");
-#else
-    flint_printf("\n");
-#endif
+    flint_printf("len/func\t%s", header2[idfun]);
 
 
+
+// BEGINNING OF PROFILING
     for (len = 1; len < 200; ++len)
     {
         info.length = len;

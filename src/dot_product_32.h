@@ -14,6 +14,9 @@ void seq_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 void seq_dot_product_vectorized(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 void seq_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 
+void split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
+void split_kara_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
+
 void simd2_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 

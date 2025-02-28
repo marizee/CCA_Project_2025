@@ -3,39 +3,46 @@ import sys
 try:
     file_name = sys.argv[1]
 except IndexError:
-    print("No input file. Running on scalar-vector_25bits_marie_laptop.txt")
-    file_name = "scalar-vector_25bits_marie_laptop.txt"
+    print("Missing parameter.")
+    print("Usage: python3 ratio.py [file_timings] [avx512]")
+    print("    - avx512: 1 if exists, 0 else")
+    exit()
+
+try:
+    avx512 = int(sys.argv[2])
+except IndexError:
+    print("Missing parameter.")
+    print("Usage: python3 ratio.py [file_timings] [avx512]")
+    print("    - avx512: 1 if exists, 0 else")
+    exit()
 
 try:
     datas = open(file_name,"r").read().splitlines()
 except FileNotFoundError:
-    print("File doesn't exists. Running on scalar-vector_25bits_marie_laptop.txt")
-    datas = open("scalar-vector_25bits_marie_laptop.txt", "r").read().splitlines()
-    fratios = open("ratio_scalar-vector_25bits_marie_laptop.txt", "w")
-else:
-    fratios = open("ratio_" + file_name, "w")
+    print("Problem opening file.")
+    exit()
 
+h = datas.index('')
+parse = datas[h+1].split()
+nbv = len(parse)-1
 
-parse = datas[5].split()
-avx512 = False if len(parse)==6 else True
+fratios = open("ratio_" + file_name, "w")
+fratios.write(f'{parse[0]}\t')
+for i in range(2,nbv+1):
+    fratios.write(f'{parse[i]}\t\t')
+fratios.write("\n")
 
-fratios.write(f'{parse[0]}\t{parse[2]}\t{parse[3]}\t{parse[4]}\t{parse[5]}')
-if avx512:
-    fratios.write(f'{parse[6]}\t{parse[7]}\n')
-else:
-    fratios.write("\n")
-
-for row in datas[6:]:
+for row in datas[h+2:]:
     parse = row.split()
+
     ratios = [float(parse[1])/float(parse[i]) for i in range(2,len(parse))]
     if len(parse[0]) <= 3:
-        fratios.write(f'{parse[0]}\t\t')
+        fratios.write(f'{parse[0]}\t\t\t')
     else:
         fratios.write(f'{parse[0]}\t\t')
-    fratios.write(f'{ratios[0]:.3f}\t\t{ratios[1]:.3f}\t{ratios[2]:.3f}\t{ratios[3]:.3f}')
-    if avx512:
-        fratios.write(f'\t{ratios[4]:.3f}\t{ratios[5]:.3f}\n')
-    else:
-        fratios.write("\n")
+    
+    for r in ratios:
+        fratios.write(f'{r:.3f}\t\t')
+    fratios.write("\n")
 
 fratios.close()

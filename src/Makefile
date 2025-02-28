@@ -6,12 +6,12 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o dot_product_32.o
-OBJ += profile_sec2_new.o
-#OBJ += test_dp.o #test_sc.o
+OBJ = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
+OBJ += profile_sec2_new.o 
+OBJ += test_sc_mod.o test_split.o test_dp.o #test_sc.o
 
 PROG = profile_sec2_new
-#PROG +=  test_dp #test_sc
+PROG += test_sc_mod test_split test_dp #test_sc
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -69,6 +69,12 @@ asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
 # Rules for the mains
 # --------------------------------------------------------------------------------------------------
 test_dp: test_dp.o dot_product_32.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_sc_mod: test_sc_mod.o scalar_vector_mod_32.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_split: test_split.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 profile_sec2_new: profile_sec2_new.o scalar_vector_32.o dot_product_32.o

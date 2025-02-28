@@ -21,17 +21,17 @@
 ### 14/02 - 04/03
 
 - [ ] unroll +/- pour trouver le meilleur pas
-- [ ] verifier que avx2 est mesurée correctement sinon ajouter flag comme sur version sequentielle
-- [ ] generaliser profiler pour mesurer autres fonctions
+- [X] verifier que avx2 est mesurée correctement sinon ajouter flag comme sur version sequentielle -> registres ymm (sinon zmm pour avx512). `-mno-avx512f` comment?
+- [X] generaliser profiler pour mesurer autres fonctions
 
 - [ ] ajouter le modulus: >= 32 bits (ex 45 bits)
     -> relire articles pour reduction
 
 dot product:
-- faire des versions split_k (avec k constante C) par ex 20 bits.
-    - [ ] style produit normal 
+- faire des versions split_k (avec k constante C) par ex 20 bits -> pas concluant.
+    - [X] style produit normal 
         r = (lo1 * lo2) + 2^k(lo1 * hi2 + hi1 * lo2) + 2^{2k}(hi1 * hi2)
-    - [ ] style karatsuba 
+    - [X] style karatsuba 
         rlo = lo1 * lo2;
         rhi = hi1 * hi2;
         rmid = (lo1 + hi1) * (lo2 + hi2) - rlo - rhi;

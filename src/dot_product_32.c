@@ -9,6 +9,8 @@
 #include "flint/ulong_extras.h"
 #include "flint/machine_vectors.h"
 
+#define SPLIT 20
+#define MASK ((1L << SPLIT) - 1)
 
 __attribute__((optimize("-fno-tree-vectorize")))
 void seq_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
@@ -47,6 +49,50 @@ void seq_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
     {
         *res += vec1[i]*vec2[i];
     }
+}
+
+void split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+{
+    ulong alo, ahi, blo, bhi;
+    ulong rlo=0, rmid=0, rhi=0;
+    
+    for (slong i=0; i < len; i++)
+    {
+        alo = vec1[i] & MASK; //((1L << SPLIT) - 1);
+        ahi = vec1[i] >> SPLIT;
+        blo = vec2[i] & MASK; //((1L << SPLIT) - 1);
+        bhi = vec2[i] >> SPLIT;
+
+        rlo += alo*blo;
+        rhi += ahi*bhi;
+        rmid += alo*bhi + ahi*blo;
+    }
+
+    *res = rlo + (rmid << SPLIT) + (rhi << 2*SPLIT);
+}
+
+void split_kara_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+{
+    ulong alo, ahi, blo, bhi;
+    ulong lolo, hihi;
+    ulong rlo=0, rmid=0, rhi=0;
+    
+    for (slong i=0; i < len; i++)
+    {
+        alo = vec1[i] & MASK;
+        ahi = vec1[i] >> SPLIT;
+        blo = vec2[i] & MASK;
+        bhi = vec2[i] >> SPLIT;
+
+        lolo = alo*blo;
+        hihi = ahi*bhi;
+
+        rlo += lolo;
+        rhi += hihi;
+        rmid += (alo + ahi)*(blo + bhi) - lolo - hihi;
+    }
+
+    *res = rlo + (rmid << SPLIT) + (rhi << 2*SPLIT);
 }
 
 void simd2_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)

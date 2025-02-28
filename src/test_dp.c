@@ -17,8 +17,8 @@
 
 int main()
 {
-    slong len = 1 << 24;
-    flint_bitcnt_t bits = 20;
+    slong len = 1 << 14;
+    flint_bitcnt_t bits = 25;
     FLINT_TEST_INIT(state);
 
     //nmod_t mod;
@@ -47,8 +47,10 @@ int main()
     //_nmod_vec_print_pretty(vec2, len, mod);
 
     ulong res1=0, res2=0, res3=0, res4=0, res5=0;
+    ulong res8=0, res9=0;
     clock_t start, end;
     double tseq, tseq_v, tseq_unr, tsimd, tsimd_unr;
+    double tsplit, tkara;
 
     start = clock();
     seq_dot_product(&res1,vec1,vec2,len);
@@ -85,6 +87,20 @@ int main()
     tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("simd2_unr=\t%.5es\n", tsimd_unr);
 
+    start = clock();
+    split_dot_product(&res8,vec1,vec2,len);
+    end = clock();
+    //printf("res= %ld\n", res8);
+    tsplit = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("split=\t\t%.5es\n", tsplit);
+
+    start = clock();
+    split_dot_product(&res9,vec1,vec2,len);
+    end = clock();
+    //printf("res= %ld\n", res9);
+    tkara = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("kara=\t\t%.5es\n", tkara);
+
 #if defined(__AVX512F__)
     ulong res6=0, res7=0;
 
@@ -113,8 +129,15 @@ int main()
     // simd
     int check2 = (res4 == res5);
 
-    // seq vs simd
+    // split
+    int check5 = (res8 == res1);
+    int check6 = (res9 == res1);
+    printf("check5=%d, check6=%d\n", check5, check6);
+
+
+    // seq vs others
     int check3 = (res3 == res4);
+
 
 #if defined(__AVX512F__)
     int check22 = (res6 == res7);
@@ -122,7 +145,7 @@ int main()
 
     if (!check11 || !check12 || !check2 || !check3 || !check22 || !check4)
     {
-	printf("ff\n");
+	    printf("ff\n");
 	//printf("check11=%d; check12=%d; check2=%d; check3=%d; check22=%d; check4=%d\n", check11,check12,check2,check3,check22,check4);
     }else
         printf("OK!\n");
