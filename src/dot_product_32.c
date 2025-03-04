@@ -51,11 +51,11 @@ void seq_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
     }
 }
 
-void split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+void split_dot_product_old(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {
     ulong alo, ahi, blo, bhi;
     ulong rlo=0, rmid=0, rhi=0;
-    
+
     for (slong i=0; i < len; i++)
     {
         alo = vec1[i] & MASK; //((1L << SPLIT) - 1);
@@ -71,12 +71,60 @@ void split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
     *res = rlo + (rmid << SPLIT) + (rhi << 2*SPLIT);
 }
 
+void split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+//void split_dot_product_unroll(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+{
+    __m256i alo, ahi, blo, bhi;
+    __m256i v_rlo = _mm256_setzero_si256();
+    __m256i v_rmi = _mm256_setzero_si256();
+    __m256i v_rhi = _mm256_setzero_si256();
+    const __m256i vMASK = _mm256_set1_epi64x(MASK);
+
+    slong i = 0;
+
+    for (; i+3 < len; i+=4)
+    {
+        __m256i v1 = _mm256_loadu_si256((__m256i*) (vec1+i));
+        __m256i v2 = _mm256_loadu_si256((__m256i*) (vec2+i));
+
+        alo = _mm256_and_si256(v1, vMASK);
+        ahi = _mm256_srli_epi64(v1, SPLIT);
+        blo = _mm256_and_si256(v2, vMASK);
+        bhi = _mm256_srli_epi64(v2, SPLIT);
+
+        v_rlo = _mm256_add_epi64(v_rlo, _mm256_mul_epu32(alo, blo));
+        v_rhi = _mm256_add_epi64(v_rhi, _mm256_mul_epu32(ahi, bhi));
+        v_rmi = _mm256_add_epi64(v_rmi, _mm256_mul_epu32(alo, bhi));
+        v_rmi = _mm256_add_epi64(v_rmi, _mm256_mul_epu32(ahi, blo));
+    }
+
+    // gather results
+    ulong rlo = vec4n_horizontal_sum(v_rlo);
+    ulong rmi = vec4n_horizontal_sum(v_rmi);
+    ulong rhi = vec4n_horizontal_sum(v_rhi);
+
+    // handle extra terms if len not multiple of 4
+    for (; i < len; i++)
+    {
+        ulong alo = vec1[i] & MASK; //((1L << SPLIT) - 1);
+        ulong ahi = vec1[i] >> SPLIT;
+        ulong blo = vec2[i] & MASK; //((1L << SPLIT) - 1);
+        ulong bhi = vec2[i] >> SPLIT;
+
+        rlo += alo*blo;
+        rhi += ahi*bhi;
+        rmi += alo*bhi + ahi*blo;
+    }
+
+    *res = rlo + (rmi << SPLIT) + (rhi << 2*SPLIT);
+}
+
 void split_kara_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {
     ulong alo, ahi, blo, bhi;
     ulong lolo, hihi;
     ulong rlo=0, rmid=0, rhi=0;
-    
+
     for (slong i=0; i < len; i++)
     {
         alo = vec1[i] & MASK;
