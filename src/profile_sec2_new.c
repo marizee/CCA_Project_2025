@@ -5,6 +5,7 @@
 #include "flint/flint.h"
 
 #include "scalar_vector_32.h"
+#include "scalar_vector_mod_32.h"
 #include "dot_product_32.h"
 
 #include <string.h>
@@ -102,6 +103,48 @@ void dot_prod(info_t* info, void (*func)(ulong*, nn_ptr, nn_ptr, slong))
     FLINT_TEST_CLEAR(state);
 }
 
+void scalar_vector_mod(info_t* info, void (*func)(nn_ptr, ulong, nn_ptr, slong, nmod_t))
+{
+    // retrieve function parameters
+    //info_t * info = (info_t *) arg;
+    slong length = info->length;
+    flint_bitcnt_t bits = info->bits;
+    
+    FLINT_TEST_INIT(state);
+    
+    nmod_t mod;
+    ulong n, b;
+    nn_ptr vec, res;
+    //ulong i;
+    slong j;
+
+    vec = _nmod_vec_init(length);
+    res = _nmod_vec_init(length);
+
+    
+    // init modulus
+    n = n_randbits(state, (uint32_t)bits);
+    if (n == UWORD(0)) n++;
+    nmod_init(&mod, n);
+    
+    // init scalar and vector
+    b = n_randint(state, 32);
+    if (b==0) b++;
+    for (j = 0; j < length; j++)
+        vec[j] = n_randint(state, 32);
+    
+    double FLINT_SET_BUT_UNUSED(tcpu), twall;
+
+    TIMEIT_START
+    func(res,b,vec,length,mod);
+    TIMEIT_STOP_VALUES(tcpu, twall)
+
+    printf("\t%.3e", twall);
+    
+    _nmod_vec_clear(res);
+    _nmod_vec_clear(vec);
+    FLINT_TEST_CLEAR(state);
+}
 
 int main(int argc, char** argv)
 {
@@ -110,7 +153,7 @@ int main(int argc, char** argv)
 
     typedef void (*func) ();
     typedef void (*timefun) (info_t*, func);
-    const timefun funs[] = {scalar_vector, dot_prod};
+    const timefun funs[] = {scalar_vector, dot_prod, scalar_vector_mod};
 
     // all versions of the function
     const func versions[][10] = {
@@ -137,21 +180,29 @@ int main(int argc, char** argv)
         simd512_dot_product,
         simd512_dot_product_unrolled
 #endif
-    }};
+    },
+    {
+        seq_mod_scalar_vector,
+        seq_mod_scalar_vector_vectorized,
+        seq_mod_scalar_vector_unrolled,
+        simd2_mod_scalar_vector,
+    }
+    };
 
     // number of versions for each function
-    slong nbv[2] = {5, 7};
+    slong nbv[] = {5, 7, 4};
 #if defined(__AVX512F__)
     nbv[0] += 2; nbv[1] += 2;
 #endif
 
     // name of the function
-    const char* fnames[] = {"scalar-vector product", "dot product"};
+    const char* fnames[] = {"scalar-vector product", "dot product", "modular scalar-vector product"};
 
     // headers 
     char header2[][1024] = {
-        "s-novec\t\ts-vec\ts-unr\t\tavx2\t\tavx2u",
-        "s-novec\t\ts-vec\ts-unr\t\tsplit\t\tkara\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\t\ts-unr\t\tsplit\t\tkara\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
     };
 #if defined(__AVX512F__)
     strcat(header2[0], "\tavx512\t\tavx512u\n");
@@ -164,13 +215,16 @@ int main(int argc, char** argv)
     char header1[][1024] = {
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | split | karatsuba | avx2 | avx2 loop-unrolled",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | avx2",
     };
 #if defined(__AVX512F__)
     strcat(header1[0], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[1], " | avx512 | avx512 loop-unrolled\n");
+    strcat(header1[2], " | avx512 | avx512 loop-unrolled\n");
 #else
     strcat(header1[0], "\n");
     strcat(header1[1], "\n");
+    strcat(header1[2], "\n");
 #endif
 
 
@@ -185,10 +239,11 @@ int main(int argc, char** argv)
     {
         flint_printf("ERROR: missing parameter(s).\n");
         flint_printf("Usage: ./profile_sec2 [bitsize] [idfunc]\n");
-        flint_printf("  - bitsize: max number of bits for the entries;\n");
+        flint_printf("  - bitsize: max number of bits for the entries or size of the modulo;\n");
         flint_printf("  - idfunc:\n");
         flint_printf("      #0 --> scalar-vector product\n");
         flint_printf("      #1 --> dot product\n");
+        flint_printf("      #2 --> modular scalar-vector product\n");
         return 0;
     }
     

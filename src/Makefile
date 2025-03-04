@@ -8,7 +8,7 @@
 
 OBJ = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
 OBJ += profile_sec2_new.o 
-OBJ += test_sc_mod.o test_split.o test_dp.o #test_sc.o
+OBJ += test_sc_mod.o #test_split.o test_dp.o #test_sc.o
 
 PROG = profile_sec2_new
 PROG += test_sc_mod test_split test_dp #test_sc
@@ -77,5 +77,5 @@ test_sc_mod: test_sc_mod.o scalar_vector_mod_32.o
 test_split: test_split.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profile_sec2_new: profile_sec2_new.o scalar_vector_32.o dot_product_32.o
+profile_sec2_new: profile_sec2_new.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
 	$(CC) -o $@ $^ $(LFLAGS)

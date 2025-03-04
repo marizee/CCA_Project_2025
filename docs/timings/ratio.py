@@ -4,16 +4,7 @@ try:
     file_name = sys.argv[1]
 except IndexError:
     print("Missing parameter.")
-    print("Usage: python3 ratio.py [file_timings] [avx512]")
-    print("    - avx512: 1 if exists, 0 else")
-    exit()
-
-try:
-    avx512 = int(sys.argv[2])
-except IndexError:
-    print("Missing parameter.")
-    print("Usage: python3 ratio.py [file_timings] [avx512]")
-    print("    - avx512: 1 if exists, 0 else")
+    print("Usage: python3 ratio.py [file_timings]")
     exit()
 
 try:

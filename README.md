@@ -24,8 +24,10 @@
 - [X] verifier que avx2 est mesurée correctement sinon ajouter flag comme sur version sequentielle -> registres ymm (sinon zmm pour avx512). `-mno-avx512f` comment?
 - [X] generaliser profiler pour mesurer autres fonctions
 
-- [ ] ajouter le modulus: >= 32 bits (ex 45 bits)
-    -> relire articles pour reduction
+ajouter le modulus: >= 32 bits (ex 45 bits)
+- [X] scalar vector
+- [ ] dot product
+
 
 dot product:
 - faire des versions split_k (avec k constante C) par ex 20 bits -> pas concluant.

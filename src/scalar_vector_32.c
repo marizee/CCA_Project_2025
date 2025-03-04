@@ -9,17 +9,6 @@
 #include "flint/ulong_extras.h"
 
 
-void print_reg_64(char* nom, __m256i reg) 
-{
-    // prints values of the register assuming they are 64 bits integers.
-
-    printf("%s =\t", nom);
-    for (slong i=0; i<4; i++) {
-        printf("%lld ", reg[i]);
-    }
-    printf("\n");
-}
-
 __attribute__((optimize("-fno-tree-vectorize")))
 void seq_scalar_vector(nn_ptr res, ulong b, nn_ptr vec, slong len)
 {
