@@ -18,15 +18,30 @@
 
 ## TODO
 
+### 04//03 - 14/03
+
+- fonction utilisant `_nmod_vec_scalar_mul_nmod_shoup` dans `scalar-vector` avec modulo et pour le butterfly fft
+- voir si utiliser uint plutot que ulong est mieux pour fonction split
+
+dot product:
+- [ ] ajouter le modulus: >= 32 bits (ex 45 bits)
+- [ ] unroll +/- pour trouver le meilleur pas
+
+butterfly fft: (See: https://flintlib.org/doc/ulong_extras.html ).
+- voir tableau
+- commencer avec une seule paire de coeff
+
+- [ ] timings split avx2 marie
+
 ### 14/02 - 04/03
 
-- [ ] unroll +/- pour trouver le meilleur pas
+- ~~[ ] unroll +/- pour trouver le meilleur pas~~
 - [X] verifier que avx2 est mesurée correctement sinon ajouter flag comme sur version sequentielle -> registres ymm (sinon zmm pour avx512). `-mno-avx512f` comment?
 - [X] generaliser profiler pour mesurer autres fonctions
 
 ajouter le modulus: >= 32 bits (ex 45 bits)
 - [X] scalar vector
-- [ ] dot product
+- ~~[ ] dot product~~
 
 
 dot product:
@@ -42,11 +57,6 @@ dot product:
 Remarques:
 - split26 -> jusqu'à len=1000
 - horizontal sum -> utiliser fonctions de flint (voir fichier Vincent)
-
-
-butterfly fft: (See: https://flintlib.org/doc/ulong_extras.html ).
-- voir tableau
-- commencer avec une seule paire de coeff
 
 ___
 ### 07/02 - 14/02
@@ -65,7 +75,7 @@ ___
     - [ ] butterfly fft
     - ~~[ ] vector-vector product~~
 
-- [ ] start report
+- ~~[X] start report~~
 
 #### Notes RDV
 
