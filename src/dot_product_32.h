@@ -19,6 +19,8 @@ void split_kara_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 
 void simd2_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
+void simd2_dot_product_unrolled_8(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
+void simd2_dot_product_unrolled_16(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 
 void simd512_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 void simd512_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;

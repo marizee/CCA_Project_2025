@@ -206,6 +206,69 @@ void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 
 }
 
+void simd2_dot_product_unrolled_16(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+{
+    // loop-unrolling of simd2_scalar_vector.
+
+    __m256i sum = _mm256_setzero_si256();
+
+
+    slong i;
+    for (i=0; i+15 < len; i+=16)
+    {
+        sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i+ 0]), _mm256_loadu_si256((const __m256i *)&vec2[i+ 0])));
+        sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i+ 4]), _mm256_loadu_si256((const __m256i *)&vec2[i+ 4])));
+        sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i+ 8]), _mm256_loadu_si256((const __m256i *)&vec2[i+ 8])));
+        sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i+12]), _mm256_loadu_si256((const __m256i *)&vec2[i+12])));
+    }
+
+    // when len is not a multiple of 16
+    for ( ; i+4 < len; i+=4)
+    {
+        sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i]), _mm256_loadu_si256((const __m256i *)&vec2[i])));
+    }
+
+    // reduce sum vector
+    *res = vec4n_horizontal_sum(sum);
+
+    for ( ; i < len; i++)
+    {
+        *res += vec1[i]*vec2[i];
+    }
+
+}
+
+void simd2_dot_product_unrolled_8(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+{
+    // loop-unrolling of simd2_scalar_vector.
+
+    __m256i sum = _mm256_setzero_si256();
+
+
+    slong i;
+    for (i=0; i+7 < len; i+=8)
+    {
+        sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i+ 0]), _mm256_loadu_si256((const __m256i *)&vec2[i+ 0])));
+        sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i+ 4]), _mm256_loadu_si256((const __m256i *)&vec2[i+ 4])));
+    }
+
+    // when len is not a multiple of 8
+    if (i+4 < len)
+    {
+        sum = _mm256_add_epi64(sum, _mm256_mul_epu32(_mm256_loadu_si256((const __m256i *)&vec1[i]), _mm256_loadu_si256((const __m256i *)&vec2[i])));
+        i+=4;
+    }
+
+    // reduce sum vector
+    *res = vec4n_horizontal_sum(sum);
+
+    for ( ; i < len; i++)
+    {
+        *res += vec1[i]*vec2[i];
+    }
+
+}
+
 #if defined(__AVX512F__)
 void simd512_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {

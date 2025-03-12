@@ -71,6 +71,9 @@ asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
 test_dp: test_dp.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
+test_dot_product: test_dot_product.o dot_product_32.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
 test_sc_mod: test_sc_mod.o scalar_vector_mod_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
