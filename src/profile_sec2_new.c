@@ -172,6 +172,7 @@ int main(int argc, char** argv)
         seq_dot_product,
         seq_dot_product_vectorized,
         seq_dot_product_unrolled,
+        split_dot_product_old,
         split_dot_product,
         split_kara_dot_product,
         simd2_dot_product,
@@ -190,7 +191,7 @@ int main(int argc, char** argv)
     };
 
     // number of versions for each function
-    slong nbv[] = {5, 7, 4};
+    slong nbv[] = {5, 8, 4};
 #if defined(__AVX512F__)
     nbv[0] += 2; nbv[1] += 2;
 #endif
@@ -201,7 +202,7 @@ int main(int argc, char** argv)
     // headers 
     char header2[][1024] = {
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
-        "s-novec\t\ts-vec\t\ts-unr\t\tsplit\t\tkara\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
     };
 #if defined(__AVX512F__)
@@ -214,7 +215,7 @@ int main(int argc, char** argv)
 
     char header1[][1024] = {
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
-        "seq no-vec | seq auto-vec | seq loop-unrolled | split | karatsuba | avx2 | avx2 loop-unrolled",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | split-old | split-new | karatsuba | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2",
     };
 #if defined(__AVX512F__)
