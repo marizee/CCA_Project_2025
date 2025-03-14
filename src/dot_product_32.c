@@ -117,6 +117,13 @@ void split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
     }
 
     *res = rlo + (rmi << SPLIT) + (rhi << 2*SPLIT);
+
+    //    A ADAPTER:
+//    // result: ulo + 2**26 umi + 2**52 uhi
+//    // hi = (umi >> 38) + (uhi >> 12)  ||  lo = (umi << 26) + (uhi << 52) + ulo
+//    add_ssaaaa(dp_hi, dp_lo, (dp_mi>>38), (dp_mi<<26), (dp_hi>>12), ((dp_hi<<52)+dp_lo));
+//    ulong res;
+//    NMOD2_RED2(res, dp_hi, dp_lo, mod);
 }
 
 void split_kara_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
