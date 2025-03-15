@@ -6,12 +6,15 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
-OBJ += profile_sec2_new.o 
-OBJ += test_sc_mod.o #test_split.o test_dp.o #test_sc.o
+OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
+OBJ_PROF = profile_sec2_new.o
+OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o
 
-PROG = profile_sec2_new
-PROG += test_sc_mod test_split test_dp #test_sc
+PROG_PROF = profile_sec2_new
+PROG_TEST = tests/test_dot_product tests/test_dp tests/test_sc_mod tests/test_split
+
+ALL_OBJ = $(OBJ_SRC) $(OBJ_PROF) $(OBJ_TEST)
+ALL_PROG = $(PROG_PROF) $(PROG_TEST)
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -33,51 +36,29 @@ CFLAGS += -I/$(HOME)/include/
 LFLAGS  = -fwhole-program#
 LFLAGS += -L/$(HOME)/lib/ -lflint -lgmp -lmpfr -lpthread
 
-#DFLAGS  = -g#                       # Useful for gdb
-#DFLAGS += -O3#                      # No optimisation mode for compiler
-#
-#RFLAGS  = -O3#                      # Full optimisation mode of compiler
-
-# Rules (here they are used such as simple shell scripts)
+# Rules 
 # --------------------------------------------------------------------------------------------------
+all: $(ALL_OBJ) $(ALL_PROG)
 
-compil: mkdir_obj mkdir_debug all
+test: $(OBJ_SRC) $(OBJ_TEST) $(PROG_TEST)
 
-mkdir_obj:
-	@test -d obj || mkdir obj
-
-mkdir_debug:
-	@test -d debug || mkdir debug
-	@test -d debug/obj || mkdir debug/obj
+profile: $(OBJ_SRC) $(OBJ_PROF) $(PROG_PROF)
 
 clean:
-	-rm -r obj debug *~ Makefile.bak $(PROG) *.i *.o 2> /dev/null || true
-
-# Rules with automatic variables
-# --------------------------------------------------------------------------------------------------
-
-all : $(OBJ) $(PROG)
-
-%.o : %.c
-	$(CC) -o $@ $(CFLAGS) $^
-
-obj/%.o : %.c
-	$(CC) -o $@ $(CFLAGS) -save-temps -fverbose-asm $^
-
-asm: mkdir_obj $(addprefix obj/,$(OBJ) $(FUN))
+	-rm -r *~ Makefile.bak $(ALL_PROG) *.i *.o tests/*.o 2> /dev/null || true
 
 # Rules for the mains
 # --------------------------------------------------------------------------------------------------
-test_dp: test_dp.o dot_product_32.o
+tests/test_dp: tests/test_dp.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_dot_product: test_dot_product.o dot_product_32.o
+tests/test_dot_product: tests/test_dot_product.o dot_product_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_sc_mod: test_sc_mod.o scalar_vector_mod_32.o
+tests/test_sc_mod: tests/test_sc_mod.o scalar_vector_mod_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_split: test_split.o
+tests/test_split: tests/test_split.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 profile_sec2_new: profile_sec2_new.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o

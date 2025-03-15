@@ -12,7 +12,7 @@
 #include "flint/ulong_extras.h"
 #include "flint/profiler.h"
 
-#include "scalar_vector_mod_32.h"
+#include "../scalar_vector_mod_32.h"
 
 
 int main()

@@ -12,7 +12,7 @@
 #include "flint/ulong_extras.h"
 #include "flint/profiler.h"
 
-#include "dot_product_32.h"
+#include "../dot_product_32.h"
 
 
 int main(int argc, char** argv) {
