@@ -7,10 +7,10 @@
 # --------------------------------------------------------------------------------------------------
 
 OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
-OBJ_PROF = profile_sec2_new.o
+OBJ_PROF = profiler.o
 OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o
 
-PROG_PROF = profile_sec2_new
+PROG_PROF = profiler
 PROG_TEST = tests/test_dot_product tests/test_dp tests/test_sc_mod tests/test_split
 
 ALL_OBJ = $(OBJ_SRC) $(OBJ_PROF) $(OBJ_TEST)
@@ -61,5 +61,5 @@ tests/test_sc_mod: tests/test_sc_mod.o scalar_vector_mod_32.o
 tests/test_split: tests/test_split.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profile_sec2_new: profile_sec2_new.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
+profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
