@@ -6,15 +6,15 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
+OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft.o
 OBJ_PROF = profiler.o
-OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o
+OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o tests/test_fft.o
 
 PROG_PROF = profiler
-PROG_TEST = tests/test_dot_product tests/test_dp tests/test_sc_mod tests/test_split
+PROG_TEST = tests/test_dot_product tests/test_dp tests/test_sc_mod tests/test_split tests/test_fft
 
 ALL_OBJ = $(OBJ_SRC) $(OBJ_PROF) $(OBJ_TEST)
-ALL_PROG = $(PROG_PROF) $(PROG_TEST)
+ALL_PROG = $(PROG_PROF) $(PROG_TEST) $(PROG)
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -40,7 +40,9 @@ LFLAGS += -L/$(HOME)/lib/ -lflint -lgmp -lmpfr -lpthread
 # --------------------------------------------------------------------------------------------------
 all: $(ALL_OBJ) $(ALL_PROG)
 
-test: $(OBJ_SRC) $(OBJ_TEST) $(PROG_TEST)
+temp: $(OBJ) $(PROG)
+
+tests: $(OBJ_SRC) $(OBJ_TEST) $(PROG_TEST)
 
 profile: $(OBJ_SRC) $(OBJ_PROF) $(PROG_PROF)
 
@@ -59,6 +61,9 @@ tests/test_sc_mod: tests/test_sc_mod.o scalar_vector_mod_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 tests/test_split: tests/test_split.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+tests/test_fft: tests/test_fft.o butterfly_fft.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
