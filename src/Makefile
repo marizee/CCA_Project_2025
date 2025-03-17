@@ -14,7 +14,7 @@ PROG_PROF = profiler
 PROG_TEST = tests/test_dot_product tests/test_dp tests/test_sc_mod tests/test_split tests/test_fft
 
 ALL_OBJ = $(OBJ_SRC) $(OBJ_PROF) $(OBJ_TEST)
-ALL_PROG = $(PROG_PROF) $(PROG_TEST) $(PROG)
+ALL_PROG = $(PROG_PROF) $(PROG_TEST)
 
 # Tools and parameters definitions
 # --------------------------------------------------------------------------------------------------
@@ -39,8 +39,6 @@ LFLAGS += -L/$(HOME)/lib/ -lflint -lgmp -lmpfr -lpthread
 # Rules 
 # --------------------------------------------------------------------------------------------------
 all: $(ALL_OBJ) $(ALL_PROG)
-
-temp: $(OBJ) $(PROG)
 
 tests: $(OBJ_SRC) $(OBJ_TEST) $(PROG_TEST)
 
