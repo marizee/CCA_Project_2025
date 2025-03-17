@@ -1,21 +1,8 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-#include <stdint.h>
-#include <immintrin.h>
-
-#include <stdbool.h>
-
-#include "flint/flint.h"
-#include "flint/nmod.h"
-#include "flint/nmod_vec.h"
-#include "flint/ulong_extras.h"
-#include "flint/profiler.h"
-
 #include "butterfly_fft.h"
 
-#define SPLIT 20
-#define MASK ((1L << SPLIT) - 1)
+// unused at the moment
+//#define SPLIT 20
+//#define MASK ((1L << SPLIT) - 1)
 
 void seq_fft(nn_ptr res_add, nn_ptr res_sub, nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
 {
