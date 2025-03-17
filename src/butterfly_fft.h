@@ -9,6 +9,11 @@
 #include "flint/ulong_extras.h"
 #include "flint/profiler.h"
 
+// FIXME usually this operation is done "in place":
+// we modify a and b and replace them simultaneously by
+//    { a , b } <- { a + w*b , a - w*b }
+// --> only a, b, w, len, mod as input
+
 void seq_fft(nn_ptr res_add, nn_ptr res_sub, nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod) ;
 void preinv_fft(nn_ptr res_add, nn_ptr res_sub, nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod) ;
 void preinv_fft_unrolled(nn_ptr res_add, nn_ptr res_sub, nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod) ;
