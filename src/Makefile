@@ -66,6 +66,3 @@ tests/test_fft: tests/test_fft.o butterfly_fft.o
 
 profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o
 	$(CC) -o $@ $^ $(LFLAGS)
-
-profile_dot_unrolled: profile_dot_unrolled.o dot_product_32_unrolled.o
-	$(CC) -o $@ $^ $(LFLAGS)

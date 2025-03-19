@@ -183,7 +183,7 @@ int main(int argc, char** argv)
     // headers 
     char header2[][1024] = {
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
-        "s-novec\t\ts-vec\t\ts-unr\t\tsplit\t\tkara\t\tavx2\t\tavx2u",
+        "avx2\t\tavx2-u2\t\tavx2-u4\t\tavx2-u8",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
     };
 #if defined(__AVX512F__)
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
 
     char header1[][1024] = {
         "",
-        "avx2 (4) | avx2 loop-unrolled 8 | avx2 loop-unrolled 16 | avx2 loop-unrolled 32",
+        "avx2 (4) | avx2 loop-unrolled 2 (8) | avx2 loop-unrolled 4 (16) | avx2 loop-unrolled 8 (32)",
         "",
     };
 #if defined(__AVX512F__)
