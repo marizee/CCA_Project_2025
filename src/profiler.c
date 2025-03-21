@@ -316,7 +316,8 @@ int main(int argc, char** argv)
 
 
 // BEGINNING OF PROFILING
-    for (len = 1; len < 200; ++len)
+    for (len = 10; len < 200; len+=25)
+    //for (len = 1; len < 200; ++len)
     {
         info.length = len;
 
