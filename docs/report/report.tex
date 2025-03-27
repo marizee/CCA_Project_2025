@@ -39,6 +39,44 @@
 \subsection{Subject}
 \subsection{Machines description}
 
+
+% 2023 - 4.5 GHz % mariz
+% 2019 - 2.5 GHz % ppti
+% 2023 - 3.3 GHz % argiope
+% 2021 - 3.0 GHz % groebner
+
+\begin{tikzpicture}[very thick, black]
+
+    %coordinates
+    \coordinate (O) at (1,0); % Origin
+    \coordinate (F) at (12,0); %End
+    \coordinate (P1) at (2,0); %ppti
+    \coordinate (P2) at (6.5,0); %groebner
+    \coordinate (P3) at (11,0); %mariz+argiope
+
+    %proc
+    \draw[<-,thick,color=black] ($(P1)+(0,0.2)$) -- ($(P1)+(0,1.5)$) node [above=0pt,align=center,black] 
+    {Intel® Xeon® Gold 6248 Processor \\ (Cascade Lake, AVX512) \\ 2.5 GHz};
+    \draw[<-,thick,color=black] ($(P2)+(0,0.2)$) -- ($(P2)+(0,0.7)$) node [above=0pt,align=center,black] 
+    {Intel(R) Xeon(R) Gold 6354 \\ (IceLake, AVX512) \\ 3.0 GHz};
+    \draw[<-,thick,color=black] ($(P3)+(0,0.2)$) -- ($(P3)+(0,1.5)$) node [above=0pt,align=center,black] 
+    {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVX512) \\ 3.3 GHz};
+    \draw[<-,thick,color=gray] ($(P3)-(0,0.6)$) -- ($(P3)-(0,1.5)$) node [below=0pt,align=center,gray] 
+    {Intel(R) Core(TM) Ultra 5 125H \\ (Meteor Lake) \\ 4.5 GHz};
+
+    %main arrow
+    \draw[->] (O) -- (F);
+
+    %ticks
+    \foreach \x in {2,6.5,11}
+    \draw(\x cm,3pt) -- (\x cm,-3pt);
+    %labels
+    \foreach \i \j in {2/2019,6.5/2021,11/2023}{
+    	\draw (\i,0) node[below=3pt] {\j} ;
+    }
+
+\end{tikzpicture}
+
 \section{Bottlenecks}
 
 \subsection{Overflow}
