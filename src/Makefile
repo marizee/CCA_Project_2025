@@ -27,7 +27,7 @@ CFLAGS += -Wall -Wextra #-Werror#    # Gives almost all C warnings and considers
 CFLAGS += -O3
 CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
-CFLAGS += -I/$(HOME)/include/
+CFLAGS += -I/dsk/l1/vneiger/include/
 #CFLAGS += -Wpedantic
 #CFLAGS += -Wconversion -Wsign-conversion
 #CFLAGS += -Wcast-qual -Wcast-align
@@ -36,7 +36,7 @@ CFLAGS += -I/$(HOME)/include/
 #CFLAGS += -fopt-info
 
 LFLAGS  = -fwhole-program#
-LFLAGS += -L/$(HOME)/lib/ -lflint -lgmp -lmpfr -lpthread
+LFLAGS += -L/dsk/l1/vneiger/lib/ -lflint -lgmp -lmpfr -lpthread
 
 # Rules 
 # --------------------------------------------------------------------------------------------------
