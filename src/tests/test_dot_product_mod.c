@@ -83,13 +83,13 @@ int main(int argc, char** argv) {
     tsimd = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("simd=\t\t%.5es\n", tsimd);
 
-/*
     start = clock();
-    simd2_dot_product_unrolled(&res4,vec1,vec2,len);
+    split_dot_product_mod(&res4,vec1,vec2,len,mod);
     end = clock();
     tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("simd_unr=\t%.5es\n", tsimd_unr);
+    printf("split=\t\t%.5es\n", tsimd_unr);
     
+/*
     start = clock();
     simd2_dot_product_unrolled_16(&res5,vec1,vec2,len); //
     end = clock();
@@ -105,7 +105,6 @@ int main(int argc, char** argv) {
 
     // Cheats
     res2 = res;
-    res4 = res;
     res5 = res;
     res6 = res;
 

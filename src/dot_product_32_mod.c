@@ -47,7 +47,7 @@ void seq_dot_product_mod_vectorized(ulong* res, nn_ptr vec1, nn_ptr vec2, slong 
 
 void seq_dot_product_mod_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 
-void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 //void split_dot_product_unroll(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {
     __m256i alo, ahi, blo, bhi;
@@ -55,6 +55,7 @@ void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
     __m256i v_rmi = _mm256_setzero_si256();
     __m256i v_rhi = _mm256_setzero_si256();
     const __m256i vMASK = _mm256_set1_epi64x(MASK);
+    const __m256i vloMAS = _mm256_set1_epi64x((1l << 32) - 1);
 
     slong i = 0;
 
@@ -96,10 +97,17 @@ void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
         rmi = alo*bhi + ahi*blo;
     }
 
-    *res = rlo + (rmi << SPLIT) + (rhi << 2*SPLIT);
+    // FIXME : Bad reduction
+    ulong lo_mask = ((1l << 32) - 1);
+    rlo = rlo + ((rmi << SPLIT) & lo_mask);
+    rmi = (rmi >> (32 - SPLIT)) + ((rhi << (2 * SPLIT - 32)) & lo_mask);
+    rhi = rhi >> (2 * (32 - SPLIT));
+    NMOD_RED3(*res, rhi, rmi, rlo, mod);
+
+    // *res = rlo + (rmi << SPLIT) + (rhi << 2*SPLIT);
 }
 
-void split_kara_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
+void split_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 {
     ulong alo, ahi, blo, bhi;
     ulong lolo, hihi;
@@ -151,29 +159,34 @@ void simd2_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
         vtmp2 = _mm256_sub_epi32(prod, _mm256_sub_epi32(vtmp2, masked));
         sum = _mm256_add_epi64(sum, vtmp2);
 
+        /*
         vtmp = _mm256_mul_ps(_mm256_cvtepi32_ps(sum), vqinv);
         vtmp2 = _mm256_mul_epi32(_mm256_cvtps_epi32(vtmp), vmod);
         masked = _mm256_and_si256(vmod, _mm256_cmpgt_epi32(sum, vmod));
         vtmp2 = _mm256_sub_epi32(sum, _mm256_sub_epi32(vtmp2, masked));
         sum = _mm256_add_epi64(sum, vtmp2);
-    
-        /*
-        sum = _mm256_sub_epi32(sum, masked);
-        sum = _mm256_add_epi64(sum, vtmp2);
          */
-        // sum = _mm256_add_epi64(sum, prod);
+
+        // TODO : Need more tests
+        vtmp2 = _mm256_or_si256(_mm256_cmpgt_epi64(sum, vmod), _mm256_cmpeq_epi64(sum, vmod));
+        masked = _mm256_and_si256(vtmp2, vmod);
+        sum = _mm256_sub_epi64(sum, masked);
     }
 
     *res = vec4n_horizontal_sum(sum);
+    NMOD_RED(*res, *res, mod);
 
     // when len is not a multiple of 4
     for ( ; i < len; i++)
     {
-        *res += vec1[i]*vec2[i];
+        ulong tmp;
+        NMOD_RED(tmp, vec1[i]*vec2[i], mod);
+        *res += tmp;
+        if (*res > mod.n)
+        {
+            *res -= mod.n;
+        }
     }
-
-    NMOD_RED(*res, *res, mod);
-
 }
 
 void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
