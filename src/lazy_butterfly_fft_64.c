@@ -72,7 +72,6 @@ void avx2_mullo_split(__m256i* low, __m256i a, __m256i b)
     r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
 
     // lo = (umi << 26) + (uhi << 52) + ulo
-    //*high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
     *low = _mm256_add_epi64(r_lo, _mm256_add_epi64(_mm256_slli_epi64(r_mi, SPLIT), _mm256_slli_epi64(r_hi, 2*SPLIT)));
 }
 
@@ -173,6 +172,8 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
     __m512i vmod = _mm512_set1_epi64(n);
     __m512i vmod2 = _mm512_set1_epi64(n2);
 
+    __m512i vzero = _mm512_setzero_si512();
+
     slong i;
     for (i=0; i+7<len; i+=8)
     {
@@ -180,9 +181,13 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
         __m512i vb = _mm512_loadu_si512((const __m512i *)(b+i));
 
         // (a[i] < n2) ? a[i] : a[i] - n2
-        //__mmask8 cmp = _mm512_cmpgt_epi64_mask(vmod2, va);
-        //__m512i mask = _mm256_andnot_si256(cmp, vmod2);
-        //va = _mm256_sub_epi64(va, mask);
+        __mmask8 cmp = _mm512_cmpgt_epi64_mask(va, vmod2); // 1111111 if a[i] >= n2, 0 else
+	__m512i tmp2 = _mm512_maskz_sub_epi64(cmp, vzero, vmod2); // 0 if a[i] >= n2; -n2 else
+	va = _mm512_add_epi64(va, tmp2);
+
+	printf("va after modif\t");
+	for (int k=0; k<8; k++) printf("%lld ",va[k]);
+	printf("\n");
 
         avx512_mulhi_split(&vq_hi, vw_pr, vb);
 
@@ -190,8 +195,8 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
         __m512i rlo = _mm512_mullo_epi64(vq_hi, vmod);
         vres = _mm512_sub_epi64(llo, rlo);
 
-        __m512 add = _mm512_add_epi64(va, vres);
-        __m512 sub = _mm512_add_epi64(_mm512_sub_epi64(va, vres), vmod2);
+        __m512i add = _mm512_add_epi64(va, vres);
+        __m512i sub = _mm512_add_epi64(_mm512_sub_epi64(va, vres), vmod2);
 
         _mm512_storeu_si512((__m512i *)(a+i), add);
         _mm512_storeu_si512((__m512i *)(b+i), sub);

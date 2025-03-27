@@ -14,7 +14,7 @@
 
 #include "../lazy_butterfly_fft_64.h"
 
-#define SIZE_MOD 60-1
+#define SIZE_MOD 59
 
     // requirements:
     //      - n < 2**60
@@ -100,11 +100,11 @@ int main()
 
 
     preinv_fft_lazy44(a_copy1,b_copy1,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
-    //printf("add=");
-    //_nmod_vec_print_pretty(a_copy1, len, mod);
-    //printf("sub=");
-    //_nmod_vec_print_pretty(b_copy1, len, mod);
-    //printf("\n");
+    printf("add=");
+    _nmod_vec_print_pretty(a_copy1, len, mod);
+    printf("sub=");
+    _nmod_vec_print_pretty(b_copy1, len, mod);
+    printf("\n");
 
     avx2_preinv_split_fft_lazy44(a_copy2,b_copy2,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
     //printf("add=");
@@ -118,11 +118,11 @@ int main()
 
 #if defined(__AVX512F__)
     avx512_preinv_split_fft_lazy44(a_copy3,b_copy3,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
-    //printf("add=");
-    //_nmod_vec_print_pretty(a_copy3, len, mod);
-    //printf("sub=");
-    //_nmod_vec_print_pretty(b_copy3, len, mod);
-    //printf("\n");
+    printf("add=");
+    _nmod_vec_print_pretty(a_copy3, len, mod);
+    printf("sub=");
+    _nmod_vec_print_pretty(b_copy3, len, mod);
+    printf("\n");
 
     int add2 = nmod_vec_red_equal(a_copy1, a_copy3, len, mod);
     int sub2 = nmod_vec_red_equal(b_copy1, b_copy3, len, mod);
