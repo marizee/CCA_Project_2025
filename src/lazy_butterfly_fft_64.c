@@ -1,0 +1,134 @@
+#include "lazy_butterfly_fft_64.h"
+
+
+#define SPLIT 32
+#define MASK ((1L << SPLIT) - 1)
+
+
+
+
+void preinv_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
+{
+    // requirements:
+    //      - n < 2**60
+    //      - w < n
+    //      - coeffs of a, b < 4*n
+    for (slong i=0; i<len; i++)
+    {
+        ulong u = a[i];
+        ulong v = b[i];
+
+        if (u >= n2)
+            u -= n2;
+
+        umul_ppmm(p_hi, p_lo, v, w_pr);
+        tmp = w*v - p_hi*n;
+        a[i] = u + tmp;
+        b[i] = u - tmp + n2;
+    }
+}
+
+void avx2_mulhi_split(__m256i* high, __m256i a, __m256i b)
+{
+    // returns high part of the product of a and b over at most 64 bits integers
+    // using avx2 intrinsics.
+
+    __m256i r_hi, r_mi; //, r_lo;
+    __m256i a_lo, a_hi;
+    __m256i b_lo, b_hi;
+
+    const __m256i vMASK = _mm256_set1_epi64x(MASK);
+
+    a_lo = _mm256_and_si256(a, vMASK);
+    a_hi = _mm256_srli_epi64(a, SPLIT);
+    b_lo = _mm256_and_si256(b, vMASK);
+    b_hi = _mm256_srli_epi64(b, SPLIT);
+
+    //r_lo = _mm256_mul_epu32(a_lo, b_lo);
+    r_hi = _mm256_mul_epu32(a_hi, b_hi);
+    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
+
+    // hi = (umi >> 38) + (uhi >> 12)
+    *high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
+}
+
+// #if preprocessor: if the machine has avx512, use _mm256_mullo_epi64 | _mm512_mullo_epi64
+void avx2_mullo_split(__m256i* low, __m256i a, __m256i b)
+{
+    // returns low part of the product of a and b over at most 64 bits integers
+    // using avx2 intrinsics.
+
+    __m256i r_hi, r_mi, r_lo;
+    __m256i a_lo, a_hi;
+    __m256i b_lo, b_hi;
+    const __m256i vMASK = _mm256_set1_epi64x(MASK);
+
+    a_lo = _mm256_and_si256(a, vMASK);
+    a_hi = _mm256_srli_epi64(a, SPLIT);
+    b_lo = _mm256_and_si256(b, vMASK);
+    b_hi = _mm256_srli_epi64(b, SPLIT);
+
+    r_lo = _mm256_mul_epu32(a_lo, b_lo);
+    r_hi = _mm256_mul_epu32(a_hi, b_hi);
+    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
+
+    // lo = (umi << 26) + (uhi << 52) + ulo
+    //*high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
+    *low = _mm256_add_epi64(r_lo, _mm256_add_epi64(_mm256_slli_epi64(r_mi, SPLIT), _mm256_slli_epi64(r_hi, 2*SPLIT)));
+}
+
+void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
+{
+    // requirements:
+    //      - n < 2**60
+    //      - w < n
+    //      - coeffs of a, b < 4*n
+
+    __m256i vw = _mm256_set1_epi64x(w);
+    __m256i vw_pr = _mm256_set1_epi64x(w_pr);
+
+    __m256i vq_hi = _mm256_setzero_si256();
+    __m256i vres = _mm256_setzero_si256();
+
+    __m256i vmod = _mm256_set1_epi64x(n);
+    __m256i vmod2 = _mm256_set1_epi64x(n2);
+
+    slong i;
+    for (i=0; i+3<len; i+=4)
+    {
+        __m256i va = _mm256_loadu_si256((const __m256i *)(a+i));
+        __m256i vb = _mm256_loadu_si256((const __m256i *)(b+i));
+
+        // (a[i] < n2) ? a[i] : a[i] - n2
+        __m256i cmp = _mm256_cmpgt_epi64(vmod2, va);
+        __m256i mask = _mm256_andnot_si256(cmp, vmod2);
+        va = _mm256_sub_epi64(va, mask);
+
+        avx2_mulhi_split(&vq_hi, vw_pr, vb);
+
+        __m256i llo, rlo;
+        avx2_mullo_split(&llo, vw, vb);
+        avx2_mullo_split(&rlo, vq_hi, vmod);
+        vres = _mm256_sub_epi64(llo, rlo); // only low part is needed 
+
+        __m256i add = _mm256_add_epi64(va, vres);
+        __m256i sub = _mm256_add_epi64(_mm256_sub_epi64(va, vres), vmod2);
+
+        _mm256_storeu_si256((__m256i *)(a+i), add);
+        _mm256_storeu_si256((__m256i *)(b+i), sub);
+    }
+
+    for ( ; i<len; i++)
+    {
+        ulong u = a[i];
+        ulong v = b[i];
+
+        if (u >= n2)
+            u -= n2;
+
+        umul_ppmm(p_hi, p_lo, v, w_pr);
+        tmp = w*v - p_hi*n;
+        a[i] = u + tmp;
+        b[i] = u - tmp + n2;
+    }
+}

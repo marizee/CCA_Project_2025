@@ -2,6 +2,7 @@
 #define BUTTERFLY_FFT_32
 
 #include <immintrin.h>
+#include <stdint.h>
 
 #include "flint/flint.h"
 #include "flint/nmod.h"

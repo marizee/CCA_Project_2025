@@ -20,7 +20,7 @@
 
 int main()
 {
-    slong len = 6;
+    slong len = 1 << 25;
     //flint_bitcnt_t bits = 40;
     FLINT_TEST_INIT(state);
 
@@ -85,31 +85,31 @@ int main()
     end = clock();
     tseq = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("seq=\t\t%.5es\n", tseq);
-    printf("res_add=");
-    _nmod_vec_print_pretty(a_copy1, len, mod);
-    printf("res_sub=");
-    _nmod_vec_print_pretty(b_copy1, len, mod);
-    printf("\n");
+    //printf("res_add=");
+    //_nmod_vec_print_pretty(a_copy1, len, mod);
+    //printf("res_sub=");
+    //_nmod_vec_print_pretty(b_copy1, len, mod);
+    //printf("\n");
 
 
     start = clock();
     preinv_fft_32(a_copy2, b_copy2, w, len, mod);
     end = clock();
     tpreinv = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("preinv=\t\t%.5es\n\n", tpreinv);
-    printf("res_add=");
-    _nmod_vec_print_pretty(a_copy2, len, mod);
-    printf("res_sub=");
-    _nmod_vec_print_pretty(b_copy2, len, mod);
-    printf("\n");
+    printf("preinv=\t\t%.5es\n", tpreinv);
+    //printf("res_add=");
+    //_nmod_vec_print_pretty(a_copy2, len, mod);
+    //printf("res_sub=");
+    //_nmod_vec_print_pretty(b_copy2, len, mod);
+    //printf("\n");
 
 
 
-    //start = clock();
-    //avx2_preinv_fft(a_copy3, b_copy3, w, len, mod);
-    //end = clock();
-    //tavx = ((double) (end - start)) / CLOCKS_PER_SEC;
-    //printf("avx=\t\t%.5es\n", tavx);
+    start = clock();
+    avx2_preinv_fft_32(a_copy3, b_copy3, w, len, mod);
+    end = clock();
+    tavx = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("avx=\t\t%.5es\n", tavx);
     //printf("res_add=");
     //_nmod_vec_print_pretty(a_copy3, len, mod);
     //printf("res_sub=");
@@ -122,10 +122,10 @@ int main()
     int add1 = _nmod_vec_equal(a_copy1, a_copy2, len);
     int sub1 = _nmod_vec_equal(b_copy1, b_copy2, len);
 
-    //int add2 = _nmod_vec_equal(a_copy1, a_copy3, len);
-    //int sub2 = _nmod_vec_equal(b_copy1, b_copy3, len);
+    int add2 = _nmod_vec_equal(a_copy1, a_copy3, len);
+    int sub2 = _nmod_vec_equal(b_copy1, b_copy3, len);
 
-    if (!add1 || !sub1) printf("ff: add1=%d, sub1=%d\n", add1, sub1);
+    if (!add1 || !sub1 || !add2 || !sub2 ) printf("ff: add1=%d, sub1=%d, add2=%d, sub2=%d\n", add1, sub1, add2, sub2);
     else printf("OK!\n");
 
 
