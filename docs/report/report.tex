@@ -85,6 +85,14 @@
 
 \section{Profiling/Benchmarking}
 
+\subsection{Impact of caches} % todo Draft
+
+In the benchmarks, we observes bigger factors than expected between two sizes,
+e.g. during the unrolling of non modular dot product. This happen when a vector
+become too big to fit in a certain cache, and must be stored in a lower level
+cache or in the primary memory. In the previously cited case, it happen for sizes
+65536 and 131072 on ppti-gpu-4. % todo detail of calculation
+
 \section{Outcome}
 
 \section{Conclusion}
