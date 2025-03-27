@@ -52,7 +52,6 @@ void avx2_mulhi_split(__m256i* high, __m256i a, __m256i b)
     *high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
 }
 
-// #if preprocessor: if the machine has avx512, use _mm256_mullo_epi64 | _mm512_mullo_epi64
 void avx2_mullo_split(__m256i* low, __m256i a, __m256i b)
 {
     // returns low part of the product of a and b over at most 64 bits integers
@@ -132,3 +131,85 @@ void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong
         b[i] = u - tmp + n2;
     }
 }
+
+#if defined(__AVX512F__)
+void avx512_mulhi_split(__m512i* high, __m512i a, __m512i b)
+{
+    // returns high part of the product of a and b over at most 64 bits integers
+    // using avx2 intrinsics.
+
+    __m512i r_hi, r_mi; //, r_lo;
+    __m512i a_lo, a_hi;
+    __m512i b_lo, b_hi;
+
+    const __m512i vMASK = _mm512_set1_epi64(MASK);
+
+    a_lo = _mm512_and_si512(a, vMASK);
+    a_hi = _mm512_srli_epi64(a, SPLIT);
+    b_lo = _mm512_and_si512(b, vMASK);
+    b_hi = _mm512_srli_epi64(b, SPLIT);
+
+    //r_lo = _mm256_mul_epu32(a_lo, b_lo);
+    r_hi = _mm512_mul_epu32(a_hi, b_hi);
+    r_mi = _mm512_add_epi64(_mm512_mul_epu32(a_lo, b_hi), _mm512_mul_epu32(a_hi, b_lo));
+
+    // hi = (umi >> 38) + (uhi >> 12)
+    *high = _mm512_add_epi64(_mm512_srli_epi64(r_mi, (64-SPLIT)), _mm512_srli_epi64(r_hi, (64-2*SPLIT)));
+}
+
+void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
+{
+    // requirements:
+    //      - n < 2**60
+    //      - w < n
+    //      - coeffs of a, b < 4*n
+
+    __m512i vw = _mm512_set1_epi64(w);
+    __m512i vw_pr = _mm512_set1_epi64(w_pr);
+
+    __m512i vq_hi = _mm512_setzero_si512();
+    __m512i vres = _mm512_setzero_si512();
+
+    __m512i vmod = _mm512_set1_epi64(n);
+    __m512i vmod2 = _mm512_set1_epi64(n2);
+
+    slong i;
+    for (i=0; i+7<len; i+=8)
+    {
+        __m512i va = _mm512_loadu_si512((const __m512i *)(a+i));
+        __m512i vb = _mm512_loadu_si512((const __m512i *)(b+i));
+
+        // (a[i] < n2) ? a[i] : a[i] - n2
+        //__mmask8 cmp = _mm512_cmpgt_epi64_mask(vmod2, va);
+        //__m512i mask = _mm256_andnot_si256(cmp, vmod2);
+        //va = _mm256_sub_epi64(va, mask);
+
+        avx512_mulhi_split(&vq_hi, vw_pr, vb);
+
+        __m512i llo = _mm512_mullo_epi64(vw, vb);
+        __m512i rlo = _mm512_mullo_epi64(vq_hi, vmod);
+        vres = _mm512_sub_epi64(llo, rlo);
+
+        __m512 add = _mm512_add_epi64(va, vres);
+        __m512 sub = _mm512_add_epi64(_mm512_sub_epi64(va, vres), vmod2);
+
+        _mm512_storeu_si512((__m512i *)(a+i), add);
+        _mm512_storeu_si512((__m512i *)(b+i), sub);
+    }
+
+    for ( ; i<len; i++)
+    {
+        ulong u = a[i];
+        ulong v = b[i];
+
+        if (u >= n2)
+            u -= n2;
+
+        umul_ppmm(p_hi, p_lo, v, w_pr);
+        tmp = w*v - p_hi*n;
+        a[i] = u + tmp;
+        b[i] = u - tmp + n2;
+    }
+}
+
+#endif

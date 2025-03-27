@@ -14,7 +14,7 @@
 
 #include "../lazy_butterfly_fft_64.h"
 
-#define SIZE_MOD 10
+#define SIZE_MOD 60-1
 
     // requirements:
     //      - n < 2**60
@@ -40,7 +40,7 @@ int nmod_vec_red_equal(nn_srcptr vec1, nn_srcptr vec2, ulong len, nmod_t mod)
 
 int main()
 {
-    slong len = 4;
+    slong len = 8;
     //flint_bitcnt_t bits = 40;
     FLINT_TEST_INIT(state);
 
@@ -50,6 +50,7 @@ int main()
     ulong p_hi, p_lo, tmp;
     nn_ptr a_copy1, b_copy1;
     nn_ptr a_copy2, b_copy2;
+    nn_ptr a_copy3, b_copy3;
 
     // init modulus structure
     n = n_randbits(state, (uint32_t)SIZE_MOD);
@@ -83,6 +84,11 @@ int main()
     _nmod_vec_set(a_copy2, a, len);
     _nmod_vec_set(b_copy2, b, len);
 
+    a_copy3 = _nmod_vec_init(len);
+    b_copy3 = _nmod_vec_init(len);
+    _nmod_vec_set(a_copy3, a, len);
+    _nmod_vec_set(b_copy3, b, len);
+
 
     // print param for debug
     printf("mod.n=%ld, omega=%ld\n", mod.n, w);
@@ -94,27 +100,42 @@ int main()
 
 
     preinv_fft_lazy44(a_copy1,b_copy1,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
-    printf("add=");
-    _nmod_vec_print_pretty(a_copy1, len, mod);
-    printf("sub=");
-    _nmod_vec_print_pretty(b_copy1, len, mod);
-    printf("\n");
+    //printf("add=");
+    //_nmod_vec_print_pretty(a_copy1, len, mod);
+    //printf("sub=");
+    //_nmod_vec_print_pretty(b_copy1, len, mod);
+    //printf("\n");
 
     avx2_preinv_split_fft_lazy44(a_copy2,b_copy2,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
-    printf("add=");
-    _nmod_vec_print_pretty(a_copy2, len, mod);
-    printf("sub=");
-    _nmod_vec_print_pretty(b_copy2, len, mod);
-    printf("\n");
+    //printf("add=");
+    //_nmod_vec_print_pretty(a_copy2, len, mod);
+    //printf("sub=");
+    //_nmod_vec_print_pretty(b_copy2, len, mod);
+    //printf("\n");
 
+    int add1 = nmod_vec_red_equal(a_copy1, a_copy2, len, mod);
+    int sub1 = nmod_vec_red_equal(b_copy1, b_copy2, len, mod);
 
-    int check1 = nmod_vec_red_equal(a_copy1, a_copy2, len, mod);
-    int check2 = nmod_vec_red_equal(b_copy1, b_copy2, len, mod);
-    printf("c1=%d, c2=%d\n", check1, check2);
+#if defined(__AVX512F__)
+    avx512_preinv_split_fft_lazy44(a_copy3,b_copy3,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
+    //printf("add=");
+    //_nmod_vec_print_pretty(a_copy3, len, mod);
+    //printf("sub=");
+    //_nmod_vec_print_pretty(b_copy3, len, mod);
+    //printf("\n");
 
+    int add2 = nmod_vec_red_equal(a_copy1, a_copy3, len, mod);
+    int sub2 = nmod_vec_red_equal(b_copy1, b_copy3, len, mod);
+
+    printf("add1=%d, sub1=%d, add2=%d, sub2=%d\n", add1, sub1, add2, sub2);
+#else
+    printf("add1=%d, sub1=%d\n", add1, sub1);
+
+#endif
     _nmod_vec_clear(a); _nmod_vec_clear(b);
     _nmod_vec_clear(a_copy1); _nmod_vec_clear(b_copy1);
     _nmod_vec_clear(a_copy2); _nmod_vec_clear(b_copy2);
+    _nmod_vec_clear(a_copy3); _nmod_vec_clear(b_copy3);
     
     FLINT_TEST_CLEAR(state);
 
