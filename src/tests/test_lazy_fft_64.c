@@ -14,7 +14,7 @@
 
 #include "../lazy_butterfly_fft_64.h"
 
-#define SIZE_MOD 59
+#define SIZE_MOD 61
 
     // requirements:
     //      - n < 2**60
@@ -40,7 +40,7 @@ int nmod_vec_red_equal(nn_srcptr vec1, nn_srcptr vec2, ulong len, nmod_t mod)
 
 int main()
 {
-    slong len = 8;
+    slong len = 1 << 25;
     //flint_bitcnt_t bits = 40;
     FLINT_TEST_INIT(state);
 
@@ -89,24 +89,33 @@ int main()
     _nmod_vec_set(a_copy3, a, len);
     _nmod_vec_set(b_copy3, b, len);
 
+    clock_t start, end;
+    double tseq, tavx2;
 
     // print param for debug
     printf("mod.n=%ld, omega=%ld\n", mod.n, w);
-    printf("a=");
-    _nmod_vec_print_pretty(a, len, mod);
-    printf("b=");
-    _nmod_vec_print_pretty(b, len, mod);
-    printf("\n");
+    //printf("a=");
+    //_nmod_vec_print_pretty(a, len, mod);
+    //printf("b=");
+    //_nmod_vec_print_pretty(b, len, mod);
+    //printf("\n");
 
-
+    start = clock();
     preinv_fft_lazy44(a_copy1,b_copy1,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
-    printf("add=");
-    _nmod_vec_print_pretty(a_copy1, len, mod);
-    printf("sub=");
-    _nmod_vec_print_pretty(b_copy1, len, mod);
-    printf("\n");
+    end = clock();
+    tseq = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("seq=\t\t%.5es\n", tseq);
+    //printf("add=");
+    //_nmod_vec_print_pretty(a_copy1, len, mod);
+    //printf("sub=");
+    //_nmod_vec_print_pretty(b_copy1, len, mod);
+    //printf("\n");
 
+    start = clock();
     avx2_preinv_split_fft_lazy44(a_copy2,b_copy2,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
+    end = clock();
+    tavx2 = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("avx2=\t\t%.5es\n", tavx2);
     //printf("add=");
     //_nmod_vec_print_pretty(a_copy2, len, mod);
     //printf("sub=");
@@ -117,12 +126,19 @@ int main()
     int sub1 = nmod_vec_red_equal(b_copy1, b_copy2, len, mod);
 
 #if defined(__AVX512F__)
+
+    double tavx512;
+
+    start = clock();
     avx512_preinv_split_fft_lazy44(a_copy3,b_copy3,w,w_pr,len,n,2*n,p_hi,p_lo,tmp);
-    printf("add=");
-    _nmod_vec_print_pretty(a_copy3, len, mod);
-    printf("sub=");
-    _nmod_vec_print_pretty(b_copy3, len, mod);
-    printf("\n");
+    end = clock();
+    tavx512 = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("avx512=\t\t%.5es\n", tavx512);
+    //printf("add=");
+    //_nmod_vec_print_pretty(a_copy3, len, mod);
+    //printf("sub=");
+    //_nmod_vec_print_pretty(b_copy3, len, mod);
+    //printf("\n");
 
     int add2 = nmod_vec_red_equal(a_copy1, a_copy3, len, mod);
     int sub2 = nmod_vec_red_equal(b_copy1, b_copy3, len, mod);

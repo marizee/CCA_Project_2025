@@ -172,22 +172,16 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
     __m512i vmod = _mm512_set1_epi64(n);
     __m512i vmod2 = _mm512_set1_epi64(n2);
 
-    __m512i vzero = _mm512_setzero_si512();
-
     slong i;
     for (i=0; i+7<len; i+=8)
     {
         __m512i va = _mm512_loadu_si512((const __m512i *)(a+i));
         __m512i vb = _mm512_loadu_si512((const __m512i *)(b+i));
 
-        // (a[i] < n2) ? a[i] : a[i] - n2
-        __mmask8 cmp = _mm512_cmpgt_epi64_mask(va, vmod2); // 1111111 if a[i] >= n2, 0 else
-	__m512i tmp2 = _mm512_maskz_sub_epi64(cmp, vzero, vmod2); // 0 if a[i] >= n2; -n2 else
-	va = _mm512_add_epi64(va, tmp2);
-
-	printf("va after modif\t");
-	for (int k=0; k<8; k++) printf("%lld ",va[k]);
-	printf("\n");
+        // (a[i] >= n2) ? a[i] - n2 : a[i]
+        __mmask8 mask = _mm512_cmpge_epi64_mask(va, vmod2); // 1111111 if a[i] >= n2, 0 else
+	__m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
+	va = _mm512_sub_epi64(va, tmp2);
 
         avx512_mulhi_split(&vq_hi, vw_pr, vb);
 
