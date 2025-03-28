@@ -87,12 +87,30 @@ void avx2_mullo_split_lazy(__m256i* low, __m256i a, __m256i b)
 //     - r_hi not needed (?)
 //     - we do not need the mask since epu32 only looks at the low 32 bits (to be checked)
 // TODO 
-//     - try other approach: voir mul64_avx2 dans
+//     - try other approach: code below, mul64_avx2, pris de
 //       https://stackoverflow.com/questions/37296289/fastest-way-to-multiply-an-array-of-int64-t/37320416#37320416
 //       (it comes from Agner Fog's Vector Class Library)
 // TODO mulhi
 //     - version correcte (attention a la retenue)
 //     - version (AVX512?) basee sur https://github.com/intel/hexl
+static inline __m256i avx2_mullo_epi64(__m256i a, __m256i b)
+{
+    // There is no vpmullq until AVX-512. Split into 32-bit multiplies
+    // Given a and b composed of high<<32 | low  32-bit halves
+    // a*b = a_low*(u64)b_low  + (u64)(a_high*b_low + a_low*b_high)<<32;  // same for signed or unsigned a,b since we aren't widening to 128
+    // the a_high * b_high product isn't needed for non-widening; its place value is entirely outside the low 64 bits.
+
+    __m256i b_swap  = _mm256_shuffle_epi32(b, _MM_SHUFFLE(2,3, 0,1));   // swap H<->L
+    __m256i crossprod  = _mm256_mullo_epi32(a, b_swap);                 // 32-bit L*H and H*L cross-products
+
+    __m256i prodlh = _mm256_slli_epi64(crossprod, 32);          // bring the low half up to the top of each 64-bit chunk 
+    __m256i prodhl = _mm256_and_si256(crossprod, _mm256_set1_epi64x(0xFFFFFFFF00000000)); // isolate the other, also into the high half were it needs to eventually be
+    __m256i sumcross = _mm256_add_epi32(prodlh, prodhl);       // the sum of the cross products, with the low half of each u64 being 0.
+
+    __m256i prodll  = _mm256_mul_epu32(a,b);                  // widening 32x32 => 64-bit  low x low products
+    __m256i prod    = _mm256_add_epi32(prodll, sumcross);     // add the cross products into the high half of the result
+    return  prod;
+}
 
 void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
