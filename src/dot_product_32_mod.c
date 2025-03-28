@@ -55,7 +55,6 @@ void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
     __m256i v_rmi = _mm256_setzero_si256();
     __m256i v_rhi = _mm256_setzero_si256();
     const __m256i vMASK = _mm256_set1_epi64x(MASK);
-    const __m256i vloMAS = _mm256_set1_epi64x((1l << 32) - 1);
 
     slong i = 0;
 
