@@ -7,7 +7,10 @@
 // TODO quelques pistes:
 // - pb mulhi: quid si n = special shape?
 // - [dur] pb mulhi: quid si w est ~31 bits, ou ~15 bits
-// - radix 4 FFT
+//
+// - [later] radix 4 FFT
+// - [probably no time for this] version ifma
+// - [not very important] version int32
 
 
 
@@ -87,6 +90,9 @@ void avx2_mullo_split_lazy(__m256i* low, __m256i a, __m256i b)
 //     - try other approach: voir mul64_avx2 dans
 //       https://stackoverflow.com/questions/37296289/fastest-way-to-multiply-an-array-of-int64-t/37320416#37320416
 //       (it comes from Agner Fog's Vector Class Library)
+// TODO mulhi
+//     - version correcte (attention a la retenue)
+//     - version (AVX512?) basee sur https://github.com/intel/hexl
 
 void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
