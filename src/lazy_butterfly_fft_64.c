@@ -4,6 +4,10 @@
 #define SPLIT 32
 #define MASK ((1L << SPLIT) - 1)
 
+// TODO quelques pistes:
+// - pb mulhi: quid si n = special shape?
+// - [dur] pb mulhi: quid si w est ~31 bits, ou ~15 bits
+// - radix 4 FFT
 
 
 
@@ -28,6 +32,7 @@ void preinv_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong
     }
 }
 
+// TODO to make correct
 void avx2_mulhi_split_lazy(__m256i* high, __m256i a, __m256i b)
 {
     // returns high part of the product of a and b over at most 64 bits integers
@@ -47,6 +52,7 @@ void avx2_mulhi_split_lazy(__m256i* high, __m256i a, __m256i b)
     //r_lo = _mm256_mul_epu32(a_lo, b_lo);
     r_hi = _mm256_mul_epu32(a_hi, b_hi);
     r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
+    // FIXME explain why no overflow above
 
     // hi = (umi >> 38) + (uhi >> 12)
     *high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
@@ -71,9 +77,16 @@ void avx2_mullo_split_lazy(__m256i* low, __m256i a, __m256i b)
     r_hi = _mm256_mul_epu32(a_hi, b_hi);
     r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
 
-    // lo = (umi << 26) + (uhi << 52) + ulo
     *low = _mm256_add_epi64(r_lo, _mm256_add_epi64(_mm256_slli_epi64(r_mi, SPLIT), _mm256_slli_epi64(r_hi, 2*SPLIT)));
 }
+
+// TODO make a version split32 to make mullo as fast as possible:
+//     - r_hi not needed (?)
+//     - we do not need the mask since epu32 only looks at the low 32 bits (to be checked)
+// TODO 
+//     - try other approach: voir mul64_avx2 dans
+//       https://stackoverflow.com/questions/37296289/fastest-way-to-multiply-an-array-of-int64-t/37320416#37320416
+//       (it comes from Agner Fog's Vector Class Library)
 
 void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
@@ -180,8 +193,8 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
 
         // (a[i] >= n2) ? a[i] - n2 : a[i]
         __mmask8 mask = _mm512_cmpge_epi64_mask(va, vmod2); // 1111111 if a[i] >= n2, 0 else
-	__m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
-	va = _mm512_sub_epi64(va, tmp2);
+        __m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
+        va = _mm512_sub_epi64(va, tmp2);
 
         avx512_mulhi_split_lazy(&vq_hi, vw_pr, vb);
 
