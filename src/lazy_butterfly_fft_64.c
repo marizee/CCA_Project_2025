@@ -61,28 +61,6 @@ void avx2_mulhi_split_lazy(__m256i* high, __m256i a, __m256i b)
     *high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
 }
 
-// improved variant, which should give the same thing
-// (potentially missing carry, so only off by 1 at most?
-// if yes, could we accept this in the FFT context?)
-static inline __m256i avx2_mulhi_split_lazy_v2(__m256i a, __m256i b)
-{
-    // returns high part of the product of a and b over at most 64 bits integers
-    // using avx2 intrinsics.
-
-    __m256i r_hi, r_mi;
-    __m256i a_hi;
-    __m256i b_hi;
-
-    a_hi = _mm256_srli_epi64(a, 32);
-    b_hi = _mm256_srli_epi64(b, 32);
-
-    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a, b_hi), _mm256_mul_epu32(a_hi, b));
-    r_hi = _mm256_mul_epu32(a_hi, b_hi);
-
-    return _mm256_add_epi64(_mm256_srli_epi64(r_mi, 32), r_hi);
-}
-
-
 void avx2_mullo_split_lazy(__m256i* low, __m256i a, __m256i b)
 {
     // returns low part of the product of a and b over at most 64 bits integers
@@ -104,6 +82,29 @@ void avx2_mullo_split_lazy(__m256i* low, __m256i a, __m256i b)
 
     *low = _mm256_add_epi64(r_lo, _mm256_add_epi64(_mm256_slli_epi64(r_mi, SPLIT), _mm256_slli_epi64(r_hi, 2*SPLIT)));
 }
+
+
+// improved variant, which should give the same thing
+// (potentially missing carry, so only off by 1 at most?
+// if yes, could we accept this in the FFT context?)
+static inline __m256i avx2_mulhi_split_lazy_v2(__m256i a, __m256i b)
+{
+    // returns high part of the product of a and b over at most 64 bits integers
+    // using avx2 intrinsics.
+
+    __m256i r_hi, r_mi;
+    __m256i a_hi;
+    __m256i b_hi;
+
+    a_hi = _mm256_srli_epi64(a, 32);
+    b_hi = _mm256_srli_epi64(b, 32);
+
+    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a, b_hi), _mm256_mul_epu32(a_hi, b));
+    r_hi = _mm256_mul_epu32(a_hi, b_hi);
+
+    return _mm256_add_epi64(_mm256_srli_epi64(r_mi, 32), r_hi);
+}
+
 
 // TODO make a version split32 to make mullo as fast as possible:
 //     - r_hi not needed (?)
