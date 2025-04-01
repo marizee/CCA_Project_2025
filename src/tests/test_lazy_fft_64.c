@@ -14,6 +14,7 @@
 
 #include "../lazy_butterfly_fft_64.h"
 
+//#define SIZE_MOD 50  // <-- use this if IFMA
 #define SIZE_MOD 61
 
     // requirements:
