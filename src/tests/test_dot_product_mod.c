@@ -68,44 +68,36 @@ int main(int argc, char** argv) {
     tseqv = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("seqv=\t\t%.5es\n", tseqv);
 
-/*
     start = clock();
-    seq_dot_product_mod_unrolled(&res2,vec1,vec2,len);
+    split_dot_product_mod(&res2,vec1,vec2,len,mod);
     end = clock();
-    tseq_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("unr=\t\t%.5es\n", tseq_unr);
- */
+    tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("split=\t\t%.5es\n", tsimd_unr);
+    
 
     start = clock();
-    simd2_dot_product_mod(&res3,vec1,vec2,len,mod);
+    split_kara_dot_product_mod(&res3,vec1,vec2,len,mod); //
+    end = clock();
+    tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("kara=\t\t%.5es\n", tsimd_unr);
+
+    start = clock();
+    simd2_dot_product_mod(&res4,vec1,vec2,len,mod);
     end = clock();
     tsimd = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("simd=\t\t%.5es\n", tsimd);
 
     start = clock();
-    split_dot_product_mod(&res4,vec1,vec2,len,mod);
+    simd2_split_dot_product_mod(&res5,vec1,vec2,len,mod);
     end = clock();
-    tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("split=\t\t%.5es\n", tsimd_unr);
-    
-/*
-    start = clock();
-    simd2_dot_product_unrolled_16(&res5,vec1,vec2,len); //
-    end = clock();
-    tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("simd_unr=\t%.5es\n", tsimd_unr);
+    tseq_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("split_simd=\t%.5es\n", tseq_unr);
 
     start = clock();
-    simd2_dot_product_unrolled_8(&res6,vec1,vec2,len);
+    simd2_kara_dot_product_mod(&res6,vec1,vec2,len,mod);
     end = clock();
     tsimd_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
-    printf("simd_unr=\t%.5es\n", tsimd_unr);
- */
-
-    // Cheats
-    res2 = res;
-    res5 = res;
-    res6 = res;
+    printf("split_simd=\t%.5es\n", tsimd_unr);
 
     // checks
     int check1 = res == res1;
