@@ -91,17 +91,22 @@ void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
         ulong blo = vec2[i] & MASK; //((1L << SPLIT) - 1);
         ulong bhi = vec2[i] >> SPLIT;
 
-        rlo = alo*blo;
-        rhi = ahi*bhi;
-        rmi = alo*bhi + ahi*blo;
+        rlo += alo*blo;
+        rhi += ahi*bhi;
+        rmi += alo*bhi + ahi*blo;
     }
 
-    // FIXME : Bad reduction
-    ulong lo_mask = ((1l << 32) - 1);
-    rlo = rlo + ((rmi << SPLIT) & lo_mask);
-    rmi = (rmi >> (32 - SPLIT)) + ((rhi << (2 * SPLIT - 32)) & lo_mask);
-    rhi = rhi >> (2 * (32 - SPLIT));
-    NMOD_RED3(*res, rhi, rmi, rlo, mod);
+    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    NMOD2_RED2(*res, rhi, rlo, mod);
+
+    // ulong lo_mask = ((1l << FLINT_BITS) - 1);
+    // ulong tmp_hi, tmp_lo, tmp_acc;
+    // tmp_hi= rhi >> (FLINT_BITS - SPLIT);
+    // tmp_lo = ((rhi << SPLIT) & lo_mask) + rmi;
+    // NMOD_RED2(tmp_acc, tmp_hi, tmp_lo, mod);
+    // tmp_hi = tmp_acc >> (FLINT_BITS - SPLIT);
+    // tmp_lo = ((tmp_acc << SPLIT) & lo_mask) + rlo;
+    // NMOD_RED2(*res, tmp_hi, tmp_lo, mod);
 
     // *res = rlo + (rmi << SPLIT) + (rhi << 2*SPLIT);
 }

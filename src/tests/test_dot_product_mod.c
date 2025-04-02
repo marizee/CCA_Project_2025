@@ -17,7 +17,7 @@
 
 int main(int argc, char** argv) {
     slong len = 10;
-    flint_bitcnt_t bits = 10;
+    flint_bitcnt_t bits = 25;
 
     FLINT_TEST_INIT(state);
 
@@ -51,7 +51,6 @@ int main(int argc, char** argv) {
     _nmod_vec_print_pretty(vec1, len, mod);
     printf("vec2=");
     _nmod_vec_print_pretty(vec2, len, mod);
-
     
     // tests
     clock_t start, end;
