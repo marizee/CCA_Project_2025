@@ -17,31 +17,19 @@ __attribute__((optimize("-fno-tree-vectorize")))
 void seq_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 {
     // computes the dot product of vectors with at most 32 bits integers.
-    ulong tmp;
+    *res=0;
     for (slong i=0; i < len; i++)
-    {
-        NMOD_RED(tmp, vec1[i]*vec2[i], mod);
-        *res += tmp;
-        if (*res > mod.n)
-        {
-            *res -= mod.n;
-        }
-    }
+        *res += vec1[i]*vec2[i];
+    NMOD_RED(*res, *res, mod);
 }
 
 void seq_dot_product_mod_vectorized(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 {
     // computes the dot product of vectors with at most 32 bits integers.
-    ulong tmp;
+    *res=0;
     for (slong i=0; i < len; i++)
-    {
-        NMOD_RED(tmp, vec1[i]*vec2[i], mod);
-        *res += tmp;
-        if (*res > mod.n)
-        {
-            *res -= mod.n;
-        }
-    }
+        *res += vec1[i]*vec2[i];
+    NMOD_RED(*res, *res, mod);
 }
 
 
@@ -68,14 +56,10 @@ void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
         blo = _mm256_and_si256(v2, vMASK);
         bhi = _mm256_srli_epi64(v2, SPLIT);
 
-        // TODO : Mod on res
-
         v_rlo = _mm256_add_epi64(v_rlo, _mm256_mul_epu32(alo, blo));
         v_rhi = _mm256_add_epi64(v_rhi, _mm256_mul_epu32(ahi, bhi));
         v_rmi = _mm256_add_epi64(v_rmi, _mm256_mul_epu32(alo, bhi));
         v_rmi = _mm256_add_epi64(v_rmi, _mm256_mul_epu32(ahi, blo));
-        
-        // TODO : add and cond sub
     }
 
     // gather results
@@ -116,7 +100,6 @@ void split_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len,
     ulong alo, ahi, blo, bhi;
     ulong lolo, hihi;
     ulong rlo=0, rmid=0, rhi=0;
-    ulong red_tmp;
 
     for (slong i=0; i < len; i++)
     {
@@ -128,19 +111,16 @@ void split_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len,
         lolo = alo*blo;
         hihi = ahi*bhi;
 
-        red_tmp = rlo + lolo;
-        NMOD_RED(rlo, red_tmp, mod);
-        red_tmp = rhi + hihi;
-        NMOD_RED(rhi, red_tmp, mod);
-        red_tmp = rmid + (alo + ahi)*(blo + bhi) - lolo - hihi;
-        NMOD_RED(rmid, red_tmp, mod);
+        rlo = rlo + lolo;
+        rhi = rhi + hihi;
+        rmid += (alo + ahi)*(blo + bhi) - lolo - hihi;
     }
 
-    // TODO : Final red
-    // red_tmp = NMOD
-    *res = rlo + (rmid << SPLIT) + (rhi << 2*SPLIT);
+    add_ssaaaa(rhi, rlo, (rmid>>(64-SPLIT)), (rmid<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    NMOD2_RED2(*res, rhi, rlo, mod);
 }
 
+// Doesn't work for int size > 15 bits. No mul64 => need split
 void simd2_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 {
     // computes dot product of vectors with at most 32 bits integers using intrinsics.
@@ -163,34 +143,15 @@ void simd2_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
         vtmp2 = _mm256_sub_epi32(prod, _mm256_sub_epi32(vtmp2, masked));
         sum = _mm256_add_epi64(sum, vtmp2);
 
-        /*
-        vtmp = _mm256_mul_ps(_mm256_cvtepi32_ps(sum), vqinv);
-        vtmp2 = _mm256_mul_epi32(_mm256_cvtps_epi32(vtmp), vmod);
-        masked = _mm256_and_si256(vmod, _mm256_cmpgt_epi32(sum, vmod));
-        vtmp2 = _mm256_sub_epi32(sum, _mm256_sub_epi32(vtmp2, masked));
-        sum = _mm256_add_epi64(sum, vtmp2);
-         */
-
-        // TODO : Need more tests
         vtmp2 = _mm256_or_si256(_mm256_cmpgt_epi64(sum, vmod), _mm256_cmpeq_epi64(sum, vmod));
         masked = _mm256_and_si256(vtmp2, vmod);
         sum = _mm256_sub_epi64(sum, masked);
     }
 
     *res = vec4n_horizontal_sum(sum);
+    for (slong i=0; i < len; i++)
+        *res += vec1[i]*vec2[i];
     NMOD_RED(*res, *res, mod);
-
-    // when len is not a multiple of 4
-    for ( ; i < len; i++)
-    {
-        ulong tmp;
-        NMOD_RED(tmp, vec1[i]*vec2[i], mod);
-        *res += tmp;
-        if (*res > mod.n)
-        {
-            *res -= mod.n;
-        }
-    }
 }
 
 void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
