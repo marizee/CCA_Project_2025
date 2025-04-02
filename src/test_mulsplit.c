@@ -79,17 +79,17 @@ __m512i avx512_mulhi_split(__m512i a, __m512i b)
     a_hi = _mm512_srli_epi64(a, 32);
     b_hi = _mm512_srli_epi64(b, 32);
 
-    r_lo = _mm512_mul_epu32(a_lo, b_lo);
+    r_lo = _mm512_mul_epu32(a, b);
     r_hi = _mm512_mul_epu32(a_hi, b_hi);
-    r_mi = _mm512_add_epi64(_mm512_mul_epu32(a_lo, b_hi), _mm512_mul_epu32(a_hi, b_lo));
+    r_mi = _mm512_add_epi64(_mm512_mul_epu32(a, b_hi), _mm512_mul_epu32(a_hi, b));
 
     // detects the carry if any
     __m512i low = _mm512_add_epi64(r_lo, _mm512_slli_epi64(r_mi, 32));
     __m512i msb_mask = _mm512_set1_epi64(1L << 63);
     __m512i xr_lo = _mm512_xor_si512(r_lo, msb_mask);
     __m512i xlow  = _mm512_xor_si512(low, msb_mask);
-    __mmask8 carry = _mm512_cmpgt_epi64_mask(xr_lo, xlow);
-    // treat the carry
+    __mmask8 cmask = _mm512_cmpgt_epi64_mask(xr_lo, xlow);
+	__m512i carry = _mm512_maskz_set1_epi64(cmask, 1);
 
     return _mm512_add_epi64(carry, _mm512_add_epi64(_mm512_srli_epi64(r_mi, 32), r_hi));
 }
@@ -226,7 +226,7 @@ int main()
             low = _mm512_mullo_epi64(va, vb);
             _mm512_storeu_si512((__m512i *)(p_lo5+i), low);
 
-            high = avx512_mulhi_split_lazy(va, vb);
+            high = avx512_mulhi_split(va, vb);
             _mm512_storeu_si512((__m512i *)(p_hi5+i), high);
         }
 #endif
@@ -247,7 +247,7 @@ int main()
         int h3;
 
         l4 = _nmod_vec_equal(p_lo1, p_lo5, 4); // low: umul vs avx512 mullo
-        h3 = _nmod_vec_equal(p_hi1, p_hi4, 4); // high: umul vs avx512 mine
+        h3 = _nmod_vec_equal(p_hi1, p_hi5, 4); // high: umul vs avx512 mine
 
         printf("nbits=%ld -- l1=%d l2=%d l3=%d l4=%d -- h1=%d h2=%d h3=%d\n", k, l1, l2, l3, l4, h1, h2, h3);
 #else
