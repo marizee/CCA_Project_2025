@@ -18,6 +18,26 @@
 
 ## TODO
 
+- [ ] pb mulhi: quid si n = special shape?
+- [ ] [dur] pb mulhi: quid si w est ~31 bits, ou ~15 bits
+- [ ] [later] radix 4 FFT
+- [ ] [probably no time for this] version ifma
+- [ ] [not very important] version int32
+
+
+### 14/03 - 08/04
+
+make a version split32 to make mullo as fast as possible:
+- [X] r_hi not needed
+- [X] we do not need the mask since epu32 only looks at the low 32 bits (to be checked)
+
+- [X] try other approach: code below, mul64_avx2, pris de
+  https://stackoverflow.com/questions/37296289/fastest-way-to-multiply-an-array-of-int64-t/37320416#37320416 (it comes from Agner Fog's Vector Class Library)
+
+mulhi:
+- [X] version correcte (attention a la retenue)
+- [ ] version (AVX512?) basee sur https://github.com/intel/hexl -> `_mm512_hexl_mulhi_epi64` not found
+
 ### 04//03 - 14/03
 
 - fonction utilisant `_nmod_vec_scalar_mul_nmod_shoup` dans `scalar-vector` avec modulo et pour le butterfly fft
@@ -25,7 +45,7 @@
 
 dot product:
 - [ ] ajouter le modulus: >= 32 bits (ex 45 bits)
-- [ ] unroll +/- pour trouver le meilleur pas
+- [X] unroll +/- pour trouver le meilleur pas
 
 butterfly fft: (See: https://flintlib.org/doc/ulong_extras.html ).
 - voir tableau

@@ -4,20 +4,11 @@
 #define SPLIT 32
 #define MASK ((1L << SPLIT) - 1)
 
-// TODO quelques pistes:
-// - pb mulhi: quid si n = special shape?
-// - [dur] pb mulhi: quid si w est ~31 bits, ou ~15 bits
-//
-// - [later] radix 4 FFT
-// - [probably no time for this] version ifma
-// - [not very important] version int32
-
-
 
 void preinv_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
     // requirements:
-    //      - n < 2**60
+    //      - n < 2**62
     //      - w < n
     //      - coeffs of a, b < 4*n
     for (slong i=0; i<len; i++)
@@ -35,7 +26,6 @@ void preinv_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong
     }
 }
 
-// TODO to make correct
 void avx2_mulhi_split_lazy(__m256i* high, __m256i a, __m256i b)
 {
     // returns high part of the product of a and b over at most 64 bits integers
@@ -83,16 +73,7 @@ void avx2_mullo_split_lazy(__m256i* low, __m256i a, __m256i b)
     *low = _mm256_add_epi64(r_lo, _mm256_add_epi64(_mm256_slli_epi64(r_mi, SPLIT), _mm256_slli_epi64(r_hi, 2*SPLIT)));
 }
 
-// TODO make a version split32 to make mullo as fast as possible:
-//     - r_hi not needed (?)
-//     - we do not need the mask since epu32 only looks at the low 32 bits (to be checked)
-// TODO 
-//     - try other approach: code below, mul64_avx2, pris de
-//       https://stackoverflow.com/questions/37296289/fastest-way-to-multiply-an-array-of-int64-t/37320416#37320416
-//       (it comes from Agner Fog's Vector Class Library)
-// TODO mulhi
-//     - version correcte (attention a la retenue)
-//     - version (AVX512?) basee sur https://github.com/intel/hexl
+
 static inline __m256i avx2_mullo_epi64(__m256i a, __m256i b)
 {
     // There is no vpmullq until AVX-512. Split into 32-bit multiplies
@@ -115,7 +96,7 @@ static inline __m256i avx2_mullo_epi64(__m256i a, __m256i b)
 void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
     // requirements:
-    //      - n < 2**60
+    //      - n < 2**62
     //      - w < n
     //      - coeffs of a, b < 4*n
 
@@ -196,7 +177,7 @@ void avx512_mulhi_split_lazy(__m512i* high, __m512i a, __m512i b)
 void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
     // requirements:
-    //      - n < 2**60
+    //      - n < 2**62
     //      - w < n
     //      - coeffs of a, b < 4*n
 
