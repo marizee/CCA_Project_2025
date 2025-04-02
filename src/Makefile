@@ -8,21 +8,15 @@
 
 OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o
 OBJ_PROF = profiler.o
-#<<<<<<< HEAD
+
 #OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o tests/test_fft_32.o tests/test_fft_64.o 
-OBJ_TEST = tests/test_lazy_fft_64.o
+#OBJ_TEST = tests/test_lazy_fft_64.o
+OBJ_TEST = test_mulsplit.o
 
 PROG_PROF = profiler
 #PROG_TEST = tests/test_dot_product tests/test_dp tests/test_sc_mod tests/test_split tests/test_fft_32 tests/test_fft_64
-PROG_TEST = tests/test_lazy_fft_64
-#=======
-##OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o 
-#OBJ_TEST = tests/test_fft_32.o tests/test_fft_64.o tests/test_dot_product_mod.o
-#
-#PROG_PROF = profiler
-##PROG_TEST = tests/test_dot_product tests/test_dp tests/test_sc_mod tests/test_split 
-#PROG_TEST = tests/test_fft_32 tests/test_fft_64 tests/test_dot_product_mod
-#>>>>>>> c4e9fe4 (Some mosular dot prod versions)
+#PROG_TEST = tests/test_lazy_fft_64
+PROG_TEST = test_mulsplit
 
 ALL_OBJ = $(OBJ_SRC) $(OBJ_PROF) $(OBJ_TEST)
 ALL_PROG = $(PROG_PROF) $(PROG_TEST)
@@ -36,7 +30,7 @@ CFLAGS += -Wall -Wextra #-Werror#    # Gives almost all C warnings and considers
 CFLAGS += -O3
 CFLAGS += -march=native#            # Enable AVX 
 CFLAGS += -Wno-unused-parameter# 
-CFLAGS += -I/dsk/l1/vneiger/include/
+CFLAGS += -I/$(HOME)/include/
 #CFLAGS += -Wpedantic
 #CFLAGS += -Wconversion -Wsign-conversion
 #CFLAGS += -Wcast-qual -Wcast-align
@@ -45,7 +39,7 @@ CFLAGS += -I/dsk/l1/vneiger/include/
 #CFLAGS += -fopt-info
 
 LFLAGS  = -fwhole-program#
-LFLAGS += -L/dsk/l1/vneiger/lib/ -lflint -lgmp -lmpfr -lpthread
+LFLAGS += -L/$(HOME)/lib/ -lflint -lgmp -lmpfr -lpthread
 
 # Rules 
 # --------------------------------------------------------------------------------------------------
@@ -79,6 +73,9 @@ tests/test_fft_64: tests/test_fft_64.o butterfly_fft_64.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 tests/test_lazy_fft_64: tests/test_lazy_fft_64.o lazy_butterfly_fft_64.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_mulsplit: test_mulsplit.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 tests/test_dot_product_mod: tests/test_dot_product_mod.o dot_product_32_mod.o
