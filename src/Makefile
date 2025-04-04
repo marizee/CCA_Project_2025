@@ -11,7 +11,7 @@ OBJ_PROF = profiler.o
 #OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o tests/test_fft_32.o tests/test_fft_64.o tests/test_lazy_fft_64.o tests/test_dot_product_mod.o
 OBJ_TEST = test_mulsplit.o
 
-PROG_PROF = profiler_mulsplit_fft #profiler
+PROG_PROF = profiler
 #PROG_TEST = tests/test_dot_product tests/test_dp tests/test_sc_mod tests/test_split tests/test_fft_32 tests/test_fft_64 tests/test_lazy_fft_64 tests/test_dot_product_mod
 PROG_TEST = test_mulsplit
 
