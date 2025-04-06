@@ -1,4 +1,5 @@
 #include "butterfly_fft_64.h"
+#include "mulsplit.h"
 
 
 #define SPLIT 32
@@ -79,14 +80,13 @@ void preinv_split_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
 
     ulong w_pre = n_mulmod_precomp_shoup(w, mod.n);
 
-    ulong q_hi=0;
+    ulong q_hi=0; ulong q_lo;
     ulong res;
     
     for (slong i=0; i<len; i++)
     {
         // step1: q_hi st b*w_pre = q_hi*2^64 + q_lo
-        //umul_ppmm(q_hi, q_lo, b[i], w_pre);
-        mulhi_split(&q_hi, b[i], w_pre);
+        umul_ppmm(q_hi, q_lo, b[i], w_pre);
 
         // step2: r := b*w - q_hi*p
         res = w*b[i] - q_hi*mod.n;
@@ -124,13 +124,13 @@ void avx2_preinv_split_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
         __m256i vb = _mm256_loadu_si256((const __m256i *)(b+i));
 
         // step1: q_hi st b*w_pre = q_hi*2^32 + q_lo
-        avx2_mulhi_split(&vq_hi, vw_pre, vb); // OK
+        vq_hi = avx2_mulhi_split(vw_pre, vb);
 
         // step2: r := b*w - q_hi*p OK
         __m256i llo; //, lhi; 
         __m256i rlo; //, rhi;
-        avx2_mullo_split(&llo, vw, vb);
-        avx2_mullo_split(&rlo, vq_hi, vmod);
+        llo = avx2_mullo_split(vw, vb);
+        rlo = avx2_mullo_split(vq_hi, vmod);
 
         vres = _mm256_sub_epi64(llo, rlo); // only low part is needed
 
@@ -167,7 +167,7 @@ void avx2_preinv_split_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
     for ( ; i<len; i++)
     {
         // step1: q_hi st b*w_pre = q_hi*2^64 + q_lo
-        mulhi_split(&q_hi, b[i], w_pre);
+        q_hi = mulhi_split(b[i], w_pre);
 
         // step2: r := b*w - q_hi*p
         res = w*b[i] - q_hi*mod.n;
