@@ -6,7 +6,7 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o mulsplit.o
+OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_32.o butterfly_fft_64.o mulsplit.o lazy_butterfly_fft_64.o 
 OBJ_PROF = profiler.o
 #OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o tests/test_fft_32.o tests/test_fft_64.o tests/test_lazy_fft_64.o tests/test_dot_product_mod.o
 OBJ_TEST = test_mulsplit.o
@@ -80,5 +80,5 @@ test_mulsplit: test_mulsplit.o mulsplit.o
 tests/test_dot_product_mod: tests/test_dot_product_mod.o dot_product_32_mod.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o
+profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_64.o mulsplit.o lazy_butterfly_fft_64.o
 	$(CC) -o $@ $^ $(LFLAGS)
