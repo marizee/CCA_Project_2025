@@ -27,10 +27,10 @@ ulong mulhi_split(ulong a, ulong b)
     r_mi = a_lo*b_hi + a_hi*b_lo;
 
     // detects the carry if any
-    ulong low = r_lo + (r_mi << 32) + (r_hi << 64);
+    ulong low = r_lo + (r_mi << 32) + (r_hi << 64);  // FIXME r_hi << 64 is zero
     ulong carry = (low < r_lo ? 1 : 0);
 
-    return (r_lo >> 64) + (r_mi >> 32) + r_hi + carry;
+    return (r_lo >> 64) + (r_mi >> 32) + r_hi + carry;  // FIXME r_lo >> 64 is zero
 }
 
 __m256i avx2_mulhi_split(__m256i a, __m256i b)
