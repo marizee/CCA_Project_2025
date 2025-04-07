@@ -16,7 +16,7 @@ __m256i avx2_mulhi_split(__m256i a, __m256i b) ;
 __m256i avx2_mullo_split(__m256i a, __m256i b) ;
 __m256i avx2_mullo_epi64(__m256i a, __m256i b) ;
 
-#if defined(__AVX512__)
+#if defined(__AVX512F__)
 __m512i avx512_mulhi_split(__m512i a, __m512i b) ;
 #endif
 
