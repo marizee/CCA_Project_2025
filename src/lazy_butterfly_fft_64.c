@@ -91,14 +91,13 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
     //      - w < n
     //      - coeffs of a, b < 4*n
 
-    __m512i vw = _mm512_set1_epi64(w);
-    __m512i vw_pr = _mm512_set1_epi64(w_pr);
-
-    __m512i vq_hi = _mm512_setzero_si512();
-    __m512i vres = _mm512_setzero_si512();
-
-    __m512i vmod = _mm512_set1_epi64(n);
-    __m512i vmod2 = _mm512_set1_epi64(n2);
+    const __m512i vw = _mm512_set1_epi64(w);
+    const __m512i vw_pr = _mm512_set1_epi64(w_pr);
+    const __m512i vw_pr_hi = _mm512_srli_epi64(vw_pr, 32);
+    const __m512i msb_mask = _mm512_set1_epi64(1L << 63);
+    const __m512i vmod = _mm512_set1_epi64(n);
+    const __m512i vmod2 = _mm512_set1_epi64(n2);
+    const __m512i carry = _mm512_set1_epi64(1L);
 
     slong i;
     for (i=0; i+7<len; i+=8)
@@ -111,11 +110,11 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
         __m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
         va = _mm512_sub_epi64(va, tmp2);
 
-        vq_hi = avx512_mulhi_split(vw_pr, vb);
+        __m512i vq_hi = avx512_mulhi_split(vw_pr, vw_pr_hi, vb, msb_mask, carry);
 
         __m512i llo = _mm512_mullo_epi64(vw, vb);
         __m512i rlo = _mm512_mullo_epi64(vq_hi, vmod);
-        vres = _mm512_sub_epi64(llo, rlo);
+        __m512i vres = _mm512_sub_epi64(llo, rlo);
 
         __m512i add = _mm512_add_epi64(va, vres);
         __m512i sub = _mm512_add_epi64(_mm512_sub_epi64(va, vres), vmod2);

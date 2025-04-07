@@ -73,7 +73,7 @@ int main()
             low = _mm512_mullo_epi64(va, vb);
             _mm512_storeu_si512((__m512i *)(p_lo5+i), low);
 
-            high = avx512_mulhi_split(va, vb);
+            high = avx512_mulhi_split_v2(va, vb);
             _mm512_storeu_si512((__m512i *)(p_hi5+i), high);
         }
 #endif

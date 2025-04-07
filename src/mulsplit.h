@@ -71,7 +71,25 @@ static inline __m256i avx2_mullo_epi64(__m256i a, __m256i b)
 }
 
 #if defined(__AVX512F__)
-static inline __m512i avx512_mulhi_split(__m512i a, __m512i b)
+static inline __m512i avx512_mulhi_split(__m512i a, __m512i a_hi, __m512i b, __m512i msb_mask, __m512i carry)
+{
+    __m512i b_hi = _mm512_srli_epi64(b, 32);
+
+    __m512i r_lo = _mm512_mul_epu32(a, b);
+    __m512i r_hi = _mm512_mul_epu32(a_hi, b_hi);
+    __m512i r_mi = _mm512_add_epi64(_mm512_mul_epu32(a, b_hi), _mm512_mul_epu32(a_hi, b));
+
+    // detects the carry if any
+    __m512i low = _mm512_add_epi64(r_lo, _mm512_slli_epi64(r_mi, 32));
+    __m512i xr_lo = _mm512_xor_si512(r_lo, msb_mask);
+    __m512i xlow  = _mm512_xor_si512(low, msb_mask);
+    __mmask8 cmask = _mm512_cmpgt_epi64_mask(xr_lo, xlow);
+
+    r_mi = _mm512_add_epi64(_mm512_srli_epi64(r_mi, 32), r_hi);
+    return _mm512_mask_add_epi64(r_mi, cmask, r_hi, carry);
+}
+
+static inline __m512i avx512_mulhi_split_v2(__m512i a, __m512i b)
 {
     __m512i r_hi, r_mi, r_lo;
     __m512i a_hi;
