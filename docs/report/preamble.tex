@@ -1,6 +1,7 @@
 \usepackage{graphicx} % Required for inserting images
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage{amsthm}
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{fancyhdr}
@@ -16,6 +17,8 @@
 \usepackage[nottoc,numbib]{tocbibind}
 \usepackage[usenames, dvipsnames]{xcolor}
 \usepackage{tikz} \usetikzlibrary{calc}
+\usepackage[boxed, linesnumbered]{algorithm2e}
+%\usepackage{algpseudocode}
 
 
 \geometry{margin=1in}
@@ -24,14 +27,14 @@
 \colorlet{myDGreen}{green!50!black}
 \colorlet{myGray}{white!60!black}
 
-\newcommand{\colNaN}[1]{{\textcolor{black!30}{#1}}}
-\newcommand{\colDisaster}[1]{{\textcolor{red!60}{#1}}}
-\newcommand{\colFailure}[1]{{\textcolor{orange}{#1}}}
-\newcommand{\colWorse}[1]{\textcolor{orange!60}{#1}}
-\newcommand{\colSimilar}[1]{\textcolor{black!60}{#1}}
-\newcommand{\colBetter}[1]{\textcolor{blue!70}{#1}}
-\newcommand{\colSuccess}[1]{\textcolor{black!30!green}{#1}}
-\newcommand{\colAmazing}[1]{\textcolor{green}{#1}}
+%\newcommand{\colNaN}[1]{{\textcolor{black!30}{#1}}}
+%\newcommand{\colDisaster}[1]{{\textcolor{red!60}{#1}}}
+%\newcommand{\colFailure}[1]{{\textcolor{orange}{#1}}}
+%\newcommand{\colWorse}[1]{\textcolor{orange!60}{#1}}
+%\newcommand{\colSimilar}[1]{\textcolor{black!60}{#1}}
+%\newcommand{\colBetter}[1]{\textcolor{blue!70}{#1}}
+%\newcommand{\colSuccess}[1]{\textcolor{black!30!green}{#1}}
+%\newcommand{\colAmazing}[1]{\textcolor{green}{#1}}
 
 \hypersetup{
     colorlinks,
@@ -73,6 +76,5 @@
 \fancyfoot[C]{\thepage}
 \pagestyle{fancy}
 
-\title{Internship report}
-\author{Marie BONBOIRE}
-\date{}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
