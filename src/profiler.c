@@ -7,6 +7,7 @@
 #include "scalar_vector_32.h"
 #include "scalar_vector_mod_32.h"
 #include "dot_product_32.h"
+#include "dot_product_32_mod.h"
 #include "butterfly_fft_64.h"
 #include "lazy_butterfly_fft_64.h"
 
@@ -306,6 +307,14 @@ int main(int argc, char** argv)
 #if defined(__AVX512F__)
         avx512_preinv_split_fft_lazy44,
 #endif
+    },
+    {
+        seq_dot_product_mod,
+        seq_dot_product_mod_vectorized,
+        split_dot_product_mod,
+        split_kara_dot_product_mod,        
+        simd2_split_dot_product_mod,
+        simd2_kara_dot_product_mod,  
     }
     };
 
@@ -324,7 +333,8 @@ int main(int argc, char** argv)
         "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
         "seq\t\tpreinv\t\tsplit\t\tavx2-split\n",
-        "seq\t\tavx2\t"
+        "seq\t\tavx2\t",
+        "seq\t\ts-vec\t\tsplit\t\tkara\t\tsplit avx2\t\tkata avx2\n"
     };
 #if defined(__AVX512F__)
     strcat(header2[0], "\tavx512\t\tavx512u\n");
@@ -342,6 +352,7 @@ int main(int argc, char** argv)
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2",
         "seq | preinverse | split-preinverse | avx2 split-preinverse\n",
         "seq | avx2",
+        "seq no-vec | seq auto-vec | split seq | kara seq | split avx2 | kara avx2\n",
     };
 #if defined(__AVX512F__)
     strcat(header1[0], " | avx512 | avx512 loop-unrolled\n");
@@ -374,6 +385,7 @@ int main(int argc, char** argv)
         flint_printf("      #2 --> modular scalar-vector product\n");
         flint_printf("      #3 --> modular butterfly fft\n");
         flint_printf("      #4 --> lazy butterfly fft\n");
+        flint_printf("      #5 --> modular dot product");
         return 0;
     }
     

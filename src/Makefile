@@ -80,5 +80,5 @@ test_mulsplit: test_mulsplit.o mulsplit.o
 tests/test_dot_product_mod: tests/test_dot_product_mod.o dot_product_32_mod.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o
+profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o dot_product_32_mod.o
 	$(CC) -o $@ $^ $(LFLAGS)
