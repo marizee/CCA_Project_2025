@@ -196,7 +196,6 @@ void butterfly_fft_64(info_t* info, void (*func)(nn_ptr, nn_ptr, ulong, slong, n
     _nmod_vec_clear(a_copy);
     _nmod_vec_clear(b_copy);
     FLINT_TEST_CLEAR(state);
-
 }
 
 void lazy_butterfly_64(info_t* info, void (*func)(nn_ptr, nn_ptr, ulong, ulong, slong, ulong, ulong, ulong, ulong, ulong))
@@ -253,6 +252,50 @@ void lazy_butterfly_64(info_t* info, void (*func)(nn_ptr, nn_ptr, ulong, ulong, 
     FLINT_TEST_CLEAR(state);
 }
 
+void dot_prod_mod(info_t* info, void (*func)(ulong*, nn_ptr, nn_ptr, slong, nmod_t))
+{
+    // retrieve function parameters
+    //info_t * info = (info_t *) arg;
+    slong length = info->length;
+    flint_bitcnt_t bits = info->bits;
+    
+    FLINT_TEST_INIT(state);
+    
+    nmod_t mod;
+    ulong n;
+    nn_ptr vec1, vec2;
+    //ulong i;
+    slong j;
+
+    vec1 = _nmod_vec_init(length);
+    vec2 = _nmod_vec_init(length);
+    ulong res=0;
+    
+    // init modulus
+    n = n_randbits(state, (uint32_t)bits);
+    if (n == UWORD(0)) n++;
+    nmod_init(&mod, n);
+    
+    // init scalar and vector
+    //b = n_randint(state, n);
+    for (j = 0; j < length; j++)
+    {
+        vec1[j] = n_randint(state, n);
+        vec2[j] = n_randint(state, n);
+    }
+    
+    double FLINT_SET_BUT_UNUSED(tcpu), twall;
+    TIMEIT_START
+    func(&res,vec1,vec2,length, mod);
+    TIMEIT_STOP_VALUES(tcpu, twall)
+
+    printf("\t%.3e", twall);
+    
+    _nmod_vec_clear(vec1);
+    _nmod_vec_clear(vec2);
+    FLINT_TEST_CLEAR(state);
+}
+
 int main(int argc, char** argv)
 {
     info_t info;
@@ -260,7 +303,7 @@ int main(int argc, char** argv)
 
     typedef void (*func) ();
     typedef void (*timefun) (info_t*, func);
-    const timefun funs[] = {scalar_vector, dot_prod, scalar_vector_mod, butterfly_fft_64, lazy_butterfly_64};
+    const timefun funs[] = {scalar_vector, dot_prod, scalar_vector_mod, butterfly_fft_64, lazy_butterfly_64, dot_prod_mod};
 
     // all versions of the function
     const func versions[][10] = {
@@ -314,18 +357,22 @@ int main(int argc, char** argv)
         split_dot_product_mod,
         split_kara_dot_product_mod,        
         simd2_split_dot_product_mod,
-        simd2_kara_dot_product_mod,  
+        simd2_kara_dot_product_mod,
+#if defined(__AVX512F__)
+        simd512_split_dot_product,
+        simd512_kara_dot_product_mod,
+#endif
     }
     };
 
     // number of versions for each function
-    slong nbv[] = {5, 8, 4, 4, 2};
+    slong nbv[] = {5, 8, 4, 4, 2, 6};
 #if defined(__AVX512F__)
-    nbv[0] += 2; nbv[1] += 2, nbv[4] += 1;
+    nbv[0] += 2; nbv[1] += 2, nbv[4] += 1; nbv[5] += 2;
 #endif
 
     // name of the function
-    const char* fnames[] = {"scalar-vector product", "dot product", "modular scalar-vector product", "modular butterfly fft", "lazy butterfly fft (Harvey)"};
+    const char* fnames[] = {"scalar-vector product", "dot product", "modular scalar-vector product", "modular butterfly fft", "lazy butterfly fft (Harvey)", "dot product mod"};
 
     // headers 
     char header2[][1024] = {
@@ -334,16 +381,18 @@ int main(int argc, char** argv)
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
         "seq\t\tpreinv\t\tsplit\t\tavx2-split\n",
         "seq\t\tavx2\t",
-        "seq\t\ts-vec\t\tsplit\t\tkara\t\tsplit avx2\t\tkata avx2\n"
+        "seq\t\ts-vec\t\tsplit\t\tkara\t\tsplit avx2\tkara avx2"
     };
 #if defined(__AVX512F__)
     strcat(header2[0], "\tavx512\t\tavx512u\n");
     strcat(header2[1], "\tavx512\t\tavx512u\n");
     strcat(header2[4], "\tavx512\n");
+    strcat(header2[5], "\tsplit avx512\tkara avx512\n");
 #else
     strcat(header2[0], "\n");
     strcat(header2[1], "\n");
     strcat(header2[4], "\n");
+    strcat(header2[5], "\n");
 #endif
 
     char header1[][1024] = {
@@ -352,18 +401,20 @@ int main(int argc, char** argv)
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2",
         "seq | preinverse | split-preinverse | avx2 split-preinverse\n",
         "seq | avx2",
-        "seq no-vec | seq auto-vec | split seq | kara seq | split avx2 | kara avx2\n",
+        "seq no-vec | seq auto-vec | split seq | kara seq | split avx2 | kara avx2",
     };
 #if defined(__AVX512F__)
     strcat(header1[0], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[1], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[2], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[4], " | avx512\n");
+    strcat(header1[5], " | avx512 split | avx512 karatsuba\n");
 #else
     strcat(header1[0], "\n");
     strcat(header1[1], "\n");
     strcat(header1[2], "\n");
     strcat(header1[4], "\n");
+    strcat(header1[5], "\n");
 #endif
 
 
@@ -385,7 +436,7 @@ int main(int argc, char** argv)
         flint_printf("      #2 --> modular scalar-vector product\n");
         flint_printf("      #3 --> modular butterfly fft\n");
         flint_printf("      #4 --> lazy butterfly fft\n");
-        flint_printf("      #5 --> modular dot product");
+        flint_printf("      #5 --> modular dot product\n");
         return 0;
     }
     
