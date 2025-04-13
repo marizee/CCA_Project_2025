@@ -79,7 +79,53 @@
 
 \section{Multiplication of 64 bits integers}
 
-\subsection{Split}
+\subsection{Split}\label{sub:split}
+
+
+\section{Dot product}
+
+For two vectors $u$ and $v$ of $len$ integers of bit size $bitsize \le 32$, and an integer $n$ of some bit size, we want to compute
+
+\[\left(\sum_{i=0}^{len}u_iv_i\right) \mod n\]
+
+To compute the sum of products, we split the integers as described in subsection \ref{sub:split}. Then, we sum separately the three limbs $r_{high}$, $r_{mid}$, $r_{low}$. % TODO: Verify name
+
+\subsection{Modular reduction}
+
+The modular is done with \texttt{NMOD2\_RED2} from the flint library. We first regroup the three limbs in two limbs $h$ and $l$ as follows:
+
+\begin{align}
+    l &= r_{mid}B &+ \left(r_{high}B^2 + r_{low}\right) \\
+    h &= \left\lfloor r_{mid}\frac{B}{2^{64}}\right\rfloor &+ \left\lfloor r_{hi}\frac{B^2}{2^{64}}\right\rfloor &+ c \quad{\text{where $c$ is $1$ if the computation of l overflows and 0 otherwise}}
+\end{align}
+
+Because of the cost of this operation, we only reduce at the end, adter the sum. As a consequence, the number of integers we can sum without overflows is limited, and depend of their size.
+
+\begin{proposition}\label{prop:sum}
+    For integers of size $\S$, the result of the sum of $2^n$ of such integers is at most $S + n$
+\end{proposition}
+
+\begin{proof}
+    By induction on $n\in\mathbf{N}$
+
+    \paragraph{Base case: $n = 0$}
+    $2^0 = 1$, thus no addition is done and the result has size $S = S + 0 = S + n$. Hence, $\Pi(0)$ is verified.
+
+    \paragraph{Induction}
+    Assume for some $i \in \mathbf{N}^*$, $\Pi(i - 1)$ is verified.
+
+    Let $u$ and $v$ be the sums of $2^{i-1}$ integers of size $ S $. By $\Pi(i-1)$, their sizes are at most $S + i - 1$. So the size of $u + v$ is at most $\left(S + i + 1\right) + 1 = S + i$, and $u + v$ is the sum of $2 \cdot 2^(i-1) = 2^i$ integers.
+    So $\Pi(i)$ is verified, hence $\Pi(i-1) \Rightarrow \Pi(i)$
+
+    \paragraph{By induction's principle:} $\Pi(0)$ is verified and $\forall i\in\mathbf{N},\ \Pi(i) \Rightarrow \Pi(i+1)$, So
+    \begin{displaymath}
+        \forall n\in\mathbf{N},\ \Pi(n)\text{ is verified}
+    \end{displaymath}
+\end{proof}
+
+This value can be computed using \ref{prop:sum}. In our case, because we sum the results of the products of two integers of bit size $bitsize,\ S = 2 bitsize$.
+
+TODO: Max for rhi, rmi and rlo
 
 
 
