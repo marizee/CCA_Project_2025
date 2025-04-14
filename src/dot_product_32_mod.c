@@ -235,6 +235,99 @@ void simd2_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len,
 void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 
 #if defined(__AVX512F__)
-void simd512_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
-void simd512_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
+void simd512_split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) {
+    __m512i vrlo = _mm512_setzero_si512();
+    __m512i vrmi = _mm512_setzero_si512();
+    __m512i vrhi = _mm512_setzero_si512();
+    const __m512i vMASK = _mm512_set1_epi64(MASK);
+
+    slong i = 0;
+
+    for(; i+7 < len; i+=8)
+    {
+        __m512i v1 = _mm512_loadu_si512((const __m512i *)&vec1[i]);
+        __m512i v2 = _mm512_loadu_si512((const __m512i *)&vec2[i]);
+
+        __m512i alo = _mm512_and_si512(v1, vMASK);
+        __m512i ahi = _mm512_srli_epi64(v1, SPLIT);
+        __m512i blo = _mm512_and_si512(v2, vMASK);
+        __m512i bhi = _mm512_srli_epi64(v2, SPLIT);
+
+        __m512i hihi = _mm512_mul_epu32(ahi, bhi);
+        __m512i lolo = _mm512_mul_epu32(alo, blo);
+
+        vrlo = _mm512_add_epi64(vrlo, lolo);
+        vrhi = _mm512_add_epi64(vrhi, hihi);
+        vrmi = _mm512_add_epi64(vrmi, _mm512_mul_epu32(alo, bhi));
+        vrmi = _mm512_add_epi64(vrmi, _mm512_mul_epu32(ahi, blo));
+    }
+
+    ulong rlo = _mm512_reduce_add_epi64(vrlo);
+    ulong rmi = _mm512_reduce_add_epi64(vrmi);
+    ulong rhi = _mm512_reduce_add_epi64(vrhi);
+
+    for(; i < len; i++)
+    {
+        ulong alo = vec1[i] & MASK; //((1L << SPLIT) - 1);
+        ulong ahi = vec1[i] >> SPLIT;
+        ulong blo = vec2[i] & MASK; //((1L << SPLIT) - 1);
+        ulong bhi = vec2[i] >> SPLIT;
+
+        rlo += alo*blo;
+        rhi += ahi*bhi;
+        rmi += alo*bhi + ahi*blo;
+    }
+
+    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    NMOD2_RED2(*res, rhi, rlo, mod);
+}
+void simd512_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) {
+    __m512i vrlo = _mm512_setzero_si512();
+    __m512i vrmi = _mm512_setzero_si512();
+    __m512i vrhi = _mm512_setzero_si512();
+    const __m512i vMASK = _mm512_set1_epi64(MASK);
+
+    slong i = 0;
+
+    for(; i+7 < len; i+=8)
+    {
+        __m512i v1 = _mm512_loadu_si512((const __m512i *)&vec1[i]);
+        __m512i v2 = _mm512_loadu_si512((const __m512i *)&vec2[i]);
+
+        __m512i alo = _mm512_and_si512(v1, vMASK);
+        __m512i ahi = _mm512_srli_epi64(v1, SPLIT);
+        __m512i blo = _mm512_and_si512(v2, vMASK);
+        __m512i bhi = _mm512_srli_epi64(v2, SPLIT);
+
+        __m512i hihi = _mm512_mul_epu32(ahi, bhi);
+        __m512i lolo = _mm512_mul_epu32(alo, blo);
+
+        __m512i asum = _mm512_add_epi64(alo, ahi);
+        __m512i bsum = _mm512_add_epi64(blo, bhi);
+
+        vrlo = _mm512_add_epi64(vrlo, lolo);
+        vrhi = _mm512_add_epi64(vrhi, hihi);
+        vrmi = _mm512_add_epi64(vrmi, _mm512_mul_epu32(asum, bsum));
+        vrmi = _mm512_sub_epi64(vrmi, _mm512_add_epi64(hihi, lolo));
+    }
+
+    ulong rlo = _mm512_reduce_add_epi64(vrlo);
+    ulong rmi = _mm512_reduce_add_epi64(vrmi);
+    ulong rhi = _mm512_reduce_add_epi64(vrhi);
+
+    for(; i < len; i++)
+    {
+        ulong alo = vec1[i] & MASK; //((1L << SPLIT) - 1);
+        ulong ahi = vec1[i] >> SPLIT;
+        ulong blo = vec2[i] & MASK; //((1L << SPLIT) - 1);
+        ulong bhi = vec2[i] >> SPLIT;
+
+        rlo += alo*blo;
+        rhi += ahi*bhi;
+        rmi += alo*bhi + ahi*blo;
+    }
+
+    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    NMOD2_RED2(*res, rhi, rlo, mod);
+}
 #endif

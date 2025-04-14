@@ -36,10 +36,11 @@
 
 \section{Preface}
 
-\paragraph{goals}
+\subsection{goals}
 \begin{itemize}
     \item Implement basic arithemic operations (scalar-vector multiplication, vector-vector multiplication, dot product) using Flint.
-    \item Improve these operations using Intel's intrinsics for Single Instruction Multiple Datas (SIMD) vectorization.
+    \item Study the impact of the modulo operation.
+    \item Enhance these operations using Intel's intrinsics for Single Instruction Multiple Datas (SIMD) vectorization.
     \item Advanced benchmarking/profiling.
     \item Apply on a form of butterfly FFT for a forward integration to Flint.
 \end{itemize}
@@ -92,7 +93,7 @@
 When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a 64 bits word. 
 To circumvent this issue, one needs to first split the two integers into two words of a given size and then apply the long multiplication.
 
-That is, given two integers $a$ and $b$ each of at most 64 bits, we start by splitting them into 2 words of $k$ bits with $k<64$:
+That is, given two integers $a$ and $b$ each of at most 64 bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$ bits, with $k<64$:
 
 \begin{align*}
     a &= a_{hi}\cdot 2^{k} + a_{lo} \\
@@ -109,16 +110,65 @@ We compute
 \end{align*}
 then $ab = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$.
 
-Since $ab$ can have more than 64 bits, we return $ab$ as a pair of two words of at most 64 bits such that $ab = (ab)_{hi}\cdot 2^{64} + (ab)_{lo}$ where
 
-%%% check formulas
-%\begin{align*}
-%    ab_{lo} &= r_{lo} + (r_{mi} \gg k) + (r_{hi} \gg 2k) \\
-%    ab_{hi} &= (r_{lo} \gg 2k) + (r_{mi} \gg k) + (r_{hi} \gg 2k) \\
-%\end{align*}
+\subsection{High and low part of the result}
+
+Since the product $ab$ can have more than 64 bits, it has to be split into two words of at most 64 bits such that $ab = (ab)_{hi}\cdot 2^{64} + (ab)_{lo}$.
+
+\begin{itemize}
+    \item Flint's function \texttt{umulppmm}
+    \item avx2: no mullo/mulhi
+    \item avx512: mullo but no mulhi
+\end{itemize} 
 
 
-\newpage
+\section{Dot product}
+
+For two vectors $u$ and $v$ of $len$ integers of bit size $bitsize \le 32$, and an integer $n$ of some bit size, we want to compute
+
+\[\left(\sum_{i=0}^{len}u_iv_i\right) \mod n\]
+
+To compute the sum of products, we split the integers as described in subsection \ref{sub:split}. Then, we sum separately the three limbs $r_{high}$, $r_{mid}$, $r_{low}$. % TODO: Verify name
+
+\subsection{Modular reduction}
+
+The modular is done with \texttt{NMOD2\_RED2} from the flint library. We first regroup the three limbs in two limbs $h$ and $l$ as follows:
+
+\begin{align}
+    l &= r_{mid}B &+ \left(r_{high}B^2 + r_{low}\right) \\
+    h &= \left\lfloor r_{mid}\frac{B}{2^{64}}\right\rfloor &+ \left\lfloor r_{hi}\frac{B^2}{2^{64}}\right\rfloor &+ c \quad{\text{where $c$ is $1$ if the computation of l overflows and 0 otherwise}}
+\end{align}
+
+Because of the cost of this operation, we only reduce at the end, adter the sum. As a consequence, the number of integers we can sum without overflows is limited, and depend of their size.
+
+\begin{proposition}\label{prop:sum}
+    For integers of size $\S$, the result of the sum of $2^n$ of such integers is at most $S + n$
+\end{proposition}
+
+\begin{proof}
+    By induction on $n\in\mathbf{N}$
+
+    \paragraph{Base case: $n = 0$}
+    $2^0 = 1$, thus no addition is done and the result has size $S = S + 0 = S + n$. Hence, $\Pi(0)$ is verified.
+
+    \paragraph{Induction}
+    Assume for some $i \in \mathbf{N}^*$, $\Pi(i - 1)$ is verified.
+
+    Let $u$ and $v$ be the sums of $2^{i-1}$ integers of size $ S $. By $\Pi(i-1)$, their sizes are at most $S + i - 1$. So the size of $u + v$ is at most $\left(S + i + 1\right) + 1 = S + i$, and $u + v$ is the sum of $2 \cdot 2^(i-1) = 2^i$ integers.
+    So $\Pi(i)$ is verified, hence $\Pi(i-1) \Rightarrow \Pi(i)$
+
+    \paragraph{By induction's principle:} $\Pi(0)$ is verified and $\forall i\in\mathbf{N},\ \Pi(i) \Rightarrow \Pi(i+1)$, So
+    \begin{displaymath}
+        \forall n\in\mathbf{N},\ \Pi(n)\text{ is verified}
+    \end{displaymath}
+\end{proof}
+
+This value can be computed using \ref{prop:sum}. In our case, because we sum the results of the products of two integers of bit size $bitsize,\ S = 2 bitsize$.
+
+TODO: Max for rhi, rmi and rlo
+
+
+
 \section{Butterfly fft}
 \begin{align*}
     add &= a + w*b \mod n \\
@@ -185,14 +235,11 @@ Using \autoref{prop:quorem} again, we have $c=wb \mod n$ or $c=(wb \mod n)+n$, a
 
 
 
-\subsection{Intrinsics?}
-
-
-\subsection{Special prime numbers}
+\section{Modular reduction in the case of special prime numbers}
 
 modular reduction can be costly because of the division it involves
 
-\paragraph{Mersenne's primes}
+\subsection{Mersenne primes}
 
 $p = 2^x - 1$
 \[
@@ -202,6 +249,8 @@ p \mod p \Longleftrightarrow 2^x - 1 = 0 \mod p \Longleftrightarrow 1^u = 1 \mod
 \[
     ab \mod p \Longleftrightarrow ab_{hi}\ + ab_{lo} \mod p
 \]
+
+\subsection{Generalized Mersenne primes}
 
 
 \section{Profiling/Benchmarking}
