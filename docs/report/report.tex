@@ -36,7 +36,17 @@
 
 \section{Preface}
 
-\subsection{Subject}
+\paragraph{goals}
+\begin{itemize}
+    \item Implement basic arithemic operations (scalar-vector multiplication, vector-vector multiplication, dot product) using Flint.
+    \item Improve these operations using Intel's intrinsics for Single Instruction Multiple Datas (SIMD) vectorization.
+    \item Advanced benchmarking/profiling.
+    \item Apply on a form of butterfly FFT for a forward integration to Flint.
+\end{itemize}
+
+
+
+
 \subsection{Machines description}
 
 
@@ -79,10 +89,36 @@
 
 \section{Multiplication of 64 bits integers}
 
-\subsection{Split}
+When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a 64 bits word. 
+To circumvent this issue, one needs to first split the two integers into two words of a given size and then apply the long multiplication.
+
+That is, given two integers $a$ and $b$ each of at most 64 bits, we start by splitting them into 2 words of $k$ bits with $k<64$:
+
+\begin{align*}
+    a &= a_{hi}\cdot 2^{k} + a_{lo} \\
+    b &= b_{hi}\cdot 2^{k} + b_{lo}.
+\end{align*}
+
+The long multiplication consists in computing the multiplication of 64 bits limbs using multiplications and additions of integers with a lower size.
+
+We compute
+\begin{align*}
+    r_{lo} &= a_{lo}\cdot b_{lo} \\
+    r_{mi} &= a_{lo}\cdot b_{hi} + a_{hi}\cdot b_{lo} \\
+    r_{hi} &= a_{hi}\cdot b_{hi}
+\end{align*}
+then $ab = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$.
+
+Since $ab$ can have more than 64 bits, we return $ab$ as a pair of two words of at most 64 bits such that $ab = (ab)_{hi}\cdot 2^{64} + (ab)_{lo}$ where
+
+%%% check formulas
+%\begin{align*}
+%    ab_{lo} &= r_{lo} + (r_{mi} \gg k) + (r_{hi} \gg 2k) \\
+%    ab_{hi} &= (r_{lo} \gg 2k) + (r_{mi} \gg k) + (r_{hi} \gg 2k) \\
+%\end{align*}
 
 
-
+\newpage
 \section{Butterfly fft}
 \begin{align*}
     add &= a + w*b \mod n \\
@@ -146,7 +182,31 @@ Using \autoref{prop:quorem} again, we have $c=wb \mod n$ or $c=(wb \mod n)+n$, a
 
 \subsection{Harvey's lazy butterfly fft}
 
+
+
+
+\subsection{Intrinsics?}
+
+
+\subsection{Special prime numbers}
+
+modular reduction can be costly because of the division it involves
+
+\paragraph{Mersenne's primes}
+
+$p = 2^x - 1$
+\[
+p \mod p \Longleftrightarrow 2^x - 1 = 0 \mod p \Longleftrightarrow 1^u = 1 \mod p
+\]
+------> with $ab = ab_{hi}\cdot 2^{64} + ab_{lo}$, it means that if we take the Mersenne's prime number $p = 2^{64} - 1$, we can compute $ab \mod p$ with only one addition 
+\[
+    ab \mod p \Longleftrightarrow ab_{hi}\ + ab_{lo} \mod p
+\]
+
+
 \section{Profiling/Benchmarking}
+
+\subsection{Verification of timings}
 
 \subsection{Impact of caches} % todo Draft
 
@@ -156,9 +216,12 @@ become too big to fit in a certain cache, and must be stored in a lower level
 cache or in the primary memory. In the previously cited case, it happen for sizes
 65536 and 131072 on ppti-gpu-4. % todo detail of calculation
 
-\section{Outcome}
+
+\subsection{Results}
 
 \section{Conclusion}
+
+
 
 \newpage
 \bibliographystyle{plain} 
