@@ -14,7 +14,7 @@
     \begin{center}
         {\LARGE PCCA}\\[0.3cm]
         \rule{\linewidth}{0.5mm} \\[0.4cm]
-        {\huge \textbf{Arithmétique modulaire et vectorisation\\ SIMD / AVX}}\\[0.4cm]
+        {\huge \textbf{Modular arithmetic and vectorization using\\ SIMD and AVX}}\\[0.4cm]
         \rule{\linewidth}{0.5mm} \\[1cm]
         {\large 24 January 2025 - ?? May 2025}\\[3cm]
 
@@ -25,7 +25,7 @@
 
     \vfill
 \begin{flushleft}{\large
-    \textbf{Supervisor:} Mr. Vincent NEIGER (LIP6 - PolSys)\\
+    \textbf{Supervisor:} Mr. Vincent NEIGER\footnote{\url{https://vincent.neiger.science/}} (LIP6 - PolSys)\\
     }
 \end{flushleft}
 \end{titlepage}
@@ -36,7 +36,7 @@
 
 \section{Preface}
 
-\subsection{goals}
+\subsection{Goals}
 \begin{itemize}
     \item Implement basic arithemic operations (scalar-vector multiplication, vector-vector multiplication, dot product) using Flint.
     \item Study the impact of the modulo operation.
@@ -44,9 +44,6 @@
     \item Advanced benchmarking/profiling.
     \item Apply on a form of butterfly FFT for a forward integration to Flint.
 \end{itemize}
-
-
-
 
 \subsection{Machines description}
 
@@ -88,12 +85,23 @@
 
 \end{tikzpicture}
 
+\section{SIMD instructions}
+
+\begin{itemize}
+    \item Intel intrinsics guide\footnote{\url{https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html}}
+    \item avx2: 256 bits registers \texttt{\_\_m256i} --> vectors of 4 integers
+    \item avx512: 512 bits registers \texttt{\_\_m512i} --> vectors of 8 integers
+    \item general description cf. slides PPAR
+\end{itemize}
+
+
 \section{Multiplication of 64 bits integers}
 
 When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a 64 bits word. 
 To circumvent this issue, one needs to first split the two integers into two words of a given size and then apply the long multiplication.
 
-That is, given two integers $a$ and $b$ each of at most 64 bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$ bits, with $k<64$:
+\subsection{Long multiplication}
+Given two integers $a$ and $b$ both of at most 64 bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$ bits, with $k<64$:
 
 \begin{align*}
     a &= a_{hi}\cdot 2^{k} + a_{lo} \\
@@ -111,9 +119,9 @@ We compute
 then $ab = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$.
 
 
-\subsection{High and low part of the result}
+\subsection{Retrieve the high and the low part of the result}
 
-Since the product $ab$ can have more than 64 bits, it has to be split into two words of at most 64 bits such that $ab = (ab)_{hi}\cdot 2^{64} + (ab)_{lo}$.
+Since the product $ab$ can have more than 64 bits, the output of this operation is usually given as a pair of words of at most 64 bits such that $ab = (ab)_{hi}\cdot 2^{64} + (ab)_{lo}$.
 
 \begin{itemize}
     \item Flint's function \texttt{umulppmm}
@@ -121,8 +129,23 @@ Since the product $ab$ can have more than 64 bits, it has to be split into two w
     \item avx512: mullo but no mulhi
 \end{itemize} 
 
+\section{Classic arithemic operations on vectors}
 
-\section{Dot product}
+\subsection{Addition of two vectors}
+
+\begin{itemize}
+    \item not done atm but todo 
+    \item modular reduction might be delayed
+\end{itemize}
+
+\subsection{Multiplication of a vector by a scalar or by another vector}
+
+\begin{itemize}
+    \item define the operations.
+    \item boils down to mult described above
+\end{itemize}
+
+\subsection{Dot product}
 
 For two vectors $u$ and $v$ of $len$ integers of bit size $bitsize \le 32$, and an integer $n$ of some bit size, we want to compute
 
@@ -130,7 +153,7 @@ For two vectors $u$ and $v$ of $len$ integers of bit size $bitsize \le 32$, and 
 
 To compute the sum of products, we split the integers as described in subsection \ref{sub:split}. Then, we sum separately the three limbs $r_{high}$, $r_{mid}$, $r_{low}$. % TODO: Verify name
 
-\subsection{Modular reduction}
+\subsubsection{Modular reduction}
 
 The modular is done with \texttt{NMOD2\_RED2} from the flint library. We first regroup the three limbs in two limbs $h$ and $l$ as follows:
 
@@ -232,12 +255,13 @@ Using \autoref{prop:quorem} again, we have $c=wb \mod n$ or $c=(wb \mod n)+n$, a
 
 \subsection{Harvey's lazy butterfly fft}
 
+\begin{itemize}
+    \item restrict the size of the inputs such that the output can be stored in a 64 bits word.
+    \item describe theses restrictions.
+\end{itemize}
 
 
-
-\section{Modular reduction in the case of special prime numbers}
-
-modular reduction can be costly because of the division it involves
+\section{Modular reduction with special primes}
 
 \subsection{Mersenne primes}
 
@@ -250,10 +274,11 @@ p \mod p \Longleftrightarrow 2^x - 1 = 0 \mod p \Longleftrightarrow 1^u = 1 \mod
     ab \mod p \Longleftrightarrow ab_{hi}\ + ab_{lo} \mod p
 \]
 
-\subsection{Generalized Mersenne primes}
 
 
 \section{Profiling/Benchmarking}
+
+
 
 \subsection{Verification of timings}
 
