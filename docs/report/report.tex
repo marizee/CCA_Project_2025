@@ -16,7 +16,7 @@
         \rule{\linewidth}{0.5mm} \\[0.4cm]
         {\huge \textbf{Modular arithmetic and vectorization using\\ SIMD and AVX}}\\[0.4cm]
         \rule{\linewidth}{0.5mm} \\[1cm]
-        {\large 24 January 2025 - ?? May 2025}\\[3cm]
+        {\large 24 January 2025 - 20 May 2025}\\[3cm]
 
         {\Large Damien ASSIRE \& Marie BONBOIRE}
 
@@ -34,15 +34,28 @@
 \tableofcontents
 \newpage
 
+\paragraph{NOTATIONS:} (to be removed from report, just for consistency)
+\begin{itemize}
+    \item $B$ the max bitsize, either $32$ or $64$,
+    \item $n$ the modulus,
+    \item $N$ the size of a vector,
+    \item $a,b$ vectors, coefficients are $a_i$, $b_i$,
+    \item $x,y$ for integers,
+    \item $p_{hi}, p_{lo}$ temp variables,
+    \item $p$ prime number,
+    \item todo: Choose between writting high, middle and low part as $\{hi,mi,lo\}$ or $\{high, middle, low\}$ but not both,
+\end{itemize}
+
+\newpage
 \section{Preface}
 
 \subsection{Goals}
 \begin{itemize}
-    \item Implement basic arithemic operations (scalar-vector multiplication, vector-vector multiplication, dot product) using Flint.
+    \item Implement basic arithemic operations (scalar-vector multiplication, vector-vector multiplication, dot product) using library FLINT.
     \item Study the impact of the modulo operation.
     \item Enhance these operations using Intel's intrinsics for Single Instruction Multiple Datas (SIMD) vectorization.
     \item Advanced benchmarking/profiling.
-    \item Apply on a form of butterfly FFT for a forward integration to Flint.
+    \item Apply on a form of butterfly FFT for a forward integration to FLINT.
 \end{itemize}
 
 \subsection{Machines description}
@@ -64,11 +77,11 @@
 
     %proc
     \draw[<-,thick,color=black] ($(P1)+(0,0.2)$) -- ($(P1)+(0,1.5)$) node [above=0pt,align=center,black] 
-    {Intel® Xeon® Gold 6248 Processor \\ (Cascade Lake, AVX512) \\ 2.5 GHz};
+    {Intel® xeon® Gold 6248 Processor \\ (Cascade Lake, AVx512) \\ 2.5 GHz};
     \draw[<-,thick,color=black] ($(P2)+(0,0.2)$) -- ($(P2)+(0,0.7)$) node [above=0pt,align=center,black] 
-    {Intel(R) Xeon(R) Gold 6354 \\ (IceLake, AVX512) \\ 3.0 GHz};
+    {Intel(R) xeon(R) Gold 6354 \\ (IceLake, AVx512) \\ 3.0 GHz};
     \draw[<-,thick,color=black] ($(P3)+(0,0.2)$) -- ($(P3)+(0,1.5)$) node [above=0pt,align=center,black] 
-    {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVX512) \\ 3.3 GHz};
+    {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVx512) \\ 3.3 GHz};
     \draw[<-,thick,color=gray] ($(P3)-(0,0.6)$) -- ($(P3)-(0,1.5)$) node [below=0pt,align=center,gray] 
     {Intel(R) Core(TM) Ultra 5 125H \\ (Meteor Lake) \\ 4.5 GHz};
 
@@ -101,27 +114,30 @@ When multiplying two integers, a problem of overflow can arise since the result 
 To circumvent this issue, one needs to first split the two integers into two words of a given size and then apply the long multiplication.
 
 \subsection{Long multiplication}
-Given two integers $a$ and $b$ both of at most 64 bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$ bits, with $k<64$:
+Given two integers $x,y$ both of at most 64 bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$
+bits, with $k<64$:
 
 \begin{align*}
-    a &= a_{hi}\cdot 2^{k} + a_{lo} \\
-    b &= b_{hi}\cdot 2^{k} + b_{lo}.
+    x &= x_{hi}\cdot 2^{k} + x_{lo} \\
+    y &= y_{hi}\cdot 2^{k} + y_{lo}.
 \end{align*}
 
-The long multiplication consists in computing the multiplication of 64 bits limbs using multiplications and additions of integers with a lower size.
+The long multiplication consists in computing the multiplication of 64 bits limbs using multiplications and additions of
+integers with a lower size.
 
 We compute
 \begin{align*}
-    r_{lo} &= a_{lo}\cdot b_{lo} \\
-    r_{mi} &= a_{lo}\cdot b_{hi} + a_{hi}\cdot b_{lo} \\
-    r_{hi} &= a_{hi}\cdot b_{hi}
+    r_{lo} &= x_{lo}\cdot y_{lo} \\
+    r_{mi} &= x_{lo}\cdot y_{hi} + x_{hi}\cdot y_{lo} \\
+    r_{hi} &= x_{hi}\cdot y_{hi}
 \end{align*}
 then $ab = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$.
 
 
 \subsection{Retrieve the high and the low part of the result}
 
-Since the product $ab$ can have more than 64 bits, the output of this operation is usually given as a pair of words of at most 64 bits such that $ab = (ab)_{hi}\cdot 2^{64} + (ab)_{lo}$.
+Since the product $xy$ can have more than 64 bits, the output of this operation is usually given as a pair of words of at most 64 
+bits such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
 
 \begin{itemize}
     \item Flint's function \texttt{umulppmm}
@@ -192,65 +208,78 @@ TODO: Max for rhi, rmi and rlo
 
 
 
-\section{Butterfly fft}
-\begin{align*}
-    add &= a + w*b \mod n \\
-    sub &= a - w*b \mod n 
-\end{align*}
+\section{Butterfly Fast Fourier Transform}
 
-\subsection{Shoup's multiplication}
+The butterfly refers to an operation that takes place in Cooley-Tukey algorithm (todo:ref), a common algorithm to perfom 
+Fast Fourier Transform (FFT), which takes as inputs: $n, w$ a modulus and a scalar of at most 64 bits, and two integers 
+$x, y$ in $\mathbb{Z}_n$, and performs the in-place computation:
+\[
+(x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n).
+\]
 
+Our goal is to study the methods used to efficiently implement this operation on vectors with coefficients in $\mathbb{Z}_n$.
 
-\paragraph{Motivations:} Compute repeated multiplications with fixed $a$ and $n$, and varying $b$ => w*b
+\subsection{Multiplication with precomputation}
 
-steps:
+The butterfly described above leads to the computation of several modular multiplications where one operand and the modulus are fixed.
+To take the most of these fixed parameters, V. Shoup (todo:ref) introduced a step of precomputation that allows to speed up the modular reduction.
+
+Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \in \mathbb{Z}_n$, one can compute a scaled approximation 
+of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
+
+Then, for a given vector $b = (b_1,\dots, b_N)$ , one can compute $(wb_i \mod n)$ for all $i\in{1,\dots, N}$ as follows:
+
 \begin{enumerate}
-    \item find $p_{hi}, p_{lo}$ such that $w_{pre} * b = p_{hi}W + p_{lo}$,
-    \item compute $c = wb - p_{hi}n$
-    \item if $c \leq n$, return $c-n$ else return $c$.
+    \item Find $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$,
+    \item Compute $c = wb_i - p_{hi}n$,
+    \item If $c \leq n$, return $c-n$, else return $c$.
 \end{enumerate}
 
 The correctness of this algorithm relies on the definition of $w_{pre}$. 
 
 \begin{proposition}\label{prop:quorem}
-For $(a,b) \in \mathbb{Z}\times \mathbb{N}^*$, the quantities $q=\left\lfloor\frac{a}{b}\right\rfloor$ and $r=a - \left\lfloor\frac{a}{b}\right\rfloor b$ are respectively the quotient and the remainder in the Euclidian division of $a$ by $b$.
+For $(x,y) \in \mathbb{Z}\times \mathbb{N}^*$, the quantities $q=\left\lfloor\frac{x}{y}\right\rfloor$ and 
+$r=x - \left\lfloor\frac{x}{y}\right\rfloor y$ are respectively the quotient and the remainder in the Euclidian division of $x$ by $y$.
 \end{proposition}
     
 \begin{proof}
 From the definition of the floor of a rational number, we have:
 \[
-    \left\lfloor\dfrac{a}{b}\right\rfloor \leq \dfrac{a}{b} < \left\lfloor\dfrac{a}{b}\right\rfloor \Longleftrightarrow
-    \left\lfloor\dfrac{a}{b}\right\rfloor b \leq a < \left\lfloor\dfrac{a}{b}\right\rfloor b + b \Longleftrightarrow
-    0 \leq a - \left\lfloor\dfrac{a}{b}\right\rfloor b < b.
+    \left\lfloor\dfrac{x}{y}\right\rfloor \leq \dfrac{x}{y} < \left\lfloor\dfrac{x}{y}\right\rfloor + 1 \Longleftrightarrow
+    \left\lfloor\dfrac{x}{y}\right\rfloor y \leq x < \left\lfloor\dfrac{x}{y}\right\rfloor y + y \Longleftrightarrow
+    0 \leq x - \left\lfloor\dfrac{x}{y}\right\rfloor y < y.
 \]
-We then consider $q=\left\lfloor\dfrac{a}{b}\right\rfloor$ and by the uniqueness of the quotient in the Euclidian division with remainder, it implies that $a = bq + r$ with $r=a - \left\lfloor\dfrac{a}{b}\right\rfloor b$ and $0 \leq r < b$.
+We then consider $q=\left\lfloor\dfrac{x}{y}\right\rfloor$ and by the uniqueness of the quotient in the Euclidian division with remainder, 
+it implies that $x = yq + r$ with $r=x - \left\lfloor\dfrac{x}{y}\right\rfloor y$ and $0 \leq r < y$.
 \end{proof}
 
 \begin{proof} (Correctness of the algorithm)
-First, using \autoref{prop:quorem}, we have that $w_{pre}= \left\lfloor\frac{wB}{n}\right\rfloor $ is the quotient in the division of $wB$ by $n$. Thus,
-\begin{align*}
-wB &= w_{pre}\cdot n + r \text{ with } 0 \leq r < n \\
-w_{pre} &= \dfrac{wB - r}{n}
-\end{align*}
+First, using \autoref{prop:quorem}, we have that $w_{pre}= \left\lfloor\frac{w\cdot 2^B}{n}\right\rfloor $ is the quotient in the division 
+of $w\cdot 2^B$ by $n$. Thus,
+\[
+    w\cdot 2^B = w_{pre}\cdot n + r \text{ with } 0 \leq r < n\ \Longleftrightarrow\ w_{pre} = \dfrac{w\cdot 2^B - r}{n}
+\]
+
 Thus, by definition of $p_{hi}$,
 \[
-p_{hi} = \left\lfloor\frac{w_{pre}\cdot b}{B}\right\rfloor
-= \left\lfloor\dfrac{wb}{n} - \dfrac{rb}{nB} \right\rfloor.
+p_{hi} = \left\lfloor\frac{w_{pre}\cdot b_i}{2^B}\right\rfloor
+= \left\lfloor\dfrac{wb_i}{n} - \dfrac{rb_i}{n\cdot 2^B} \right\rfloor.
 \]
 
-From the requirements on $r$ ($<n$) and $b$ ($<B$), and the previous result, we have that
+From the requirements on $r$ and $b_i$ and the previous result, we have that
 \[
-\left\lfloor\dfrac{wb}{n}\right\rfloor - 1 \leq p_{hi} \leq \left\lfloor\dfrac{wb}{n}\right\rfloor
+\left\lfloor\dfrac{wb_i}{n}\right\rfloor - 1 \leq p_{hi} \leq \left\lfloor\dfrac{wb_i}{n}\right\rfloor
 \]
-and this means that $p_{hi}$ is either $\left\lfloor\frac{wb}{n}\right\rfloor - 1$ or $\left\lfloor\frac{wb}{n}\right\rfloor$.
+and this means that $p_{hi}$ is either $\left\lfloor\frac{wb_i}{n}\right\rfloor - 1$ or $\left\lfloor\frac{wb_i}{n}\right\rfloor$.
 
 
-It follows that 
+It follows that we have
 \begin{align*}
-\text{either } &c=w\cdot b - \left\lfloor\frac{wb}{n}\right\rfloor n + n \\
-\text{or } &c=w\cdot b - \left\lfloor\frac{wb}{n}\right\rfloor n.
+\text{either } &c=w\cdot b_i - \left\lfloor\frac{wb_i}{n}\right\rfloor n + n \\
+\text{or } &c=w\cdot b_i - \left\lfloor\frac{wb_i}{n}\right\rfloor n.
 \end{align*}
-Using \autoref{prop:quorem} again, we have $c=wb \mod n$ or $c=(wb \mod n)+n$, and the last step of the algorithm ensures that we retrieve $wb \mod n$.
+Using \autoref{prop:quorem} again, we have $c=wb_i \mod n$ or $c=(wb_i \mod n)+n$, and the last step of the algorithm ensures 
+that we retrieve $wb_i \mod n$.
 \end{proof}
 
 \subsection{Harvey's lazy butterfly fft}
@@ -265,15 +294,17 @@ Using \autoref{prop:quorem} again, we have $c=wb \mod n$ or $c=(wb \mod n)+n$, a
 
 \subsection{Mersenne primes}
 
-$p = 2^x - 1$
-\[
-p \mod p \Longleftrightarrow 2^x - 1 = 0 \mod p \Longleftrightarrow 1^u = 1 \mod p
-\]
-------> with $ab = ab_{hi}\cdot 2^{64} + ab_{lo}$, it means that if we take the Mersenne's prime number $p = 2^{64} - 1$, we can compute $ab \mod p$ with only one addition 
-\[
-    ab \mod p \Longleftrightarrow ab_{hi}\ + ab_{lo} \mod p
-\]
+%$p = 2^u - 1$
+%\[
+%p \mod p \Longleftrightarrow 2^u - 1 = 0 \mod p \Longleftrightarrow 1^u = 1 \mod p
+%\]
+%------> with $ab = ab_{hi}\cdot 2^{64} + ab_{lo}$, it means that if we take the Mersenne's prime number $p = 2^{64} - 1$, 
+%we can compute $ab \mod p$ with only one addition 
+%\[
+%    ab \mod p \Longleftrightarrow ab_{hi}\ + ab_{lo} \mod p
+%\]
 
+\subsection{Generalized Mersenne primes}
 
 
 \section{Profiling/Benchmarking}
