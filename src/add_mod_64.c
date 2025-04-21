@@ -123,7 +123,7 @@ void simd512_add_mod(nn_ptr res, nn_ptr a, nn_ptr b, slong len, nmod_t mod)
         // modular reduction
         add = _mm512_sub_epi64(add, vmod);
         __mmask8 cmp = _mm512_cmpgt_epi64_mask (vzero, add);
-        __m512i mask = _mm512_maskz_set1_epi64(cmp, vmod);
+        __m512i mask = _mm512_maskz_set1_epi64(cmp, mod.n);
         add = _mm512_add_epi64(add, mask);
 
         _mm512_storeu_si512((__m512i *)&res[i], add);
@@ -138,6 +138,7 @@ void simd512_add_mod_unrolled(nn_ptr res, nn_ptr a, nn_ptr b, slong len, nmod_t 
 {
     // Loop-unrolling of simd512_add_mod.
 
+    __m512i add;
     __m512i vmod = _mm512_set1_epi64(mod.n);
     __m512i vzero = _mm512_setzero_si512();
 
@@ -145,20 +146,19 @@ void simd512_add_mod_unrolled(nn_ptr res, nn_ptr a, nn_ptr b, slong len, nmod_t 
     for (i=0; i+31 < len; i+=32)
     {
         add = _mm512_sub_epi64(_mm512_add_epi64(_mm512_loadu_si512((const __m512i *)&a[i+ 0]), _mm512_loadu_si512((const __m512i *)&b[i+ 0])), vmod);
+        _mm512_storeu_si512((__m512i *)&res[i+ 0], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask(vzero, add), mod.n)));
         add = _mm512_sub_epi64(_mm512_add_epi64(_mm512_loadu_si512((const __m512i *)&a[i+ 8]), _mm512_loadu_si512((const __m512i *)&b[i+ 8])), vmod);
+        _mm512_storeu_si512((__m512i *)&res[i+ 8], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask(vzero, add), mod.n)));
         add = _mm512_sub_epi64(_mm512_add_epi64(_mm512_loadu_si512((const __m512i *)&a[i+16]), _mm512_loadu_si512((const __m512i *)&b[i+16])), vmod);
+        _mm512_storeu_si512((__m512i *)&res[i+16], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask(vzero, add), mod.n)));
         add = _mm512_sub_epi64(_mm512_add_epi64(_mm512_loadu_si512((const __m512i *)&a[i+24]), _mm512_loadu_si512((const __m512i *)&b[i+24])), vmod);
-
-        _mm512_storeu_si512((__m512i *)&res[i+ 0], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask (vzero, add), vmod)));
-        _mm512_storeu_si512((__m512i *)&res[i+ 8], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask (vzero, add), vmod)));
-        _mm512_storeu_si512((__m512i *)&res[i+16], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask (vzero, add), vmod)));
-        _mm512_storeu_si512((__m512i *)&res[i+24], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask (vzero, add), vmod)));
+        _mm512_storeu_si512((__m512i *)&res[i+24], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask(vzero, add), mod.n)));
     }
 
     for ( ; i+7 < len; i+=8)
     {
-        add = _mm256_sub_epi64(_mm256_add_epi64(_mm256_loadu_si256((const __m256i *)&a[i]), _mm256_loadu_si256((const __m256i *)&b[i])),vmod);
-        _mm256_storeu_si256((__m256i *)&res[i], _mm256_add_epi64(add, _mm256_and_si256(_mm256_cmpgt_epi64(vzero, add), vmod)));
+        add = _mm512_sub_epi64(_mm512_add_epi64(_mm512_loadu_si512((const __m512i *)&a[i]), _mm512_loadu_si512((const __m512i *)&b[i])), vmod);
+        _mm512_storeu_si512((__m512i *)&res[i], _mm512_add_epi64(add, _mm512_maskz_set1_epi64(_mm512_cmpgt_epi64_mask(vzero, add), mod.n)));
     }
 
     // if len is not a multiple of 8
