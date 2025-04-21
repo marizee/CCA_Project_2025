@@ -1,4 +1,4 @@
-#include "mulsplit.h"
+#include "../mulsplit.h"
 
 // For now, only checks the correctness of the functions.
 
