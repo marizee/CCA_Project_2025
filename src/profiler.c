@@ -510,19 +510,19 @@ int main(int argc, char** argv)
         "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\tsplit\t\tkara\t\tsplit avx2\tkara avx2",
         "seq\t\tpreinv\t\tsplit\t\tavx2-split\n",
-        "seq\t\tavx2\t",
+        "seq\t\tavx2",
     };
 
 
 #if defined(__AVX512F__)
-    strcat(header2[0], "\tavx512\t\tavx512u\n");
-    strcat(header2[1], "\tavx512\t\tavx512u\n");
-    strcat(header2[2], "\tavx512\t\tavx512u\n");
+    strcat(header2[0], "\t\tavx512\t\tavx512u\n");
+    strcat(header2[1], "\t\tavx512\t\tavx512u\n");
+    strcat(header2[2], "\t\tavx512\t\tavx512u\n");
 
-    strcat(header2[4], "\tavx512\t\tavx512u\n");
+    strcat(header2[4], "\t\tavx512\t\tavx512u\n");
     strcat(header2[5], "\tsplit avx512\tkara avx512\n");
 
-    strcat(header2[7], "\tavx512\n");
+    strcat(header2[7], "\t\tavx512\n");
 #else
     strcat(header2[0], "\n");
     strcat(header2[1], "\n");
