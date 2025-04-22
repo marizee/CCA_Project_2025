@@ -13,6 +13,7 @@
 #include "flint/profiler.h"
 
 #include "../butterfly_fft_64.h"
+#include "../mulsplit.h"
 
 #define SIZE_MOD 40
 #define SIZE_COEFF 39

@@ -1,5 +1,5 @@
 #include "lazy_butterfly_fft_64.h"
-
+#include "mulsplit.h"
 
 #define SPLIT 32
 #define MASK ((1L << SPLIT) - 1)
@@ -26,6 +26,7 @@ void preinv_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong
     }
 }
 
+/*
 void avx2_mulhi_split_lazy(__m256i* high, __m256i a, __m256i b)
 {
     // returns high part of the product of a and b over at most 64 bits integers
@@ -92,6 +93,7 @@ static inline __m256i avx2_mullo_epi64(__m256i a, __m256i b)
     __m256i prod    = _mm256_add_epi32(prodll, sumcross);     // add the cross products into the high half of the result
     return  prod;
 }
+*/
 
 void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
@@ -120,12 +122,11 @@ void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong
         __m256i mask = _mm256_andnot_si256(cmp, vmod2);
         va = _mm256_sub_epi64(va, mask);
 
-        avx2_mulhi_split_lazy(&vq_hi, vw_pr, vb);
+        vq_hi = avx2_mulhi_split(vw_pr, vb);
 
-        __m256i llo, rlo;
-        avx2_mullo_split_lazy(&llo, vw, vb);
-        avx2_mullo_split_lazy(&rlo, vq_hi, vmod);
-        vres = _mm256_sub_epi64(llo, rlo); // only low part is needed 
+        __m256i llo = avx2_mullo_split(vw, vb);
+        __m256i rlo = avx2_mullo_split(vq_hi, vmod);
+        vres = _mm256_sub_epi64(llo, rlo); // only low part is needed
 
         __m256i add = _mm256_add_epi64(va, vres);
         __m256i sub = _mm256_add_epi64(_mm256_sub_epi64(va, vres), vmod2);
@@ -150,6 +151,7 @@ void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong
 }
 
 #if defined(__AVX512F__)
+/*
 void avx512_mulhi_split_lazy(__m512i* high, __m512i a, __m512i b)
 {
     // returns high part of the product of a and b over at most 64 bits integers
@@ -173,6 +175,7 @@ void avx512_mulhi_split_lazy(__m512i* high, __m512i a, __m512i b)
     // hi = (umi >> 38) + (uhi >> 12)
     *high = _mm512_add_epi64(_mm512_srli_epi64(r_mi, (64-SPLIT)), _mm512_srli_epi64(r_hi, (64-2*SPLIT)));
 }
+*/
 
 void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
@@ -201,7 +204,7 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
         __m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
         va = _mm512_sub_epi64(va, tmp2);
 
-        avx512_mulhi_split_lazy(&vq_hi, vw_pr, vb);
+        vq_hi = avx512_mulhi_split(vw_pr, vb);
 
         __m512i llo = _mm512_mullo_epi64(vw, vb);
         __m512i rlo = _mm512_mullo_epi64(vq_hi, vmod);
