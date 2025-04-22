@@ -6,8 +6,7 @@
 # Sources
 # --------------------------------------------------------------------------------------------------
 
-#OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o mulsplit.o
-OBJ_SRC = add_64.o add_mod_64.o
+OBJ_SRC = scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o mulsplit.o add_64.o add_mod_64.o
 OBJ_PROF = profiler.o
 #OBJ_TEST = tests/test_dot_product.o tests/test_dp.o tests/test_sc_mod.o tests/test_split.o tests/test_fft_32.o tests/test_fft_64.o tests/test_lazy_fft_64.o tests/test_dot_product_mod.o tests/test_mulsplit.o
 OBJ_TEST = tests/test_add.o tests/test_add_mod.o
@@ -47,7 +46,7 @@ all: $(ALL_OBJ) $(ALL_PROG)
 
 tests: $(OBJ_SRC) $(OBJ_TEST) $(PROG_TEST)
 
-profile: $(OBJ_SRC) $(OBJ_PROF) $(PROG_PROF)
+profiler: $(OBJ_SRC) $(OBJ_PROF) $(PROG_PROF)
 
 clean:
 	-rm -r *~ Makefile.bak $(ALL_PROG) *.i *.o tests/*.o 2> /dev/null || true
@@ -87,5 +86,5 @@ tests/test_mulsplit: tests/test_mulsplit.o mulsplit.o
 tests/test_dot_product_mod: tests/test_dot_product_mod.o dot_product_32_mod.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o dot_product_32_mod.o
+profiler: profiler.o scalar_vector_32.o dot_product_32.o scalar_vector_mod_32.o butterfly_fft_64.o lazy_butterfly_fft_64.o dot_product_32_mod.o add_64.o add_mod_64.o
 	$(CC) -o $@ $^ $(LFLAGS)

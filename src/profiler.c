@@ -10,6 +10,8 @@
 #include "dot_product_32_mod.h"
 #include "butterfly_fft_64.h"
 #include "lazy_butterfly_fft_64.h"
+#include "add_64.h"
+#include "add_mod_64.h"
 
 #include <string.h>
 
@@ -19,6 +21,90 @@ typedef struct
    flint_bitcnt_t bits;
    slong length;
 } info_t;
+
+void add_64(info_t* info, void (*func)(nn_ptr, nn_ptr, nn_ptr, slong))
+{
+    // retrieve function parameters
+    //info_t * info = (info_t *) arg;
+    slong length = info->length;
+    flint_bitcnt_t bits = info->bits;
+    
+    FLINT_TEST_INIT(state);
+
+    //nmod_t mod;
+    ulong n;
+    nn_ptr a, b;
+    nn_ptr res;
+
+    // init modulus structure
+    n = n_randbits(state, bits);
+    if (n == UWORD(0)) n++;
+    //nmod_init(&mod, n);
+
+    // init vectors
+    a = _nmod_vec_init(length);
+    b = _nmod_vec_init(length);
+    for (slong i = 0; i < length; i++)
+    {
+        a[i] = n_randint(state, n);
+        b[i] = n_randint(state, n);
+    }
+    res = _nmod_vec_init(length);
+    
+    double FLINT_SET_BUT_UNUSED(tcpu), twall;
+
+    TIMEIT_START
+    func(res,a,b,length);
+    TIMEIT_STOP_VALUES(tcpu, twall)
+
+    printf("\t%.3e", twall);
+    
+    _nmod_vec_clear(a); _nmod_vec_clear(b);
+    _nmod_vec_clear(res);
+    FLINT_TEST_CLEAR(state);
+}
+
+void add_mod_64(info_t* info, void (*func)(nn_ptr, nn_ptr, nn_ptr, slong, nmod_t))
+{
+    // retrieve function parameters
+    //info_t * info = (info_t *) arg;
+    slong length = info->length;
+    flint_bitcnt_t bits = info->bits;
+    
+    FLINT_TEST_INIT(state);
+
+    nmod_t mod;
+    ulong n;
+    nn_ptr a, b;
+    nn_ptr res;
+
+    // init modulus structure
+    n = n_randbits(state, bits);
+    if (n == UWORD(0)) n++;
+    nmod_init(&mod, n);
+
+    // init vectors
+    a = _nmod_vec_init(length);
+    b = _nmod_vec_init(length);
+    for (slong i = 0; i < length; i++)
+    {
+        a[i] = n_randint(state, n);
+        b[i] = n_randint(state, n);
+    }
+    res = _nmod_vec_init(length);
+    
+    double FLINT_SET_BUT_UNUSED(tcpu), twall;
+
+    TIMEIT_START
+    func(res,a,b,length,mod);
+    TIMEIT_STOP_VALUES(tcpu, twall)
+
+    printf("\t%.3e", twall);
+    
+    _nmod_vec_clear(a); _nmod_vec_clear(b);
+    _nmod_vec_clear(res);
+    FLINT_TEST_CLEAR(state);
+}
 
 void scalar_vector(info_t* info, void (*func)(nn_ptr, ulong, nn_ptr, slong))
 {
@@ -53,6 +139,49 @@ void scalar_vector(info_t* info, void (*func)(nn_ptr, ulong, nn_ptr, slong))
 
     TIMEIT_START
     func(res,b,vec,length);
+    TIMEIT_STOP_VALUES(tcpu, twall)
+
+    printf("\t%.3e", twall);
+    
+    _nmod_vec_clear(res);
+    _nmod_vec_clear(vec);
+    FLINT_TEST_CLEAR(state);
+}
+
+void scalar_vector_mod(info_t* info, void (*func)(nn_ptr, ulong, nn_ptr, slong, nmod_t))
+{
+    // retrieve function parameters
+    //info_t * info = (info_t *) arg;
+    slong length = info->length;
+    flint_bitcnt_t bits = info->bits;
+    
+    FLINT_TEST_INIT(state);
+    
+    nmod_t mod;
+    ulong n, b;
+    nn_ptr vec, res;
+    //ulong i;
+    slong j;
+
+    vec = _nmod_vec_init(length);
+    res = _nmod_vec_init(length);
+
+    
+    // init modulus
+    n = n_randbits(state, (uint32_t)bits);
+    if (n == UWORD(0)) n++;
+    nmod_init(&mod, n);
+    
+    // init scalar and vector
+    b = n_randint(state, 32);
+    if (b==0) b++;
+    for (j = 0; j < length; j++)
+        vec[j] = n_randint(state, 32);
+    
+    double FLINT_SET_BUT_UNUSED(tcpu), twall;
+
+    TIMEIT_START
+    func(res,b,vec,length,mod);
     TIMEIT_STOP_VALUES(tcpu, twall)
 
     printf("\t%.3e", twall);
@@ -106,7 +235,7 @@ void dot_prod(info_t* info, void (*func)(ulong*, nn_ptr, nn_ptr, slong))
     FLINT_TEST_CLEAR(state);
 }
 
-void scalar_vector_mod(info_t* info, void (*func)(nn_ptr, ulong, nn_ptr, slong, nmod_t))
+void dot_prod_mod(info_t* info, void (*func)(ulong*, nn_ptr, nn_ptr, slong, nmod_t))
 {
     // retrieve function parameters
     //info_t * info = (info_t *) arg;
@@ -116,14 +245,14 @@ void scalar_vector_mod(info_t* info, void (*func)(nn_ptr, ulong, nn_ptr, slong, 
     FLINT_TEST_INIT(state);
     
     nmod_t mod;
-    ulong n, b;
-    nn_ptr vec, res;
+    ulong n;
+    nn_ptr vec1, vec2;
     //ulong i;
     slong j;
 
-    vec = _nmod_vec_init(length);
-    res = _nmod_vec_init(length);
-
+    vec1 = _nmod_vec_init(length);
+    vec2 = _nmod_vec_init(length);
+    ulong res=0;
     
     // init modulus
     n = n_randbits(state, (uint32_t)bits);
@@ -131,21 +260,22 @@ void scalar_vector_mod(info_t* info, void (*func)(nn_ptr, ulong, nn_ptr, slong, 
     nmod_init(&mod, n);
     
     // init scalar and vector
-    b = n_randint(state, 32);
-    if (b==0) b++;
+    //b = n_randint(state, n);
     for (j = 0; j < length; j++)
-        vec[j] = n_randint(state, 32);
+    {
+        vec1[j] = n_randint(state, n);
+        vec2[j] = n_randint(state, n);
+    }
     
     double FLINT_SET_BUT_UNUSED(tcpu), twall;
-
     TIMEIT_START
-    func(res,b,vec,length,mod);
+    func(&res,vec1,vec2,length, mod);
     TIMEIT_STOP_VALUES(tcpu, twall)
 
     printf("\t%.3e", twall);
     
-    _nmod_vec_clear(res);
-    _nmod_vec_clear(vec);
+    _nmod_vec_clear(vec1);
+    _nmod_vec_clear(vec2);
     FLINT_TEST_CLEAR(state);
 }
 
@@ -252,49 +382,6 @@ void lazy_butterfly_64(info_t* info, void (*func)(nn_ptr, nn_ptr, ulong, ulong, 
     FLINT_TEST_CLEAR(state);
 }
 
-void dot_prod_mod(info_t* info, void (*func)(ulong*, nn_ptr, nn_ptr, slong, nmod_t))
-{
-    // retrieve function parameters
-    //info_t * info = (info_t *) arg;
-    slong length = info->length;
-    flint_bitcnt_t bits = info->bits;
-    
-    FLINT_TEST_INIT(state);
-    
-    nmod_t mod;
-    ulong n;
-    nn_ptr vec1, vec2;
-    //ulong i;
-    slong j;
-
-    vec1 = _nmod_vec_init(length);
-    vec2 = _nmod_vec_init(length);
-    ulong res=0;
-    
-    // init modulus
-    n = n_randbits(state, (uint32_t)bits);
-    if (n == UWORD(0)) n++;
-    nmod_init(&mod, n);
-    
-    // init scalar and vector
-    //b = n_randint(state, n);
-    for (j = 0; j < length; j++)
-    {
-        vec1[j] = n_randint(state, n);
-        vec2[j] = n_randint(state, n);
-    }
-    
-    double FLINT_SET_BUT_UNUSED(tcpu), twall;
-    TIMEIT_START
-    func(&res,vec1,vec2,length, mod);
-    TIMEIT_STOP_VALUES(tcpu, twall)
-
-    printf("\t%.3e", twall);
-    
-    _nmod_vec_clear(vec1);
-    _nmod_vec_clear(vec2);
-    FLINT_TEST_CLEAR(state);
-}
 
 int main(int argc, char** argv)
 {
@@ -303,10 +390,41 @@ int main(int argc, char** argv)
 
     typedef void (*func) ();
     typedef void (*timefun) (info_t*, func);
-    const timefun funs[] = {scalar_vector, dot_prod, scalar_vector_mod, butterfly_fft_64, lazy_butterfly_64, dot_prod_mod};
+    const timefun funs[] = {
+        add_64,
+        add_mod_64,
+        scalar_vector,
+        scalar_vector_mod,
+        dot_prod,
+        dot_prod_mod,
+        butterfly_fft_64,
+        lazy_butterfly_64,
+    };
 
     // all versions of the function
     const func versions[][10] = {
+    {
+        seq_add,
+        seq_add_vectorized,
+        seq_add_unrolled,
+        simd2_add,
+        simd2_add_unrolled,
+#if defined(__AVX512F__)
+        simd512_add,
+        simd512_add_unrolled,
+#endif
+    },
+    {
+        seq_add_mod,
+        seq_add_mod_vectorized,
+        seq_add_mod_unrolled,    
+        simd2_add_mod,
+        simd2_add_mod_unrolled,
+#if defined(__AVX512F__)
+        simd512_add_mod,
+        simd512_add_mod_unrolled,
+#endif
+    },
     {
         seq_scalar_vector,
         seq_scalar_vector_vectorized,
@@ -317,6 +435,12 @@ int main(int argc, char** argv)
         simd512_scalar_vector,
         simd512_scalar_vector_unrolled,
 #endif
+    },
+    {
+        seq_mod_scalar_vector,
+        seq_mod_scalar_vector_vectorized,
+        seq_mod_scalar_vector_unrolled,
+        simd2_mod_scalar_vector,
     },
     {
         seq_dot_product,
@@ -333,10 +457,16 @@ int main(int argc, char** argv)
 #endif
     },
     {
-        seq_mod_scalar_vector,
-        seq_mod_scalar_vector_vectorized,
-        seq_mod_scalar_vector_unrolled,
-        simd2_mod_scalar_vector,
+        seq_dot_product_mod,
+        seq_dot_product_mod_vectorized,
+        split_dot_product_mod,
+        split_kara_dot_product_mod,        
+        simd2_split_dot_product_mod,
+        simd2_kara_dot_product_mod,
+#if defined(__AVX512F__)
+        simd512_split_dot_product,
+        simd512_kara_dot_product_mod,
+#endif
     },
     {
         seq_fft,
@@ -351,70 +481,87 @@ int main(int argc, char** argv)
         avx512_preinv_split_fft_lazy44,
 #endif
     },
-    {
-        seq_dot_product_mod,
-        seq_dot_product_mod_vectorized,
-        split_dot_product_mod,
-        split_kara_dot_product_mod,        
-        simd2_split_dot_product_mod,
-        simd2_kara_dot_product_mod,
-#if defined(__AVX512F__)
-        simd512_split_dot_product,
-        simd512_kara_dot_product_mod,
-#endif
-    }
     };
 
     // number of versions for each function
-    slong nbv[] = {5, 8, 4, 4, 2, 6};
+    slong nbv[] = {5, 5, 5, 4, 8, 6, 4, 2};
 #if defined(__AVX512F__)
-    nbv[0] += 2; nbv[1] += 2, nbv[4] += 1; nbv[5] += 2;
+    nbv[0] += 2; nbv[1] += 2; nbv[2] += 2; nbv[4] += 2; nbv[5] += 2; nbv[7] += 1;
 #endif
 
     // name of the function
-    const char* fnames[] = {"scalar-vector product", "dot product", "modular scalar-vector product", "modular butterfly fft", "lazy butterfly fft (Harvey)", "dot product mod"};
+    const char* fnames[] = {
+        "(64-bit) addition",
+        "(64-bit) modular addition",
+        "(32-bit) scalar-vector product",
+        "(32-bit) modular scalar-vector product",
+        "(\?\?-bit) dot product",
+        "(\?\?-bit) modular dot product",
+        "(64-bit) modular butterfly fft",
+        "(64-bit) lazy butterfly fft (Harvey)",
+    };
 
     // headers 
     char header2[][1024] = {
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
-        "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
+        "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\t\tsplit\t\tkara\t\tsplit avx2\tkara avx2",
         "seq\t\tpreinv\t\tsplit\t\tavx2-split\n",
         "seq\t\tavx2\t",
-        "seq\t\ts-vec\t\tsplit\t\tkara\t\tsplit avx2\tkara avx2"
     };
+
+
 #if defined(__AVX512F__)
     strcat(header2[0], "\tavx512\t\tavx512u\n");
     strcat(header2[1], "\tavx512\t\tavx512u\n");
-    strcat(header2[4], "\tavx512\n");
+    strcat(header2[2], "\tavx512\t\tavx512u\n");
+
+    strcat(header2[4], "\tavx512\t\tavx512u\n");
     strcat(header2[5], "\tsplit avx512\tkara avx512\n");
+
+    strcat(header2[7], "\tavx512\n");
 #else
     strcat(header2[0], "\n");
     strcat(header2[1], "\n");
+    strcat(header2[2], "\n");
+
     strcat(header2[4], "\n");
     strcat(header2[5], "\n");
+
+    strcat(header2[7], "\n");
 #endif
 
     char header1[][1024] = {
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | avx2\n",
         "seq no-vec | seq auto-vec | seq loop-unrolled | split-old | split-new | karatsuba | avx2 | avx2 loop-unrolled",
-        "seq no-vec | seq auto-vec | seq loop-unrolled | avx2",
-        "seq | preinverse | split-preinverse | avx2 split-preinverse\n",
+        "seq no-vec | seq auto-vec | seq split | seq karatsuba | avx2 split | avx2 karatsuba",
+        "seq | preinvert | split-preinvert | avx2 split-preinvert\n",
         "seq | avx2",
-        "seq no-vec | seq auto-vec | split seq | kara seq | split avx2 | kara avx2",
     };
 #if defined(__AVX512F__)
     strcat(header1[0], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[1], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[2], " | avx512 | avx512 loop-unrolled\n");
-    strcat(header1[4], " | avx512\n");
+
+    strcat(header1[4], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[5], " | avx512 split | avx512 karatsuba\n");
+
+    strcat(header1[7], " | avx512\n");
 #else
     strcat(header1[0], "\n");
     strcat(header1[1], "\n");
     strcat(header1[2], "\n");
+
     strcat(header1[4], "\n");
     strcat(header1[5], "\n");
+
+    strcat(header1[7], "\n");
 #endif
 
 
@@ -428,18 +575,20 @@ int main(int argc, char** argv)
     else
     {
         flint_printf("ERROR: missing parameter(s).\n");
-        flint_printf("Usage: ./profile_sec2 [bitsize] [idfunc]\n");
+        flint_printf("Usage: ./profiler [bitsize] [idfunc]\n");
         flint_printf("  - bitsize: max number of bits for the entries or size of the modulo;\n");
         flint_printf("  - idfunc:\n");
-        flint_printf("      #0 --> scalar-vector product\n");
-        flint_printf("      #1 --> dot product\n");
-        flint_printf("      #2 --> modular scalar-vector product\n");
-        flint_printf("      #3 --> modular butterfly fft\n");
-        flint_printf("      #4 --> lazy butterfly fft\n");
-        flint_printf("      #5 --> modular dot product\n");
+        flint_printf("      #0 --> (64-bit) addition\n");
+        flint_printf("      #1 --> (64-bit) modular addition\n");
+        flint_printf("      #2 --> (32-bit) scalar-vector product\n");
+        flint_printf("      #3 --> (32-bit) modular scalar-vector product\n");
+        flint_printf("      #4 --> (\?\?-bit) dot product\n");
+        flint_printf("      #5 --> (\?\?-bit) modular dot product\n");
+        flint_printf("      #6 --> (64-bit) modular butterfly fft\n");
+        flint_printf("      #7 --> (64-bit) lazy butterfly fft\n");
         return 0;
     }
-    
+
     flint_printf("function: %s\n", fnames[idfun]);
     flint_printf("unit: all measurements in seconds\n");
     flint_printf("profiled: %s", header1[idfun]);
@@ -449,7 +598,7 @@ int main(int argc, char** argv)
 
 
 // BEGINNING OF PROFILING
-    for (len = 10; len < 200; len+=25)
+    for (len = 10; len <= 200; len+=25)
     //for (len = 1; len < 200; ++len)
     {
         info.length = len;
