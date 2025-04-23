@@ -77,11 +77,11 @@
 
     %proc
     \draw[<-,thick,color=black] ($(P1)+(0,0.2)$) -- ($(P1)+(0,1.5)$) node [above=0pt,align=center,black] 
-    {Intel® xeon® Gold 6248 Processor \\ (Cascade Lake, AVx512) \\ 2.5 GHz};
+    {Intel® xeon® Gold 6248 Processor \\ (Cascade Lake, AVX512) \\ 2.5 GHz};
     \draw[<-,thick,color=black] ($(P2)+(0,0.2)$) -- ($(P2)+(0,0.7)$) node [above=0pt,align=center,black] 
-    {Intel(R) xeon(R) Gold 6354 \\ (IceLake, AVx512) \\ 3.0 GHz};
+    {Intel(R) xeon(R) Gold 6354 \\ (IceLake, AVX512) \\ 3.0 GHz};
     \draw[<-,thick,color=black] ($(P3)+(0,0.2)$) -- ($(P3)+(0,1.5)$) node [above=0pt,align=center,black] 
-    {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVx512) \\ 3.3 GHz};
+    {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVX512) \\ 3.3 GHz};
     \draw[<-,thick,color=gray] ($(P3)-(0,0.6)$) -- ($(P3)-(0,1.5)$) node [below=0pt,align=center,gray] 
     {Intel(R) Core(TM) Ultra 5 125H \\ (Meteor Lake) \\ 4.5 GHz};
 
@@ -108,21 +108,21 @@
 \end{itemize}
 
 
-\section{Multiplication of 64 bits integers}
+\section{Multiplication of $64$ bits integers}
 
-When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a 64 bits word. 
+When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a $64$ bits word. 
 To circumvent this issue, one needs to first split the two integers into two words of a given size and then apply the long multiplication.
 
 \subsection{Long multiplication}
-Given two integers $x,y$ both of at most 64 bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$
-bits, with $k<64$:
+Given two integers $x,y$ both of at most $64$ bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$
+bits with $k\leq32$:
 
 \begin{align*}
     x &= x_{hi}\cdot 2^{k} + x_{lo} \\
     y &= y_{hi}\cdot 2^{k} + y_{lo}.
 \end{align*}
 
-The long multiplication consists in computing the multiplication of 64 bits limbs using multiplications and additions of
+The long multiplication consists in computing the multiplication of $64$ bits limbs using multiplications and additions of
 integers with a lower size.
 
 We compute
@@ -131,19 +131,14 @@ We compute
     r_{mi} &= x_{lo}\cdot y_{hi} + x_{hi}\cdot y_{lo} \\
     r_{hi} &= x_{hi}\cdot y_{hi}
 \end{align*}
-then $ab = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$.
+then $ab = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$. This formula is mathematically correct but is not used in practice
+since it would not fit in a $64$ bits word. 
 
-\textcolor{orange}{This is maybe not detailed enough concerning overflows. For
-  example:
-\begin{itemize}
-  \item if \(k\) is not \(32\), then some of these four products will again
-    not fit in 64 bits
-  \item if \(x\) and \(y\) are really up to \(64\) bits, then there may be an overflow
-    in the addition for \(r_{mi}\) (you can say that for practical reasons we will restrict
-    to 62 or 63 bits)
-  \item the formula for \(ab\) is mathematically correct, but make it clear
-    that this is ``only mathematical'' (i.e.\ this does not fit in a 64 bit word)
-\end{itemize}}
+For a value of $k$ lower than $32$, one has to check that each of the four products computed during the long multiplication can fit in a
+64 bits word otherwise it can yield a wrong result.
+
+Furthemore, the addition involved in the computation of $r_{mi}$ can produce an overflow if the inputs are really up to $64$ bits.
+For this reason, we restrict the size of $x$ and $y$ to $63$ in practice. 
 
 \subsection{Retrieve the high and the low part of the result}
 
@@ -163,9 +158,9 @@ bits such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
 \begin{itemize}
     \item not done atm but todo 
     \item modular reduction might be delayed
-      (maybe delayed reduction could be stated as a general principle,
+      \textcolor{orange}{(maybe delayed reduction could be stated as a general principle,
       to circumvent the high cost of reductions;
-      it will be possible for some operations but not for others)
+      it will be possible for some operations but not for others)}
 \end{itemize}
 
 \subsection{Multiplication of a vector by a scalar or by another vector}
@@ -173,7 +168,7 @@ bits such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
 \begin{itemize}
     \item define the operations.
     \item boils down to mult described above
-    \item (here, delaying reductions is basically not possible)
+    \item \textcolor{orange}{(here, delaying reductions is basically not possible)}
 \end{itemize}
 
 \subsection{Dot product}
@@ -184,7 +179,7 @@ For two vectors $u$ and $v$ of $len$ integers of bit size $bitsize \le 32$, and 
 
 To compute the sum of products, we split the integers as described in subsection \ref{sub:split}. Then, we sum separately the three limbs $r_{high}$, $r_{mid}$, $r_{low}$. % TODO: Verify name
 
-(Here, this is a perfect problem for delaying reductions: e.g. if \(n < 2^{30}\), then a product \(u_iv_i\) is \(< 2^{60}\), so we can sum up to \(2^4 = 16\) terms before doing a reduction)
+\textcolor{orange}{(Here, this is a perfect problem for delaying reductions: e.g. if \(n < 2^{30}\), then a product \(u_iv_i\) is \(< 2^{60}\), so we can sum up to \(2^4 = 16\) terms before doing a reduction)}
 
 \subsubsection{Modular reduction}
 
@@ -236,10 +231,10 @@ $x, y$ in $\mathbb{Z}_n$, and performs the in-place computation:
 
 Our goal is to study the methods used to efficiently implement this operation on vectors with coefficients in $\mathbb{Z}_n$.
 
-(Looking at the more global picture, in the FFT algorithm such a butterfly will
+\textcolor{orange}{(Looking at the more global picture, in the FFT algorithm such a butterfly will
 be applied to a long vector of different \(x_i, y_i\) but with the same \(w\) and \(n\).
 Hence the motivation to perform some precomputations on \(w\) and \(n\) that will speed
-up subsequent multiplications by \(w\) mod \(n\))
+up subsequent multiplications by \(w\) mod \(n\))}
 
 \subsection{Multiplication with precomputation}
 
@@ -306,28 +301,12 @@ that we retrieve $wb_i \mod n$.
 \end{proof}
 
 \subsection{Harvey's lazy butterfly fft}
+% https://arxiv.org/pdf/1205.2926
 
 \begin{itemize}
     \item restrict the size of the inputs such that the output can be stored in a 64 bits word.
     \item describe theses restrictions.
 \end{itemize}
-
-
-\section{Modular reduction with special primes}
-
-\subsection{Mersenne primes}
-
-%$p = 2^u - 1$
-%\[
-%p \mod p \Longleftrightarrow 2^u - 1 = 0 \mod p \Longleftrightarrow 1^u = 1 \mod p
-%\]
-%------> with $ab = ab_{hi}\cdot 2^{64} + ab_{lo}$, it means that if we take the Mersenne's prime number $p = 2^{64} - 1$, 
-%we can compute $ab \mod p$ with only one addition 
-%\[
-%    ab \mod p \Longleftrightarrow ab_{hi}\ + ab_{lo} \mod p
-%\]
-
-\subsection{Generalized Mersenne primes}
 
 
 \section{Profiling/Benchmarking}
@@ -349,6 +328,29 @@ cache or in the primary memory. In the previously cited case, it happen for size
 
 \section{Conclusion}
 
+\section{Modular reduction with special primes}
+
+\subsection{Mersenne numbers}
+
+\begin{definition}
+    A Mersenne number is of the form $$ M_n = 2^n-1,$$ where $n$ is an integer.
+
+    If $n$ is prime, $M_n$ is also prime and is therefore called a Mersenne prime.
+\end{definition}
+
+From this special form, we have for any $n$,
+\[
+M_n = 0 \mod M_n \Longleftrightarrow 2^n = 1 \mod M_n.
+\]
+
+Thus, any integer $x < M_n^2$ can be reduced modulo $M_n$ using only one addition: 
+\begin{align*}
+x \mod M_n &= x_{hi}\cdot 2^{n} + x_{lo} \mod M_n \\
+    &= x_{hi} + x_{lo} \mod M_n.
+\end{align*}
+
+
+\subsection{Generalized Mersenne primes}
 
 
 \newpage
