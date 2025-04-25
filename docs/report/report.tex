@@ -98,13 +98,39 @@
 
 \end{tikzpicture}
 
-\section{SIMD instructions}
+\section{Single Instruction Multiple Data}
+
+The SIMD instructions form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
+of a fixed size allowing to significantly improve the execution speed.
+
+All of the SIMD instructions have a name of the form:
+\begin{center} 
+    \texttt{<gen><prefix><op><type><size>}
+\end{center}
+
+where
+\begin{center}
+    \begin{minipage}{12cm}
+        \begin{itemize}
+            \item[\texttt{<gen>}] empty (SSE), v (AVX, AVX2, AVX512)
+            \item[\texttt{<prefix>}] empty (unpacked), p (packed)
+            \item[\texttt{<op>}] add, sub, mul, sl, sr, \dots
+            \item[\texttt{<type>}] l (low part), h (high part), u (unsigned), s (signed), ss (signed with saturation)
+            \item[\texttt{<size>}] b (byte - 8 bits), w (word - 16 bits), d (double word - 32 bits), q (quad word - 64 bits), 
+            dq (double quad - 128 bits).
+        \end{itemize}
+    \end{minipage}
+\end{center}
+
+\bigskip
+Rather than directly use these instructions that would lead to writing assembly code, Intel proposes C-style functions that are
+accessible through the header \texttt{<immintrin.h>}.
+They are described in the Intel intrinsics guide\footnote{\url{https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html}}.
+
 
 \begin{itemize}
-    \item Intel intrinsics guide\footnote{\url{https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html}}
     \item avx2: 256 bits registers \texttt{\_\_m256i} \verb+-->+ vectors of 4 integers
     \item avx512: 512 bits registers \texttt{\_\_m512i} \verb+-->+ vectors of 8 integers
-    \item general description cf. slides PPAR
 \end{itemize}
 
 
@@ -229,17 +255,13 @@ $x, y$ in $\mathbb{Z}_n$, and performs the in-place computation:
 (x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n).
 \]
 
-Our goal is to study the methods used to efficiently implement this operation on vectors with coefficients in $\mathbb{Z}_n$.
-
-\textcolor{orange}{(Looking at the more global picture, in the FFT algorithm such a butterfly will
+Looking at the more global picture, in the FFT algorithm such a butterfly will
 be applied to a long vector of different \(x_i, y_i\) but with the same \(w\) and \(n\).
-Hence the motivation to perform some precomputations on \(w\) and \(n\) that will speed
-up subsequent multiplications by \(w\) mod \(n\))}
+
 
 \subsection{Multiplication with precomputation}
 
-The butterfly described above leads to the computation of several modular multiplications where one operand and the modulus are fixed.
-To take the most of these fixed parameters, V. Shoup (todo:ref) introduced a step of precomputation that allows to speed up the modular reduction.
+To take the most of the fixed parameters, V. Shoup (todo:ref) introduced a step of precomputations on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
 %% for the ref, you can find some ideas in Flint's documentation for n_mulmod_shoup
 
 Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \in \mathbb{Z}_n$, one can compute a scaled approximation 
