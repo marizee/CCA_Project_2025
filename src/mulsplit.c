@@ -142,3 +142,31 @@ __m256i avx2_mullo_epi64(__m256i a, __m256i b)
     __m256i prod    = _mm256_add_epi32(prodll, sumcross);     // add the cross products into the high half of the result
     return  prod;
 }
+
+// BOTH
+void avx2_mul_split(__m256i* hi, __m256i* lo, __m256i a, __m256i b)
+{
+    __m256i r_hi, r_mi, r_lo;
+    __m256i a_hi;
+    __m256i b_hi;
+
+    a_hi = _mm256_srli_epi64(a, 32);
+    b_hi = _mm256_srli_epi64(b, 32);
+
+    r_lo = _mm256_mul_epu32(a, b);
+    r_hi = _mm256_mul_epu32(a_hi, b_hi);
+    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a, b_hi), _mm256_mul_epu32(a_hi, b));
+
+    // detects carry for high part
+    __m256i low = _mm256_add_epi64(r_lo, _mm256_slli_epi64(r_mi, 32));
+    __m256i msb_mask = _mm256_set1_epi64x(1L << 63);
+    __m256i xr_lo = _mm256_xor_si256(r_lo, msb_mask);
+    __m256i xlow  = _mm256_xor_si256(low, msb_mask);
+    __m256i carry = _mm256_cmpgt_epi64(xr_lo, xlow);
+    carry = _mm256_srli_epi64(carry, 63);
+
+    *lo = _mm256_add_epi64(r_lo, _mm256_slli_epi64(r_mi, 32));
+    *hi = _mm256_add_epi64(carry, _mm256_add_epi64(_mm256_srli_epi64(r_mi, 32), r_hi));
+}
+
+//__m512i avx512_mul_split(__m512i hi, __m512i lo, __m512i a, __m512i b) ;
