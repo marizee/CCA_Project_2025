@@ -13,6 +13,9 @@
 #include "add_64.h"
 #include "add_mod_64.h"
 
+// TODO: Change this (ugly)
+#include "bench.c"
+
 #include <string.h>
 
 
@@ -459,6 +462,7 @@ int main(int argc, char** argv)
     {
         seq_dot_product_mod,
         seq_dot_product_mod_vectorized,
+        flint_dot_product_mod,
         split_dot_product_mod,
         split_kara_dot_product_mod,        
         simd2_split_dot_product_mod,
@@ -508,7 +512,7 @@ int main(int argc, char** argv)
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
         "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
-        "s-novec\t\ts-vec\t\tsplit\t\tkara\t\tsplit avx2\tkara avx2",
+        "s-novec\t\ts-vec\t\tflint\t\tsplit\t\tkara\t\tsplit avx2\tkara avx2",
         "seq\t\tpreinv\t\tsplit\t\tavx2-split\n",
         "seq\t\tavx2",
     };
@@ -540,7 +544,7 @@ int main(int argc, char** argv)
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2\n",
         "seq no-vec | seq auto-vec | seq loop-unrolled | split-old | split-new | karatsuba | avx2 | avx2 loop-unrolled",
-        "seq no-vec | seq auto-vec | seq split | seq karatsuba | avx2 split | avx2 karatsuba",
+        "seq no-vec | seq auto-vec | flint | seq split | seq karatsuba | avx2 split | avx2 karatsuba",
         "seq | preinvert | split-preinvert | avx2 split-preinvert\n",
         "seq | avx2",
     };
