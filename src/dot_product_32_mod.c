@@ -54,7 +54,8 @@ void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
         rmi += alo*bhi + ahi*blo;
     }
 
-    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    add_ssaaaa(rhi, rlo, (rhi>>(64-2*SPLIT)), rhi<<(2*SPLIT), 0, rlo);
+    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), rhi, rlo);
     NMOD2_RED2(*res, rhi, rlo, mod);
 }
 
@@ -79,7 +80,8 @@ void split_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len,
         rmid += (alo + ahi)*(blo + bhi) - lolo - hihi;
     }
 
-    add_ssaaaa(rhi, rlo, (rmid>>(64-SPLIT)), (rmid<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    add_ssaaaa(rhi, rlo, (rhi>>(64-2*SPLIT)), rhi<<(2*SPLIT), 0, rlo);
+    add_ssaaaa(rhi, rlo, (rmid>>(64-SPLIT)), (rmid<<SPLIT), rhi, rlo);
     NMOD2_RED2(*res, rhi, rlo, mod);
 }
 
@@ -162,7 +164,8 @@ void simd2_split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len
         rmi += alo*bhi + ahi*blo;
     }
 
-    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    add_ssaaaa(rhi, rlo, (rhi>>(64-2*SPLIT)), rhi<<(2*SPLIT), 0, rlo);
+    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), rhi, rlo);
     NMOD2_RED2(*res, rhi, rlo, mod);
 
     // ulong lo_mask = ((1l << FLINT_BITS) - 1);
@@ -228,7 +231,8 @@ void simd2_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len,
         rmi += (alo + ahi)*(blo + bhi) - lolo - hihi;
     }
 
-    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    add_ssaaaa(rhi, rlo, (rhi>>(64-2*SPLIT)), rhi<<(2*SPLIT), 0, rlo);
+    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), rhi, rlo);
     NMOD2_RED2(*res, rhi, rlo, mod);
 }
 
@@ -278,7 +282,8 @@ void simd512_split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, 
         rmi += alo*bhi + ahi*blo;
     }
 
-    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    add_ssaaaa(rhi, rlo, (rhi>>(64-2*SPLIT)), rhi<<(2*SPLIT), 0, rlo);
+    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), rhi, rlo);
     NMOD2_RED2(*res, rhi, rlo, mod);
 }
 void simd512_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) {
@@ -327,7 +332,8 @@ void simd512_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong le
         rmi += alo*bhi + ahi*blo;
     }
 
-    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), (rhi>>(64-2*SPLIT)), ((rhi<<(2*SPLIT))+rlo));
+    add_ssaaaa(rhi, rlo, (rhi>>(64-2*SPLIT)), rhi<<(2*SPLIT), 0, rlo);
+    add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), rhi, rlo);
     NMOD2_RED2(*res, rhi, rlo, mod);
 }
 #endif
