@@ -98,6 +98,13 @@
 
 \end{tikzpicture}
 
+\subsection{env}
+
+\begin{itemize}
+    \item ring $\mathbb{Z}/n\mathbb{Z}$, $n \in \mathbb{N}$
+    \item op over 32-bit words or 64-bit words. 
+\end{itemize}
+
 \section{Single Instruction Multiple Data}
 
 The SIMD instructions form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
@@ -123,14 +130,15 @@ where
 \end{center}
 
 \bigskip
-Rather than directly use these instructions that would lead to writing assembly code, Intel proposes C-style functions that are
-accessible through the header \texttt{<immintrin.h>}.
+Rather than directly use these instructions that would lead to writing assembly code, Intel proposes C-style functions
+along with vector types that are accessible through the header \texttt{<immintrin.h>}.
 They are described in the Intel intrinsics guide\footnote{\url{https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html}}.
 
-
+\bigskip
+We mainly used two types of register: 
 \begin{itemize}
-    \item avx2: 256 bits registers \texttt{\_\_m256i} \verb+-->+ vectors of 4 integers
-    \item avx512: 512 bits registers \texttt{\_\_m512i} \verb+-->+ vectors of 8 integers
+    \item For AVX2: \texttt{\_\_m256i} which is a 256 bits register that can store up to 4 integers of 64 bits,
+    \item For AVX512: \texttt{\_\_m512i} which is a 512 bits register that can store up to 8 integers of 64 bits,
 \end{itemize}
 
 
@@ -171,28 +179,68 @@ For this reason, we restrict the size of $x$ and $y$ to $63$ in practice.
 Since the product $xy$ can have more than 64 bits, but always has at most 128 bits, the output of this operation is usually given as a pair of words of at most 64 
 bits such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
 
+To do so, one can use the function provided by FLINT \texttt{umulppmm} which is pratical since it directly stores the 128-bit result
+before splitting it. There are no such intrinsics in AVX2 and AVX512.
+
+In what follows, we consider the two operations:
 \begin{itemize}
-    \item Flint's function \texttt{umulppmm}
-    \item avx2: no mullo/mulhi (mullo only up to epu32; mulhi only up to epu16)
-    \item avx512: mullo (epi64) but no mulhi; and mullo rather slow until very recently (give some throughput values for mullo-epi64 for the processors you consider in the report)
-\end{itemize} 
+    \item \texttt{mullo(a,b)}: multiply the $x$-bit integers in $a$ and $b$, producing intermediate $2x$-bit integers, 
+    and store the low $x$ bits of the intermediate integers.
+    \item \texttt{mulhi(a,b)}: multiply the $x$-bit integers in $a$ and $b$, producing intermediate $2x$-bit integers, 
+    and store the high $x$ bits of the intermediate integers.
+\end{itemize}
+
+In the AVX2 family, one can find intrinsics for \texttt{mullo} but only for integers up to 32 bits and intrinsics for 
+\texttt{mulhi} but only for integers up to 16 bits.
+
+In the AVX512 family, one can only find intrinsics for \texttt{mullo} (up to 64 bits) but it is rather slow on the processors we used.
+
+
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        Processor & Cascade Lake & IceLake & Zen 4 \\
+        \hline
+        Throughput & 1.5 & 3.0 & 1.0 \\
+        \hline
+    \end{tabular}
+    \caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm} for different processors.}
+\end{table}
 
 \section{Classic arithmetic operations on vectors}
 
-\subsection{Addition of two vectors}
+Each of the following operations have been implemented over 32-bit integers and 64-bit integers.
 
+\subsection{Modular reduction}
 \begin{itemize}
-    \item not done atm but todo 
-    \item modular reduction might be delayed
-      \textcolor{orange}{(maybe delayed reduction could be stated as a general principle,
+    \item \textcolor{orange}{(maybe delayed reduction could be stated as a general principle,
       to circumvent the high cost of reductions;
       it will be possible for some operations but not for others)}
 \end{itemize}
 
-\subsection{Multiplication of a vector by a scalar or by another vector}
+\subsection{Addition of two vectors}
+
+Given two vectors $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
+\[
+a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
+\]
 
 \begin{itemize}
-    \item define the operations.
+    \item timings
+\end{itemize}
+
+\subsection{Multiplication of a vector by a scalar or by another vector}
+
+\[
+w * b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
+\]
+
+\[
+a_i * b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
+\]
+
+\begin{itemize}
     \item boils down to mult described above
     \item \textcolor{orange}{(here, delaying reductions is basically not possible)}
 \end{itemize}
@@ -261,8 +309,7 @@ be applied to a long vector of different \(x_i, y_i\) but with the same \(w\) an
 
 \subsection{Multiplication with precomputation}
 
-To take the most of the fixed parameters, V. Shoup (todo:ref) introduced a step of precomputations on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
-%% for the ref, you can find some ideas in Flint's documentation for n_mulmod_shoup
+To take the most of the fixed parameters, V. Shoup\cite{Bos_Stam_2021} introduced a step of precomputations on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
 
 Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \in \mathbb{Z}_n$, one can compute a scaled approximation 
 of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
@@ -323,19 +370,43 @@ that we retrieve $wb_i \mod n$.
 \end{proof}
 
 \subsection{Harvey's lazy butterfly fft}
-% https://arxiv.org/pdf/1205.2926
 
-\begin{itemize}
-    \item restrict the size of the inputs such that the output can be stored in a 64 bits word.
-    \item describe theses restrictions.
-\end{itemize}
+Harvey proposes a strategy\cite{DBLP:journals/corr/abs-1205-2926} that saves two modular reductions compared to an usual
+implementation of the butterfly FFT.
+
+
+\begin{algorithm}
+    \caption{An algorithm with caption}\label{alg:cap}
+    \begin{algorithmic}
+        \Require \\
+            $n < B$, \\
+            $0 < w < n$ and its precomputation $0 < w_{pre} < B$, \\
+            $0 \leq x, y < 4n$.
+        \Ensure \\
+            $(x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n), \qquad 0 \leq x,y < 4p.$
+        \If {$x \geq 2p$}
+            \State $x \gets x - 2p$
+        \EndIf
+        \State Compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot y = p_{hi}\cdot 2^B + p_{lo}$
+        \State $t \gets w\cdot y - p_{hi}\cdot n$
+        \State $x \gets x + t$
+        \State $y \gets x - t + 2p$ \\
+        \Return $x,y$
+    \end{algorithmic}
+\end{algorithm}
 
 
 \section{Profiling/Benchmarking}
 
 
-
 \subsection{Verification of timings}
+
+\subsection{Auto-vectorization}
+
+\begin{itemize}
+    \item prevent: \texttt{-fno-tree-vectorize}
+    \item unrolling
+\end{itemize}
 
 \subsection{Impact of caches} % todo Draft
 

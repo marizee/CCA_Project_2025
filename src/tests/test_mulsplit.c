@@ -5,10 +5,12 @@
 int main()
 {
     FLINT_TEST_INIT(state);
-    slong len = 8;
+    slong len = 4;
 
+    nmod_t mod;
     nn_ptr a, b;
     nn_ptr p_lo1, p_hi1;
+    nn_ptr p_lo6, p_hi6;
     nn_ptr p_lo2, p_hi2;
     nn_ptr p_lo3, p_hi3;
     nn_ptr p_lo4;
@@ -16,9 +18,14 @@ int main()
     nn_ptr p_lo5, p_hi5;
 #endif
 
+    // init modulus structure
+    ulong n = 18446744073709551615;
+    nmod_init(&mod, n); // 2**64 - 1
+
     // init vector
     a = _nmod_vec_init(len); b = _nmod_vec_init(len);
     p_lo1 = _nmod_vec_init(len); p_hi1 = _nmod_vec_init(len);   // umul
+    p_lo6 = _nmod_vec_init(len); p_hi6 = _nmod_vec_init(len);   // umul-avx2
     p_lo2 = _nmod_vec_init(len); p_hi2 = _nmod_vec_init(len);   // seq
     p_lo3 = _nmod_vec_init(len); p_hi3 = _nmod_vec_init(len);   // avx2 mine
     p_lo4 = _nmod_vec_init(len);                                // avx2 stack
@@ -52,6 +59,11 @@ int main()
             __m256i low = _mm256_setzero_si256();
             __m256i high = _mm256_setzero_si256();
 
+            avx2_mul_split(&high, &low, va, vb);
+            _mm256_storeu_si256((__m256i *)(p_lo6+i), low);
+            _mm256_storeu_si256((__m256i *)(p_hi6+i), high);
+            
+
             low = avx2_mullo_split(va, vb);
             high = avx2_mulhi_split(va, vb);
             _mm256_storeu_si256((__m256i *)(p_lo3+i), low);
@@ -78,33 +90,41 @@ int main()
         }
 #endif
 
+        //_nmod_vec_print_pretty(p_lo1, len, mod);
+        //_nmod_vec_print_pretty(p_lo6, len, mod);
+
         // checks
         int l1, l2, l3;
         int h1, h2;
+        int bl, bh;
 
-        l1 = _nmod_vec_equal(p_lo1, p_lo2, 4); // low: umul vs mullo
-        l2 = _nmod_vec_equal(p_lo1, p_lo3, 4); // low: umul vs avx2 mine
-        l3 = _nmod_vec_equal(p_lo1, p_lo4, 4); // low: umul vs avx2 stack
+        l1 = _nmod_vec_equal(p_lo1, p_lo2, len); // low: umul vs mullo
+        l2 = _nmod_vec_equal(p_lo1, p_lo3, len); // low: umul vs avx2 mine
+        l3 = _nmod_vec_equal(p_lo1, p_lo4, len); // low: umul vs avx2 stack
 
-        h1 = _nmod_vec_equal(p_hi1, p_hi2, 4); // high: umul vs mulhi
-        h2 = _nmod_vec_equal(p_hi1, p_hi3, 4); // high: umul vs avx2
+        h1 = _nmod_vec_equal(p_hi1, p_hi2, len); // high: umul vs mulhi
+        h2 = _nmod_vec_equal(p_hi1, p_hi3, len); // high: umul vs avx2
+
+        bl = _nmod_vec_equal(p_lo1, p_lo6, len);
+        bh = _nmod_vec_equal(p_hi1, p_hi6, len);
 
 #if defined(__AVX512F__)
         int l4;
         int h3;
 
-        l4 = _nmod_vec_equal(p_lo1, p_lo5, 4); // low: umul vs avx512 mullo
-        h3 = _nmod_vec_equal(p_hi1, p_hi5, 4); // high: umul vs avx512 mine
+        l4 = _nmod_vec_equal(p_lo1, p_lo5, len); // low: umul vs avx512 mullo
+        h3 = _nmod_vec_equal(p_hi1, p_hi5, len); // high: umul vs avx512 mine
 
         printf("nbits=%ld -- l1=%d l2=%d l3=%d l4=%d -- h1=%d h2=%d h3=%d\n", k, l1, l2, l3, l4, h1, h2, h3);
 #else
-        printf("nbits=%ld -- l1=%d l2=%d l3=%d -- h1=%d h2=%d\n", k, l1, l2, l3, h1, h2);
+        printf("nbits=%ld -- l1=%d l2=%d l3=%d -- h1=%d h2=%d -- bl=%d bh=%d\n", k, l1, l2, l3, h1, h2, bl, bh);
 #endif
     }
 
 
     _nmod_vec_clear(a); _nmod_vec_clear(b); 
     _nmod_vec_clear(p_lo1); _nmod_vec_clear(p_hi1);
+    _nmod_vec_clear(p_lo6); _nmod_vec_clear(p_hi6);
     _nmod_vec_clear(p_lo2); _nmod_vec_clear(p_hi2);
     _nmod_vec_clear(p_lo3); _nmod_vec_clear(p_hi3);
     _nmod_vec_clear(p_lo4);
