@@ -26,10 +26,10 @@ void seq_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t
 void seq_dot_product_mod_vectorized(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 {
     // computes the dot product of vectors with at most 32 bits integers.
-    *res=0;
+    ulong rres=0;
     for (slong i=0; i < len; i++)
-        *res += vec1[i]*vec2[i];
-    NMOD_RED(*res, *res, mod);
+        rres += vec1[i]*vec2[i];
+    NMOD_RED(*res, rres, mod);
 }
 
 
