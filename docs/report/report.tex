@@ -179,7 +179,7 @@ For this reason, we restrict the size of $x$ and $y$ to $63$ in practice.
 Since the product $xy$ can have more than 64 bits, but always has at most 128 bits, the output of this operation is usually given as a pair of words of at most 64 
 bits such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
 
-To do so, one can use the function provided by FLINT \texttt{umulppmm} which is pratical since it directly stores the 128-bit result
+To do so, one can use the function provided by FLINT \texttt{umul\_ppmm} which is practical since it directly stores the 128-bit result
 before splitting it. There are no such intrinsics in AVX2 and AVX512.
 
 In what follows, we consider the two operations:
@@ -194,6 +194,7 @@ In the AVX2 family, one can find intrinsics for \texttt{mullo} but only for inte
 \texttt{mulhi} but only for integers up to 16 bits.
 
 In the AVX512 family, one can only find intrinsics for \texttt{mullo} (up to 64 bits) but it is rather slow on the processors we used.
+%% NOTE: except on the zen4 processor
 
 
 \begin{table}[!h]
