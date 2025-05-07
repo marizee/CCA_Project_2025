@@ -118,8 +118,8 @@ void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong
 
         vq_hi = avx2_mulhi_split_lazy(vw_pr, vb);
 
-        __m256i llo = avx2_mullo_split_lazy(vw, vb);
-        __m256i rlo = avx2_mullo_split_lazy(vq_hi, vmod);
+        __m256i llo = avx2_mullo_epi64(vw, vb);
+        __m256i rlo = avx2_mullo_epi64(vq_hi, vmod);
         vres = _mm256_sub_epi64(llo, rlo); // only low part is needed
 
         __m256i add = _mm256_add_epi64(va, vres);
