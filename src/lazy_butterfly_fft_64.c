@@ -1,5 +1,4 @@
 #include "lazy_butterfly_fft_64.h"
-#include "mulsplit.h"
 
 #define SPLIT 32
 #define MASK ((1L << SPLIT) - 1)
@@ -26,52 +25,47 @@ void preinv_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong
     }
 }
 
-/*
-void avx2_mulhi_split_lazy(__m256i* high, __m256i a, __m256i b)
+
+static inline __m256i avx2_mulhi_split_lazy(__m256i a, __m256i b)
 {
-    // returns high part of the product of a and b over at most 64 bits integers
-    // using avx2 intrinsics.
+    __m256i r_hi, r_mi, r_lo;
+    __m256i a_hi;
+    __m256i b_hi;
 
-    __m256i r_hi, r_mi; //, r_lo;
-    __m256i a_lo, a_hi;
-    __m256i b_lo, b_hi;
+    a_hi = _mm256_srli_epi64(a, 32);
+    b_hi = _mm256_srli_epi64(b, 32);
 
-    const __m256i vMASK = _mm256_set1_epi64x(MASK);
-
-    a_lo = _mm256_and_si256(a, vMASK);
-    a_hi = _mm256_srli_epi64(a, SPLIT);
-    b_lo = _mm256_and_si256(b, vMASK);
-    b_hi = _mm256_srli_epi64(b, SPLIT);
-
-    //r_lo = _mm256_mul_epu32(a_lo, b_lo);
+    r_lo = _mm256_mul_epu32(a, b);
     r_hi = _mm256_mul_epu32(a_hi, b_hi);
-    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
-    // FIXME explain why no overflow above
+    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a, b_hi), _mm256_mul_epu32(a_hi, b));
 
-    // hi = (umi >> 38) + (uhi >> 12)
-    *high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
+    // detects the carry if any: https://stackoverflow.com/questions/32945410/sse2-intrinsics-comparing-unsigned-integers
+    __m256i low = _mm256_add_epi64(r_lo, _mm256_slli_epi64(r_mi, 32));
+    __m256i msb_mask = _mm256_set1_epi64x(1L << 63);
+    __m256i xr_lo = _mm256_xor_si256(r_lo, msb_mask);
+    __m256i xlow  = _mm256_xor_si256(low, msb_mask);
+    __m256i carry = _mm256_cmpgt_epi64(xr_lo, xlow);
+    carry = _mm256_srli_epi64(carry, 63);
+
+    return _mm256_add_epi64(carry, _mm256_add_epi64(_mm256_srli_epi64(r_mi, 32), r_hi));
 }
 
-void avx2_mullo_split_lazy(__m256i* low, __m256i a, __m256i b)
+static inline __m256i avx2_mullo_split_lazy(__m256i a, __m256i b)
 {
     // returns low part of the product of a and b over at most 64 bits integers
     // using avx2 intrinsics.
 
-    __m256i r_hi, r_mi, r_lo;
-    __m256i a_lo, a_hi;
-    __m256i b_lo, b_hi;
-    const __m256i vMASK = _mm256_set1_epi64x(MASK);
+    __m256i r_mi, r_lo;
+    __m256i a_hi;
+    __m256i b_hi;
 
-    a_lo = _mm256_and_si256(a, vMASK);
-    a_hi = _mm256_srli_epi64(a, SPLIT);
-    b_lo = _mm256_and_si256(b, vMASK);
-    b_hi = _mm256_srli_epi64(b, SPLIT);
+    a_hi = _mm256_srli_epi64(a, 32);
+    b_hi = _mm256_srli_epi64(b, 32);
 
-    r_lo = _mm256_mul_epu32(a_lo, b_lo);
-    r_hi = _mm256_mul_epu32(a_hi, b_hi);
-    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
+    r_lo = _mm256_mul_epu32(a, b);
+    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a, b_hi), _mm256_mul_epu32(a_hi, b));
 
-    *low = _mm256_add_epi64(r_lo, _mm256_add_epi64(_mm256_slli_epi64(r_mi, SPLIT), _mm256_slli_epi64(r_hi, 2*SPLIT)));
+    return _mm256_add_epi64(r_lo, _mm256_slli_epi64(r_mi, 32));
 }
 
 
@@ -93,7 +87,7 @@ static inline __m256i avx2_mullo_epi64(__m256i a, __m256i b)
     __m256i prod    = _mm256_add_epi32(prodll, sumcross);     // add the cross products into the high half of the result
     return  prod;
 }
-*/
+
 
 void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
@@ -122,10 +116,10 @@ void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong
         __m256i mask = _mm256_andnot_si256(cmp, vmod2);
         va = _mm256_sub_epi64(va, mask);
 
-        vq_hi = avx2_mulhi_split(vw_pr, vb);
+        vq_hi = avx2_mulhi_split_lazy(vw_pr, vb);
 
-        __m256i llo = avx2_mullo_split(vw, vb);
-        __m256i rlo = avx2_mullo_split(vq_hi, vmod);
+        __m256i llo = avx2_mullo_split_lazy(vw, vb);
+        __m256i rlo = avx2_mullo_split_lazy(vq_hi, vmod);
         vres = _mm256_sub_epi64(llo, rlo); // only low part is needed
 
         __m256i add = _mm256_add_epi64(va, vres);
@@ -151,31 +145,33 @@ void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong
 }
 
 #if defined(__AVX512F__)
-/*
-void avx512_mulhi_split_lazy(__m512i* high, __m512i a, __m512i b)
+static inline __m512i avx512_mulhi_split_lazy(__m512i a, __m512i b)
 {
     // returns high part of the product of a and b over at most 64 bits integers
     // using avx2 intrinsics.
 
-    __m512i r_hi, r_mi; //, r_lo;
-    __m512i a_lo, a_hi;
-    __m512i b_lo, b_hi;
+    __m512i r_hi, r_mi, r_lo;
+    __m512i a_hi;
+    __m512i b_hi;
 
-    const __m512i vMASK = _mm512_set1_epi64(MASK);
+    a_hi = _mm512_srli_epi64(a, 32);
+    b_hi = _mm512_srli_epi64(b, 32);
 
-    a_lo = _mm512_and_si512(a, vMASK);
-    a_hi = _mm512_srli_epi64(a, SPLIT);
-    b_lo = _mm512_and_si512(b, vMASK);
-    b_hi = _mm512_srli_epi64(b, SPLIT);
-
-    //r_lo = _mm256_mul_epu32(a_lo, b_lo);
+    r_lo = _mm512_mul_epu32(a, b);
     r_hi = _mm512_mul_epu32(a_hi, b_hi);
-    r_mi = _mm512_add_epi64(_mm512_mul_epu32(a_lo, b_hi), _mm512_mul_epu32(a_hi, b_lo));
+    r_mi = _mm512_add_epi64(_mm512_mul_epu32(a, b_hi), _mm512_mul_epu32(a_hi, b));
 
-    // hi = (umi >> 38) + (uhi >> 12)
-    *high = _mm512_add_epi64(_mm512_srli_epi64(r_mi, (64-SPLIT)), _mm512_srli_epi64(r_hi, (64-2*SPLIT)));
+    // detects the carry if any
+    __m512i low = _mm512_add_epi64(r_lo, _mm512_slli_epi64(r_mi, 32));
+    __m512i msb_mask = _mm512_set1_epi64(1L << 63);
+    __m512i xr_lo = _mm512_xor_si512(r_lo, msb_mask);
+    __m512i xlow  = _mm512_xor_si512(low, msb_mask);
+    __mmask8 cmask = _mm512_cmpgt_epi64_mask(xr_lo, xlow);
+	__m512i carry = _mm512_maskz_set1_epi64(cmask, 1);
+
+    return _mm512_add_epi64(carry, _mm512_add_epi64(_mm512_srli_epi64(r_mi, 32), r_hi));
 }
-*/
+
 
 void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
@@ -204,7 +200,7 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
         __m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
         va = _mm512_sub_epi64(va, tmp2);
 
-        vq_hi = avx512_mulhi_split(vw_pr, vb);
+        vq_hi = avx512_mulhi_split_lazy(vw_pr, vb);
 
         __m512i llo = _mm512_mullo_epi64(vw, vb);
         __m512i rlo = _mm512_mullo_epi64(vq_hi, vmod);
