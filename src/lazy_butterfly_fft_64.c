@@ -1,9 +1,5 @@
 #include "lazy_butterfly_fft_64.h"
 
-#define SPLIT 32
-#define MASK ((1L << SPLIT) - 1)
-
-
 void preinv_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
     // requirements:
@@ -50,6 +46,27 @@ static inline __m256i avx2_mulhi_split_lazy(__m256i a, __m256i b)
     return _mm256_add_epi64(carry, _mm256_add_epi64(_mm256_srli_epi64(r_mi, 32), r_hi));
 }
 
+// improved variant, which should give the same thing
+// (potentially missing carry, so only off by 1 at most?
+// if yes, could we accept this in the FFT context?)
+static inline __m256i avx2_mulhi_split_lazy_v2(__m256i a, __m256i b)
+{
+    // returns high part of the product of a and b over at most 64 bits integers
+    // using avx2 intrinsics.
+
+    __m256i r_hi, r_mi;
+    __m256i a_hi;
+    __m256i b_hi;
+
+    a_hi = _mm256_srli_epi64(a, 32);
+    b_hi = _mm256_srli_epi64(b, 32);
+
+    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a, b_hi), _mm256_mul_epu32(a_hi, b));
+    r_hi = _mm256_mul_epu32(a_hi, b_hi);
+
+    return _mm256_add_epi64(_mm256_srli_epi64(r_mi, 32), r_hi);
+}
+
 static inline __m256i avx2_mullo_split_lazy(__m256i a, __m256i b)
 {
     // returns low part of the product of a and b over at most 64 bits integers
@@ -68,7 +85,7 @@ static inline __m256i avx2_mullo_split_lazy(__m256i a, __m256i b)
     return _mm256_add_epi64(r_lo, _mm256_slli_epi64(r_mi, 32));
 }
 
-
+// https://stackoverflow.com/questions/37296289/fastest-way-to-multiply-an-array-of-int64-t/37320416#37320416
 static inline __m256i avx2_mullo_epi64(__m256i a, __m256i b)
 {
     // There is no vpmullq until AVX-512. Split into 32-bit multiplies
@@ -99,9 +116,6 @@ void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong
     __m256i vw = _mm256_set1_epi64x(w);
     __m256i vw_pr = _mm256_set1_epi64x(w_pr);
 
-    __m256i vq_hi = _mm256_setzero_si256();
-    __m256i vres = _mm256_setzero_si256();
-
     __m256i vmod = _mm256_set1_epi64x(n);
     __m256i vmod2 = _mm256_set1_epi64x(n2);
 
@@ -116,11 +130,12 @@ void avx2_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong
         __m256i mask = _mm256_andnot_si256(cmp, vmod2);
         va = _mm256_sub_epi64(va, mask);
 
-        vq_hi = avx2_mulhi_split_lazy(vw_pr, vb);
+        __m256i vq_hi = avx2_mulhi_split_lazy_v2(vw_pr, vb);
 
-        __m256i llo = avx2_mullo_epi64(vw, vb);
-        __m256i rlo = avx2_mullo_epi64(vq_hi, vmod);
-        vres = _mm256_sub_epi64(llo, rlo); // only low part is needed
+        __m256i llo, rlo;
+        llo = avx2_mullo_epi64(vw, vb);
+        rlo = avx2_mullo_epi64(vq_hi, vmod);
+        __m256i vres = _mm256_sub_epi64(llo, rlo); // only low part is needed 
 
         __m256i add = _mm256_add_epi64(va, vres);
         __m256i sub = _mm256_add_epi64(_mm256_sub_epi64(va, vres), vmod2);
@@ -172,6 +187,27 @@ static inline __m512i avx512_mulhi_split_lazy(__m512i a, __m512i b)
     return _mm512_add_epi64(carry, _mm512_add_epi64(_mm512_srli_epi64(r_mi, 32), r_hi));
 }
 
+static inline __m512i avx512_mulhi_split_lazy_v2(__m512i a, __m512i b)
+//#define HAVE_AVX512_IFMA
+#ifdef HAVE_AVX512_IFMA
+{
+    return _mm512_madd52hi_epu64(_mm512_setzero_si512(), a, b);
+}
+#else
+{
+    __m512i r_hi, r_mi;
+    __m512i a_hi;
+    __m512i b_hi;
+
+    a_hi = _mm512_srli_epi64(a, 32);
+    b_hi = _mm512_srli_epi64(b, 32);
+
+    r_mi = _mm512_add_epi64(_mm512_mul_epu32(a, b_hi), _mm512_mul_epu32(a_hi, b));
+    r_hi = _mm512_mul_epu32(a_hi, b_hi);
+
+    return _mm512_add_epi64(_mm512_srli_epi64(r_mi, 32), r_hi);
+}
+#endif
 
 void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
@@ -182,9 +218,6 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
 
     __m512i vw = _mm512_set1_epi64(w);
     __m512i vw_pr = _mm512_set1_epi64(w_pr);
-
-    __m512i vq_hi = _mm512_setzero_si512();
-    __m512i vres = _mm512_setzero_si512();
 
     __m512i vmod = _mm512_set1_epi64(n);
     __m512i vmod2 = _mm512_set1_epi64(n2);
@@ -200,11 +233,12 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
         __m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
         va = _mm512_sub_epi64(va, tmp2);
 
-        vq_hi = avx512_mulhi_split_lazy(vw_pr, vb);
+        __m512i vq_hi = avx512_mulhi_split_lazy_v2(vw_pr, vb);
 
-        __m512i llo = _mm512_mullo_epi64(vw, vb);
-        __m512i rlo = _mm512_mullo_epi64(vq_hi, vmod);
-        vres = _mm512_sub_epi64(llo, rlo);
+        __m512i llo, rlo;
+        llo = _mm512_mullo_epi64(vw, vb);
+        rlo = _mm512_mullo_epi64(vq_hi, vmod);
+        __m512i vres = _mm512_sub_epi64(llo, rlo);
 
         __m512i add = _mm512_add_epi64(va, vres);
         __m512i sub = _mm512_add_epi64(_mm512_sub_epi64(va, vres), vmod2);
