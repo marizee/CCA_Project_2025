@@ -40,3 +40,5 @@
 *.toc
 *.bbl
 *.blg
+*.snm
+*.nav
