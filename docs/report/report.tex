@@ -58,7 +58,19 @@
     \item Apply on a form of butterfly FFT for a forward integration to FLINT.
 \end{itemize}
 
+\bigskip
+Each of the studied operations have been implemented over the ring $\mathbb{Z}/n\mathbb{Z}$ with $n \in \mathbb{N}$.
+We have separated the case where $n$ can fit in a 32-bit word and the case where it doesn't 
+since working over 64-bit words might require an additional care to handle potential overflows.
+
+\bigskip
+The source code of this project and the timing measurements are entirely available on GitHub\footnote{\url{https://github.com/marizee/CCA_Project_2025}}.
+
+
 \subsection{Machines description}
+
+To have a thorough analysis of the enhancements offered by the vector instructions, we used 4 generations
+of processors that have different caracteristic:
 
 
 % 2023 - 4.5 GHz % mariz
@@ -66,6 +78,7 @@
 % 2023 - 3.3 GHz % argiope
 % 2021 - 3.0 GHz % groebner
 
+\bigskip
 \begin{tikzpicture}[very thick, black]
 
     %coordinates
@@ -98,14 +111,31 @@
 
 \end{tikzpicture}
 
-\subsection{env}
+\bigskip
+The processor marked in gray corresponds to a machine that does not provide AVX2 so it is only used to check the
+correctness of the algorithms and will not appear in the timing comparisons of this document.
+
+\subsection{Profiler}
+
+Timings were measured using a profiler function that resembles the ones provided by FLINT.
+It compares the different implementations of given operation and bitsize for the modulus.
 
 \begin{itemize}
-    \item ring $\mathbb{Z}/n\mathbb{Z}$, $n \in \mathbb{N}$
-    \item op over 32-bit words or 64-bit words. 
+    \item explain timings in seconds vs cycle/limb
+    \item explain choice of sizes
+\end{itemize} 
+
+\section{Vectorization}
+
+\subsection{Auto-vectorization}
+
+\begin{itemize}
+    \item explain recent compilers....
+    \item explain loop-unrolling
+    \item \_\_attribute\_\_((optimize("-fno-tree-vectorize")))
 \end{itemize}
 
-\section{Single Instruction Multiple Data}
+\subsection{Single Instruction Multiple Data}
 
 The SIMD instructions form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
 of a fixed size allowing to significantly improve the execution speed.
@@ -128,6 +158,8 @@ where
         \end{itemize}
     \end{minipage}
 \end{center}
+
+\textit{give example}
 
 \bigskip
 Rather than directly use these instructions that would lead to writing assembly code, Intel proposes C-style functions
@@ -308,20 +340,34 @@ Looking at the more global picture, in the FFT algorithm such a butterfly will
 be applied to a long vector of different \(x_i, y_i\) but with the same \(w\) and \(n\).
 
 
-\subsection{Multiplication with precomputation}
+\subsection{Modular multiplication with precomputation}
 
 To take the most of the fixed parameters, V. Shoup\cite{Bos_Stam_2021} introduced a step of precomputations on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
 
 Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \in \mathbb{Z}_n$, one can compute a scaled approximation 
 of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
 
-Then, for a given vector $b = (b_1,\dots, b_N)$ , one can compute $(wb_i \mod n)$ for all $i\in{1,\dots, N}$ as follows:
+Then, we can run the following algorithm:
 
-\begin{enumerate}
-    \item Find $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$,
-    \item Compute $c = wb_i - p_{hi}n$,
-    \item If $c \leq n$, return $c-n$, else return $c$.
-\end{enumerate}
+for a given vector  , one can compute  as follows:
+
+\begin{algorithm}
+    \caption{Shoup modular multiplication}
+    \begin{algorithmic}[1]
+        \Require $n < B$,
+        \Require $0 < w < n$ and its precomputation $0 < w_{pre} < B$,
+        \Require $b = (b_1,\dots, b_N)$ with $0 \leq b_i < n \qquad \forall i\in \{1, \dots, N\}$.
+        \Ensure $(wb_i \mod n) \qquad \forall i\in{1,\dots, N}$.
+
+        \State Compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \Comment{1 \texttt{mulhi}}
+        \State $c \gets w\cdot b_i - p_{hi}\cdot n$ \Comment{2 \texttt{mullo}}
+        \If {$c \leq n$}
+            \State \Return $c-n$
+        \Else
+            \State \Return $c$
+        \EndIf
+    \end{algorithmic}
+\end{algorithm}
 
 The correctness of this algorithm relies on the definition of $w_{pre}$. 
 
@@ -370,44 +416,38 @@ Using \autoref{prop:quorem} again, we have $c=wb_i \mod n$ or $c=(wb_i \mod n)+n
 that we retrieve $wb_i \mod n$.
 \end{proof}
 
-\subsection{Harvey's lazy butterfly fft}
+\begin{remark}
+    about mulhi that doesn't need the computation of the carry of low part
+\end{remark}
 
-Harvey proposes a strategy\cite{DBLP:journals/corr/abs-1205-2926} that saves two modular reductions compared to an usual
-implementation of the butterfly FFT.
 
+\subsection{Harvey lazy butterfly FFT}
+
+Harvey proposes a strategy\cite{DBLP:journals/corr/abs-1205-2926} to compute the butterfly FFT that allows to save two
+modular reductions compared to a basic implementation if one is able to restrict the sizes of the modulus. 
 
 \begin{algorithm}
-    \caption{An algorithm with caption}\label{alg:cap}
-    \begin{algorithmic}
-        \Require \\
-            $n < B$, \\
-            $0 < w < n$ and its precomputation $0 < w_{pre} < B$, \\
-            $0 \leq x, y < 4n$.
-        \Ensure \\
-            $(x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n), \qquad 0 \leq x,y < 4p.$
+    \caption{Harvey lazy butterfly FFT}
+    \begin{algorithmic}[1]
+        \Require $n < B$,
+        \Require $0 < w < n$ and its precomputation $0 < w_{pre} < B$,
+        \Require $0 \leq x, y < 4n$.
+        \Ensure $(x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n), \qquad 0 \leq x,y < 4p.$
+
         \If {$x \geq 2p$}
             \State $x \gets x - 2p$
         \EndIf
-        \State Compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot y = p_{hi}\cdot 2^B + p_{lo}$
-        \State $t \gets w\cdot y - p_{hi}\cdot n$
+        \State Compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot y = p_{hi}\cdot 2^B + p_{lo}$ \Comment{1 \texttt{mulhi}}
+        \State $t \gets w\cdot y - p_{hi}\cdot n$ \Comment{2 \texttt{mullo}}
         \State $x \gets x + t$
-        \State $y \gets x - t + 2p$ \\
-        \Return $x,y$
+        \State $y \gets x - t + 2p$
+        \State \Return $x,y$
     \end{algorithmic}
 \end{algorithm}
 
 
 \section{Profiling/Benchmarking}
 
-
-\subsection{Verification of timings}
-
-\subsection{Auto-vectorization}
-
-\begin{itemize}
-    \item prevent: \texttt{-fno-tree-vectorize}
-    \item unrolling
-\end{itemize}
 
 \subsection{Impact of caches} % todo Draft
 
@@ -418,10 +458,10 @@ cache or in the primary memory. In the previously cited case, it happen for size
 65536 and 131072 on ppti-gpu-4. % todo detail of calculation
 
 
-\subsection{Results}
 
 \section{Conclusion}
 
+\appendix
 \section{Modular reduction with special primes}
 
 \subsection{Mersenne numbers}
