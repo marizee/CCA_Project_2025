@@ -228,16 +228,21 @@ In the AVX2 family, one can find intrinsics for \texttt{mullo} but only for inte
 In the AVX512 family, one can only find intrinsics for \texttt{mullo} (up to 64 bits) but it is rather slow on the processors we used.
 %% NOTE: except on the zen4 processor
 
-
-\begin{table}[!h]
+\bigskip
+\begin{table}[h!]
     \centering
-    \begin{tabular}{|c|c|c|c|}
+    \begin{tabularx}{0.7\textwidth} { 
+        | >{\centering\arraybackslash}X 
+        | >{\centering\arraybackslash}X
+        | >{\centering\arraybackslash}X 
+        | >{\centering\arraybackslash}X | }
         \hline
+        \rowcolor{myGray} 
         Processor & Cascade Lake & IceLake & Zen 4 \\
         \hline
-        Throughput & 1.5 & 3.0 & 1.0 \\
+        \cellcolor{myGray} Throughput & 1.5 & 3.0 & 1.0 \\
         \hline
-    \end{tabular}
+    \end{tabularx}
     \caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm} for different processors.}
 \end{table}
 
@@ -262,6 +267,62 @@ a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \begin{itemize}
     \item timings
 \end{itemize}
+
+\begin{table}[h!]
+    \centering
+    
+    % Proc 1
+    \begin{tabular}{|r|*{3}{c c|}}
+        \hline
+        \rowcolor{myGray} 
+        \multicolumn{7}{|c|}{\textsc{Cascade Lake}} \\
+        \hline
+        \rowcolor{myGray} 
+         & t1 & & t2 & & t3 & \\
+        \hline
+        \cellcolor{myGray} Seq. & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+        \cellcolor{myGray} AVX2 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+        \cellcolor{myGray} AVX512 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+    \end{tabular}
+
+    % Proc 2
+    \begin{tabular}{|r|*{3}{c c|}}
+        \hline
+        \rowcolor{myGray} 
+        \multicolumn{7}{|c|}{\textsc{IceLake}} \\
+        \hline
+        \rowcolor{myGray}
+         & t1 & & t2 & & t3 & \\
+        \hline
+        \cellcolor{myGray} Seq. & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+        \cellcolor{myGray} AVX2 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+        \cellcolor{myGray} AVX512 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+    \end{tabular}
+
+    % Proc 3
+    \begin{tabular}{|r|*{3}{c c|}}
+        \hline
+        \rowcolor{myGray}
+        \multicolumn{7}{|c|}{\textsc{Zen 4}} \\
+        \hline
+        \rowcolor{myGray}
+         & t1 & & t2 & & t3 & \\
+        \hline
+        \cellcolor{myGray} Seq. & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+        \cellcolor{myGray} AVX2 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+        \cellcolor{myGray} AVX512 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \hline
+    \end{tabular}
+    \caption{Timings in xx and ratios of the modular sum with a modulus of xx bits.}
+\end{table}
 
 \subsection{Multiplication of a vector by a scalar or by another vector}
 
