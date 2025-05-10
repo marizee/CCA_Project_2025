@@ -63,6 +63,8 @@ Each of the studied operations have been implemented over the ring $\mathbb{Z}/n
 We have separated the case where $n$ can fit in a 32-bit word and the case where it doesn't 
 since working over 64-bit words might require an additional care to handle potential overflows.
 
+We only present the results obtained with a modulus with a size between 32 and 64 bits.
+
 \bigskip
 The source code of this project and the timing measurements are entirely available on GitHub\footnote{\url{https://github.com/marizee/CCA_Project_2025}}.
 
@@ -70,7 +72,7 @@ The source code of this project and the timing measurements are entirely availab
 \subsection{Machines description}
 
 To have a thorough analysis of the enhancements offered by the vector instructions, we used 4 generations
-of processors that have different caracteristic:
+of processors that have different features (clock speed, throughputs, cache sizes, ...):
 
 
 % 2023 - 4.5 GHz % mariz
@@ -123,6 +125,7 @@ It compares the different implementations of given operation and bitsize for the
 \begin{itemize}
     \item explain timings in seconds vs cycle/limb
     \item explain choice of sizes
+    \item remarks on timings could be stated here ?
 \end{itemize} 
 
 \section{Vectorization}
@@ -137,8 +140,9 @@ It compares the different implementations of given operation and bitsize for the
 
 \subsection{Single Instruction Multiple Data}
 
-The SIMD instructions form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
+The SIMD instructions of Intel form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
 of a fixed size allowing to significantly improve the execution speed.
+They are separated in families 
 
 All of the SIMD instructions have a name of the form:
 \begin{center} 
@@ -159,7 +163,11 @@ where
     \end{minipage}
 \end{center}
 
-\textit{give example}
+
+\begin{example}
+    \texttt{vpmuludq} is an AVX2 instruction that multiplies the low unsigned 32-bit integers from packed 64-bit elements
+    and store the unsigned 64-bit results.
+\end{example}
 
 \bigskip
 Rather than directly use these instructions that would lead to writing assembly code, Intel proposes C-style functions
@@ -174,12 +182,22 @@ We mainly used two types of register:
 \end{itemize}
 
 
-\section{Multiplication of $64$ bits integers}
+\begin{example}
+    The function \texttt{\_\_m256i \_mm256\_mul\_epu32(\_\_m256i a, \_\_m256i b)} performs the instruction \texttt{vpmuludq}
+    on the 4 pairs of 64-bit integers stored in the registers a and b.
+\end{example}
 
-When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a $64$ bits word. 
+\section{Multiplication of $64$-bit integers}
+
+When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a $64$-bit word. 
 To circumvent this issue, one needs to first split the two integers into two words of a given size and then apply the long multiplication.
 
 \subsection{Long multiplication}
+
+The long multiplication consists in computing the multiplication of $64$-bit integers using multiplications and additions of
+integers with a lower size.
+
+\bigskip
 Given two integers $x,y$ both of at most $64$ bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$
 bits with $k\leq32$:
 
@@ -188,32 +206,53 @@ bits with $k\leq32$:
     y &= y_{hi}\cdot 2^{k} + y_{lo}.
 \end{align*}
 
-The long multiplication consists in computing the multiplication of $64$ bits limbs using multiplications and additions of
-integers with a lower size.
-
-We compute
+\bigskip
+We then compute:
 \begin{align*}
     r_{lo} &= x_{lo}\cdot y_{lo} \\
     r_{mi} &= x_{lo}\cdot y_{hi} + x_{hi}\cdot y_{lo} \\
     r_{hi} &= x_{hi}\cdot y_{hi}
 \end{align*}
-then $ab = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$. This formula is mathematically correct but is not used in practice
-since it would not fit in a $64$ bits word. 
+and the final result is $ab = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$. 
+This formula is mathematically correct but is not used in practice since it would not fit in a $64$ bits word. 
 
-For a value of $k$ lower than $32$, one has to check that each of the four products computed during the long multiplication can fit in a
-64 bits word otherwise it can yield a wrong result.
-
-Furthemore, the addition involved in the computation of $r_{mi}$ can produce an overflow if the inputs are really up to $64$ bits.
-For this reason, we restrict the size of $x$ and $y$ to $63$ in practice. 
+\begin{remark}
+    \
+    \begin{itemize}
+        \item For a value of $k$ lower than $32$, one has to check that each of the four products computed during the long multiplication can fit in a
+        $64$-bit word, otherwise it can yield a wrong result.
+        \item The addition involved in the computation of $r_{mi}$ can produce an overflow if the inputs are really up to $64$ bits.
+        For this reason, we restrict the size of $x$ and $y$ to $63$ in practice. 
+    \end{itemize}
+\end{remark}
 
 \subsection{Retrieve the high and the low part of the result}
 
 Since the product $xy$ can have more than 64 bits, but always has at most 128 bits, the output of this operation is usually given as a pair of words of at most 64 
 bits such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
 
-To do so, one can use the function provided by FLINT \texttt{umul\_ppmm} which is practical since it directly stores the 128-bit result
-before splitting it. There are no such intrinsics in AVX2 and AVX512.
+\bigskip
+The exact formulas for these elements are:
+\begin{align*}
+    (xy)_{lo} &= (r_{hi} \ll 2\cdot k) + (r_{mi} \ll k) + r_{lo} \\
+    (xy)_{hi} &= (r_{hi} \gg 64 - (2\cdot k)) + (r_{mi} \gg 64 - k) + c \\
+\end{align*}
+where $c$ corresponds to the carry coming from $(xy)_{lo}$.
 
+\begin{remark}
+    If one fixes $k=32$, then the above formulas can be slightly simplified:
+    \begin{itemize}
+        \item the shift left operation $(r_{hi} \ll 2\cdot k)$ will always yield 0,
+        \item the shift right operation $(r_{hi} \gg 64 - (2\cdot k))$ will always yield $r_{hi}$.
+    \end{itemize}
+\end{remark}
+
+\bigskip
+One can use the function \texttt{umul\_ppmm} provided by FLINT which is practical because it computes the product and
+directly stores the 128-bit result before splitting it.
+There are no such intrinsics in the AVX2 and AVX512 families.
+
+\bigskip
 In what follows, we consider the two operations:
 \begin{itemize}
     \item \texttt{mullo(a,b)}: multiply the $x$-bit integers in $a$ and $b$, producing intermediate $2x$-bit integers, 
@@ -225,8 +264,8 @@ In what follows, we consider the two operations:
 In the AVX2 family, one can find intrinsics for \texttt{mullo} but only for integers up to 32 bits and intrinsics for 
 \texttt{mulhi} but only for integers up to 16 bits.
 
-In the AVX512 family, one can only find intrinsics for \texttt{mullo} (up to 64 bits) but it is rather slow on the processors we used.
-%% NOTE: except on the zen4 processor
+In the AVX512 family, one can only find intrinsics for \texttt{mullo} (up to 64 bits) but they were rather slow
+until recent processors such as ones of the Zen 4 generation.
 
 \bigskip
 \begin{table}[h!]
@@ -243,8 +282,13 @@ In the AVX512 family, one can only find intrinsics for \texttt{mullo} (up to 64 
         \cellcolor{myGray} Throughput & 1.5 & 3.0 & 1.0 \\
         \hline
     \end{tabularx}
-    \caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm} for different processors.}
+    \caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm} on different processors.}
 \end{table}
+
+\begin{itemize}
+    \item used mullo from (url in comments)%\url{// https://stackoverflow.com/questions/37296289/fastest-way-to-multiply-an-array-of-int64-t/37320416#37320416}
+    \item used mulhi from \cite{boemer2021intelhexlacceleratinghomomorphic}
+\end{itemize}
 
 \section{Classic arithmetic operations on vectors}
 
@@ -263,10 +307,6 @@ Given two vectors $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we c
 \[
 a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \]
-
-\begin{itemize}
-    \item timings
-\end{itemize}
 
 \begin{table}[h!]
     \centering
@@ -326,12 +366,17 @@ a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 
 \subsection{Multiplication of a vector by a scalar or by another vector}
 
-\[
-w * b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
-\]
+op are pretty much the same problem 
+
+\paragraph{Scalar-vector multiplication} Given a integer $w \in \mathbb{Z}/n\mathbb{Z}$ vector $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
 
 \[
-a_i * b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
+w \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
+\]
+
+\paragraph{Vector-vector multiplication} Given two vectors $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
+\[
+a_i \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \]
 
 \begin{itemize}
@@ -409,8 +454,6 @@ Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \
 of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
 
 Then, we can run the following algorithm:
-
-for a given vector  , one can compute  as follows:
 
 \begin{algorithm}
     \caption{Shoup modular multiplication}
