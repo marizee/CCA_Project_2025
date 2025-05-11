@@ -60,7 +60,7 @@
 
 \bigskip
 Each of the studied operations have been implemented over the ring $\mathbb{Z}/n\mathbb{Z}$ with $n \in \mathbb{N}$.
-We have separated the case where $n$ can fit in a 32-bit word and the case where it doesn't 
+We have separated the case where $n$ can fit in a 32-bit word from the case in which it doesn't 
 since working over 64-bit words might require an additional care to handle potential overflows.
 
 We only present the results obtained with a modulus with a size between 32 and 64 bits.
@@ -94,7 +94,7 @@ of processors that have different features (clock speed, throughputs, cache size
     \draw[<-,thick,color=black] ($(P1)+(0,0.2)$) -- ($(P1)+(0,1.5)$) node [above=0pt,align=center,black] 
     {Intel® xeon® Gold 6248 Processor \\ (Cascade Lake, AVX512) \\ 2.5 GHz};
     \draw[<-,thick,color=black] ($(P2)+(0,0.2)$) -- ($(P2)+(0,0.7)$) node [above=0pt,align=center,black] 
-    {Intel(R) xeon(R) Gold 6354 \\ (IceLake, AVX512) \\ 3.0 GHz};
+    {Intel(R) xeon(R) Gold 6354 \\ (Ice Lake, AVX512) \\ 3.0 GHz};
     \draw[<-,thick,color=black] ($(P3)+(0,0.2)$) -- ($(P3)+(0,1.5)$) node [above=0pt,align=center,black] 
     {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVX512) \\ 3.3 GHz};
     \draw[<-,thick,color=gray] ($(P3)-(0,0.6)$) -- ($(P3)-(0,1.5)$) node [below=0pt,align=center,gray] 
@@ -142,8 +142,11 @@ It compares the different implementations of given operation and bitsize for the
 
 The SIMD instructions of Intel form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
 of a fixed size allowing to significantly improve the execution speed.
-They are separated in families 
 
+They are separated in families allowing different operations on the basic types (int, long, float, double). We only used intrinsics from
+the AVX2 and AVX512 sets.
+
+\bigskip
 All of the SIMD instructions have a name of the form:
 \begin{center} 
     \texttt{<gen><prefix><op><type><size>}
@@ -165,13 +168,14 @@ where
 
 
 \begin{example}
-    \texttt{vpmuludq} is an AVX2 instruction that multiplies the low unsigned 32-bit integers from packed 64-bit elements
+    \texttt{vpmuludq} is an AVX instruction that multiplies the low unsigned 32-bit integers from packed 64-bit elements
     and store the unsigned 64-bit results.
 \end{example}
 
 \bigskip
 Rather than directly use these instructions that would lead to writing assembly code, Intel proposes C-style functions
-along with vector types that are accessible through the header \texttt{<immintrin.h>}.
+along with vector types that are accessible through the header \texttt{<immintrin.h>} and require the flag \texttt{-march=native} at 
+compile-time.
 They are described in the Intel intrinsics guide\footnote{\url{https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html}}.
 
 \bigskip
@@ -187,7 +191,7 @@ We mainly used two types of register:
     on the 4 pairs of 64-bit integers stored in the registers a and b.
 \end{example}
 
-\section{Multiplication of $64$-bit integers}
+\section{Multiplication of $64$-bit integers} \label{mulsplit}
 
 When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a $64$-bit word. 
 To circumvent this issue, one needs to first split the two integers into two words of a given size and then apply the long multiplication.
@@ -235,7 +239,7 @@ bits such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
 The exact formulas for these elements are:
 \begin{align*}
     (xy)_{lo} &= (r_{hi} \ll 2\cdot k) + (r_{mi} \ll k) + r_{lo} \\
-    (xy)_{hi} &= (r_{hi} \gg 64 - (2\cdot k)) + (r_{mi} \gg 64 - k) + c \\
+    (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) + c \\
 \end{align*}
 where $c$ corresponds to the carry coming from $(xy)_{lo}$.
 
@@ -243,7 +247,7 @@ where $c$ corresponds to the carry coming from $(xy)_{lo}$.
     If one fixes $k=32$, then the above formulas can be slightly simplified:
     \begin{itemize}
         \item the shift left operation $(r_{hi} \ll 2\cdot k)$ will always yield 0,
-        \item the shift right operation $(r_{hi} \gg 64 - (2\cdot k))$ will always yield $r_{hi}$.
+        \item the shift right operation $(r_{hi} \gg (64 - (2\cdot k)))$ will always yield $r_{hi}$.
     \end{itemize}
 \end{remark}
 
@@ -285,21 +289,22 @@ until recent processors such as ones of the Zen 4 generation.
     \caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm} on different processors.}
 \end{table}
 
+Hence, we provide versions of the missing functions used in our implementations. They stick to the ones that can be found:
 \begin{itemize}
-    \item used mullo from (url in comments)%\url{// https://stackoverflow.com/questions/37296289/fastest-way-to-multiply-an-array-of-int64-t/37320416#37320416}
-    \item used mulhi from \cite{boemer2021intelhexlacceleratinghomomorphic}
+    \item in the Vector Class library\footnote{\url{https://github.com/vectorclass/version2}} for \texttt{mullo} over 64-bit integers using AVX2,
+    \item in the Intel HEXL library\cite{boemer2021intelhexlacceleratinghomomorphic} for \texttt{mulhi} over 64-bit integers using AVX512.
 \end{itemize}
 
 \section{Classic arithmetic operations on vectors}
 
-Each of the following operations have been implemented over 32-bit integers and 64-bit integers.
-
 \subsection{Modular reduction}
-\begin{itemize}
-    \item \textcolor{orange}{(maybe delayed reduction could be stated as a general principle,
-      to circumvent the high cost of reductions;
-      it will be possible for some operations but not for others)}
-\end{itemize}
+
+For basic arithmetic operations, the modular reduction is among the most costly. 
+Thus, to circumvent its high cost, one can try to delay it as long as there is no overflow occuring.
+Another way is to modify the required sizes of the manipulated integers such that the reduction boils down to
+only a few additions or substractions.
+
+These methods can't be applied on every operation. They will be more detailed when used.
 
 \subsection{Addition of two vectors}
 
@@ -308,65 +313,66 @@ Given two vectors $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we c
 a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \]
 
+% 510, 2010, 65536
+
 \begin{table}[h!]
     \centering
     
-    % Proc 1
+    % Proc 1: ppti
     \begin{tabular}{|r|*{3}{c c|}}
         \hline
         \rowcolor{myGray} 
         \multicolumn{7}{|c|}{\textsc{Cascade Lake}} \\
         \hline
         \rowcolor{myGray} 
-         & t1 & & t2 & & t3 & \\
+         & 510 & & 2010 & & 32768 & \\
         \hline
-        \cellcolor{myGray} Seq. & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} Seq. & 4.89e-07 & 1.0x & 1.90e-06 & 1.0x & 3.17e-05 & 1.0x \\
         \hline
-        \cellcolor{myGray} AVX2 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} AVX2 & 1.26e-07 & 3.9x & 7.05e-07 & 2.7x & 1.43e-05 & 2.2x \\
         \hline
-        \cellcolor{myGray} AVX512 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} AVX512 & 8.17e-08 & 6.0x & 6.39e-07 & 3.0x & 1.27e-05 & 2.5x \\
         \hline
     \end{tabular}
 
-    % Proc 2
+    % Proc 2: groebner
     \begin{tabular}{|r|*{3}{c c|}}
         \hline
         \rowcolor{myGray} 
-        \multicolumn{7}{|c|}{\textsc{IceLake}} \\
+        \multicolumn{7}{|c|}{\textsc{Ice Lake}} \\
         \hline
         \rowcolor{myGray}
-         & t1 & & t2 & & t3 & \\
+        & 510 & & 2010 & & 32768 & \\
         \hline
-        \cellcolor{myGray} Seq. & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} Seq. & xxxxxx & 1.0x & xxxxxx & 1.0x & xxxxxx & 1.0x \\
         \hline
-        \cellcolor{myGray} AVX2 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} AVX2 & xxxxxx & xxxx & xxxxxx & xxxx & xxxxxx & xxxx \\
         \hline
-        \cellcolor{myGray} AVX512 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} AVX512 & xxxxxx & xxxx & xxxxxx & xxxx & xxxxxx & xxxx \\
         \hline
     \end{tabular}
 
-    % Proc 3
+    % Proc 3: argiope
     \begin{tabular}{|r|*{3}{c c|}}
         \hline
         \rowcolor{myGray}
         \multicolumn{7}{|c|}{\textsc{Zen 4}} \\
         \hline
         \rowcolor{myGray}
-         & t1 & & t2 & & t3 & \\
+        & 510 & & 2010 & & 32768 & \\
         \hline
-        \cellcolor{myGray} Seq. & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} Seq. & 2.60e-07 & 1.0x & 1.15e-06 & 1.0x & 1.76e-05 & 1.0x \\
         \hline
-        \cellcolor{myGray} AVX2 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} AVX2 & 6.04e-08 & 4.3x & 3.42e-07 & 3.4x & 6.71e-06 & 2.6x \\
         \hline
-        \cellcolor{myGray} AVX512 & xxxx & xxxx & xxxx & xxxx & xxxx & xxxx \\
+        \cellcolor{myGray} AVX512 & 6.04e-08 & 4.3x & 3.63e-07 & 3.2x & 6.25e-06 & 2.8x \\
         \hline
     \end{tabular}
-    \caption{Timings in xx and ratios of the modular sum with a modulus of xx bits.}
+    \caption{Timings in seconds and ratios of the modular sum with a modulus of 60 bits.}
 \end{table}
 
 \subsection{Multiplication of a vector by a scalar or by another vector}
 
-op are pretty much the same problem 
 
 \paragraph{Scalar-vector multiplication} Given a integer $w \in \mathbb{Z}/n\mathbb{Z}$ vector $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
 
@@ -379,10 +385,14 @@ w \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 a_i \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \]
 
-\begin{itemize}
-    \item boils down to mult described above
-    \item \textcolor{orange}{(here, delaying reductions is basically not possible)}
-\end{itemize}
+\bigskip
+These two operations share about the same properties and have both been implemented using the multiplication of 64-bit integers described 
+in Section \ref{mulsplit}.
+
+\begin{remark}
+    None of the mentioned methods to bypass the modular reduction can be applied here. It has to be perfomed after each multiplication.
+\end{remark}
+
 
 \subsection{Dot product}
 
@@ -450,22 +460,24 @@ be applied to a long vector of different \(x_i, y_i\) but with the same \(w\) an
 
 To take the most of the fixed parameters, V. Shoup\cite{Bos_Stam_2021} introduced a step of precomputations on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
 
+\bigskip
 Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \in \mathbb{Z}_n$, one can compute a scaled approximation 
 of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
 
-Then, we can run the following algorithm:
+Then, for a vector $b = (b_1,\dots, b_N)$, one can compute $(w\cdot b_i \mod n)$ for each $i\in \{1, \dots, N\}$
+using the following algorithm:
 
 \begin{algorithm}
     \caption{Shoup modular multiplication}
     \begin{algorithmic}[1]
-        \Require $n < B$,
-        \Require $0 < w < n$ and its precomputation $0 < w_{pre} < B$,
-        \Require $b = (b_1,\dots, b_N)$ with $0 \leq b_i < n \qquad \forall i\in \{1, \dots, N\}$.
-        \Ensure $(wb_i \mod n) \qquad \forall i\in{1,\dots, N}$.
+        \Require $n < 2^B$,
+        \Require $0 < w < n$ and its precomputation $0 < w_{pre} < 2^B$,
+        \Require $0 \leq b_i < n \qquad i\in \{1, \dots, N\}$.
+        \Ensure $(w\cdot b_i \mod n)$.
 
         \State Compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \Comment{1 \texttt{mulhi}}
         \State $c \gets w\cdot b_i - p_{hi}\cdot n$ \Comment{2 \texttt{mullo}}
-        \If {$c \leq n$}
+        \If {$c \geq n$}
             \State \Return $c-n$
         \Else
             \State \Return $c$
@@ -521,7 +533,12 @@ that we retrieve $wb_i \mod n$.
 \end{proof}
 
 \begin{remark}
-    about mulhi that doesn't need the computation of the carry of low part
+    In this particular case, one can omit the computation of the carry when perfoming the \texttt{mulhi} operation on $w_{pre}\cdot b_i$.
+
+    If so, $p_{hi}$ might be off by one bit meaning that in the step 2 of the algorithm, we either compute $p_{hi}\cdot n$
+    or $(p_{hi}-1)\cdot n$ which leads to a result up to $2n$ and thus requires to adapt the step of correction at the end of the algorithm.
+
+    This is the approach we used as it significantly speeds up the operation.
 \end{remark}
 
 
@@ -533,8 +550,8 @@ modular reductions compared to a basic implementation if one is able to restrict
 \begin{algorithm}
     \caption{Harvey lazy butterfly FFT}
     \begin{algorithmic}[1]
-        \Require $n < B$,
-        \Require $0 < w < n$ and its precomputation $0 < w_{pre} < B$,
+        \Require $n < 2^B/4$,
+        \Require $0 < w < n$ and its precomputation $0 < w_{pre} < 2^B$,
         \Require $0 \leq x, y < 4n$.
         \Ensure $(x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n), \qquad 0 \leq x,y < 4p.$
 
@@ -565,8 +582,14 @@ cache or in the primary memory. In the previously cited case, it happen for size
 
 \section{Conclusion}
 
+\begin{itemize}
+    \item forward integration to FLINT
+    \item case of special primes presented in \ref{app}
+\end{itemize}
+
+\newpage
 \appendix
-\section{Modular reduction with special primes}
+\section{Modular reduction with special primes} \label{app}
 
 \subsection{Mersenne numbers}
 
@@ -590,6 +613,11 @@ x \mod M_n &= x_{hi}\cdot 2^{n} + x_{lo} \mod M_n \\
 
 \subsection{Generalized Mersenne primes}
 
+\begin{align*}
+    p &= 2^u + 2^v + 1 \\ 
+    p &= 2^u - 2^v + 1 \\ 
+\end{align*}
+of $u+1$ bits, with $64 > u > v > 0$.
 
 \newpage
 \bibliographystyle{plain} 
