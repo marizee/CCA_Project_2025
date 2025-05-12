@@ -13,9 +13,6 @@
 #include "add_64.h"
 #include "add_mod_64.h"
 
-// TODO: Change this (ugly)
-#include "bench.c"
-
 #include <string.h>
 
 
@@ -488,7 +485,7 @@ int main(int argc, char** argv)
     };
 
     // number of versions for each function
-    slong nbv[] = {5, 5, 5, 4, 8, 6, 4, 2};
+    slong nbv[] = {5, 5, 5, 4, 8, 7, 4, 2};
 #if defined(__AVX512F__)
     nbv[0] += 2; nbv[1] += 2; nbv[2] += 2; nbv[4] += 2; nbv[5] += 2; nbv[7] += 1;
 #endif

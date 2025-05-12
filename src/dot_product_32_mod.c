@@ -13,14 +13,20 @@
 #define SPLIT 20
 #define MASK ((1L << SPLIT) - 1)
 
+void flint_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
+{
+    dot_params_t params = _nmod_vec_dot_params(len, mod);
+    *res = _nmod_vec_dot(vec1, vec2, len, mod, params);
+}
+
 __attribute__((optimize("-fno-tree-vectorize")))
 void seq_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 {
     // computes the dot product of vectors with at most 32 bits integers.
-    *res=0;
+    ulong rres=0;
     for (slong i=0; i < len; i++)
-        *res += vec1[i]*vec2[i];
-    NMOD_RED(*res, *res, mod);
+        rres += vec1[i]*vec2[i];
+    NMOD_RED(*res, rres, mod);
 }
 
 void seq_dot_product_mod_vectorized(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
@@ -32,8 +38,6 @@ void seq_dot_product_mod_vectorized(ulong* res, nn_ptr vec1, nn_ptr vec2, slong 
     NMOD_RED(*res, rres, mod);
 }
 
-
-void seq_dot_product_mod_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 
 void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 //void split_dot_product_unroll(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
@@ -91,8 +95,6 @@ void simd2_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
     // computes dot product of vectors with at most 32 bits integers using intrinsics.
 
     __m256i sum = _mm256_setzero_si256(); 
-    __m256i vmod = _mm256_set1_epi64x((int)mod.n);
-    __m256 vqinv = _mm256_set1_ps(1.0/mod.n);
 
     slong i;
     for (i=0; i+3 < len; i+=4)
@@ -100,27 +102,19 @@ void simd2_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
         __m256i va = _mm256_loadu_si256((const __m256i *)&vec1[i]);
         __m256i vb = _mm256_loadu_si256((const __m256i *)&vec2[i]);
         __m256i prod = _mm256_mul_epu32(va, vb);
-
-        __m256 vtmp = _mm256_mul_ps(_mm256_cvtepi32_ps(prod), vqinv);
-        __m256i vtmp2 = _mm256_mul_epi32(_mm256_cvtps_epi32(vtmp), vmod);
-        __m256i masked = _mm256_and_si256(vmod, _mm256_cmpgt_epi32(vtmp2, prod));
-
-        vtmp2 = _mm256_sub_epi32(prod, _mm256_sub_epi32(vtmp2, masked));
-        sum = _mm256_add_epi64(sum, vtmp2);
-
-        vtmp2 = _mm256_or_si256(_mm256_cmpgt_epi64(sum, vmod), _mm256_cmpeq_epi64(sum, vmod));
-        masked = _mm256_and_si256(vtmp2, vmod);
-        sum = _mm256_sub_epi64(sum, masked);
+        sum = _mm256_add_epi64(sum, prod);
+		ulong tmp = vec4n_horizontal_sum(sum);
+		printf("%lu %lu\n", tmp, tmp % mod.n);
     }
 
     *res = vec4n_horizontal_sum(sum);
-    for (slong i=0; i < len; i++)
+    for (; i < len; i++)
         *res += vec1[i]*vec2[i];
+	printf("%lu %lu\n", *res, *res % mod.n);
     NMOD_RED(*res, *res, mod);
 }
 
 void simd2_split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
-//void split_dot_product_unroll(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
 {
     __m256i alo, ahi, blo, bhi;
     __m256i v_rlo = _mm256_setzero_si256();
@@ -167,17 +161,6 @@ void simd2_split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len
     add_ssaaaa(rhi, rlo, (rhi>>(64-2*SPLIT)), rhi<<(2*SPLIT), 0, rlo);
     add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), rhi, rlo);
     NMOD2_RED2(*res, rhi, rlo, mod);
-
-    // ulong lo_mask = ((1l << FLINT_BITS) - 1);
-    // ulong tmp_hi, tmp_lo, tmp_acc;
-    // tmp_hi= rhi >> (FLINT_BITS - SPLIT);
-    // tmp_lo = ((rhi << SPLIT) & lo_mask) + rmi;
-    // NMOD_RED2(tmp_acc, tmp_hi, tmp_lo, mod);
-    // tmp_hi = tmp_acc >> (FLINT_BITS - SPLIT);
-    // tmp_lo = ((tmp_acc << SPLIT) & lo_mask) + rlo;
-    // NMOD_RED2(*res, tmp_hi, tmp_lo, mod);
-
-    // *res = rlo + (rmi << SPLIT) + (rhi << 2*SPLIT);
 }
 
 void simd2_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
@@ -235,8 +218,6 @@ void simd2_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len,
     add_ssaaaa(rhi, rlo, (rmi>>(64-SPLIT)), (rmi<<SPLIT), rhi, rlo);
     NMOD2_RED2(*res, rhi, rlo, mod);
 }
-
-void simd2_dot_product_unrolled(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len) ;
 
 #if defined(__AVX512F__)
 void simd512_split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) {
