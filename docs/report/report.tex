@@ -46,27 +46,35 @@
     \item todo: Choose between writting high, middle and low part as $\{hi,mi,lo\}$ or $\{high, middle, low\}$ but not both,
 \end{itemize}
 
+\paragraph{Color code:}
+\begin{itemize}
+    \item \textcolor{orange}{orange}: Vincent
+    \item \textcolor{blue}{blue}: todo
+\end{itemize}
+
 \newpage
 \section{Preface}
 
-\subsection{Goals}
-\begin{itemize}
-    \item Implement basic arithmetic operations (scalar-vector multiplication, vector-vector multiplication, dot product) using library FLINT.
-    \item Study the impact of the modulo operation.
-    \item Enhance these operations using Intel's intrinsics for Single Instruction Multiple Datas (SIMD) vectorization.
-    \item Advanced benchmarking/profiling.
-    \item Apply on a form of butterfly FFT for a forward integration to FLINT.
-\end{itemize}
+Modular integer arithmetic takes part in most of the computer algebra problems and many
+cryptographic algorithms. The basic arithmetic operations therefore need highly optimized implementations
+that take the most of the processor features.
+
+The goal of this project is to study the recent tools and techniques to provide state-of-the-art implementations.
+We will focus on the Intel R Advanced Vector Extensions sets for a Single Instruction Multiple Data (SIMD) vectorization,
+and highlight their benefits and limitations using an advanced profiling function.
+
+The outcomes of our study will be applied to a form of butterfly Fast Fourier Transform that we look forward to see it being merged
+into FLINT.
 
 \bigskip
-Each of the studied operations have been implemented over the ring $\mathbb{Z}/n\mathbb{Z}$ with $n \in \mathbb{N}$.
+Each of the studied operation have been implemented in C over the ring $\mathbb{Z}/n\mathbb{Z}$ with $n \in \mathbb{N}$.
 We have separated the case where $n$ can fit in a 32-bit word from the case in which it doesn't 
 since working over 64-bit words might require an additional care to handle potential overflows.
 
-We only present the results obtained with a modulus with a size between 32 and 64 bits.
+We only present the results obtained with a modulus of more than 32 bits and less than 64 bits.
 
 \bigskip
-The source code of this project and the timing measurements are entirely available on GitHub\footnote{\url{https://github.com/marizee/CCA_Project_2025}}.
+The source code of this project, along with the timing measurements, is entirely available on GitHub\footnote{\url{https://github.com/marizee/CCA_Project_2025}}.
 
 
 \subsection{Machines description}
@@ -122,21 +130,30 @@ correctness of the algorithms and will not appear in the timing comparisons of t
 Timings were measured using a profiler function that resembles the ones provided by FLINT.
 It compares the different implementations of given operation and bitsize for the modulus.
 
+%\subsection{Impact of caches} % todo Draft
+%In the benchmarks, we observes bigger factors than expected between two sizes,
+%e.g. during the unrolling of non modular dot product. This happen when a vector
+%become too big to fit in a certain cache, and must be stored in a lower level
+%cache or in the primary memory. In the previously cited case, it happen for sizes
+%65536 and 131072 on ppti-gpu-4. % todo detail of calculation
+
+\textcolor{blue}{
 \begin{itemize}
     \item explain timings in seconds vs cycle/limb
     \item explain choice of sizes
-    \item remarks on timings could be stated here ?
-\end{itemize} 
+    \item remarks on timings could be stated here ? (expect factor 4/8, estimate timings with clockspeed, memory issuess)
+\end{itemize} }
 
 \section{Vectorization}
 
 \subsection{Auto-vectorization}
 
+\textcolor{blue}{
 \begin{itemize}
     \item explain recent compilers....
     \item explain loop-unrolling
     \item \_\_attribute\_\_((optimize("-fno-tree-vectorize")))
-\end{itemize}
+\end{itemize}}
 
 \subsection{Single Instruction Multiple Data}
 
@@ -313,8 +330,13 @@ Given two vectors $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we c
 a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \]
 
-% 510, 2010, 65536
 
+\begin{remark}
+    The modular reduction is done by only performing substractions and additions. It takes advantage of
+    the fact that the sum of two integers $0 \leq x,y < n$ is less than $2n$.
+\end{remark}
+
+% 510, 2010, 32768
 \begin{table}[h!]
     \centering
     
@@ -368,8 +390,20 @@ a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
         \cellcolor{myGray} AVX512 & 6.04e-08 & 4.3x & 3.63e-07 & 3.2x & 6.25e-06 & 2.8x \\
         \hline
     \end{tabular}
-    \caption{Timings in seconds and ratios of the modular sum with a modulus of 60 bits.}
+    \caption{Timings in seconds and ratios of the modular sum with a 60-bit modulus.}
 \end{table}
+
+\begin{figure}[h!]
+    \begin{center}
+        \includegraphics[width=0.8\textwidth]{add-mod_argiope.png}
+    \end{center}
+    \caption{Timings in seconds of the modular sum with a 60-bit modulus on a Zen 4 processor.}
+\end{figure}
+
+\textcolor{blue}{
+\begin{itemize}
+    \item comment results: avx slightly better; would expect factor 4/8 but lot of load/store;
+\end{itemize}}
 
 \subsection{Multiplication of a vector by a scalar or by another vector}
 
@@ -380,7 +414,7 @@ a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 w \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \]
 
-\paragraph{Vector-vector multiplication} Given two vectors $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
+\paragraph{Element-wise vector-vector multiplication} Given two vectors $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
 \[
 a_i \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \]
@@ -393,6 +427,11 @@ in Section \ref{mulsplit}.
     None of the mentioned methods to bypass the modular reduction can be applied here. It has to be perfomed after each multiplication.
 \end{remark}
 
+\textcolor{blue}{
+    \begin{itemize}
+        \item timings + comments
+    \end{itemize}
+}
 
 \subsection{Dot product}
 
@@ -441,7 +480,11 @@ This value can be computed using \ref{prop:sum}. In our case, because we sum the
 
 TODO: Max for rhi, rmi and rlo
 
-
+\textcolor{blue}{
+    \begin{itemize}
+        \item timings + comments
+    \end{itemize}
+}
 
 \section{Butterfly Fast Fourier Transform}
 
@@ -566,26 +609,22 @@ modular reductions compared to a basic implementation if one is able to restrict
     \end{algorithmic}
 \end{algorithm}
 
-
-\section{Profiling/Benchmarking}
-
-
-\subsection{Impact of caches} % todo Draft
-
-In the benchmarks, we observes bigger factors than expected between two sizes,
-e.g. during the unrolling of non modular dot product. This happen when a vector
-become too big to fit in a certain cache, and must be stored in a lower level
-cache or in the primary memory. In the previously cited case, it happen for sizes
-65536 and 131072 on ppti-gpu-4. % todo detail of calculation
-
+\textcolor{blue}{
+    \begin{itemize}
+        \item timings + comments
+    \end{itemize}
+}
 
 
 \section{Conclusion}
 
+\textcolor{blue}{
 \begin{itemize}
     \item forward integration to FLINT
     \item case of special primes presented in \ref{app}
+    \item IFMA ?
 \end{itemize}
+}
 
 \newpage
 \appendix
@@ -612,12 +651,13 @@ x \mod M_n &= x_{hi}\cdot 2^{n} + x_{lo} \mod M_n \\
 
 
 \subsection{Generalized Mersenne primes}
-
+\textcolor{blue}{
 \begin{align*}
     p &= 2^u + 2^v + 1 \\ 
     p &= 2^u - 2^v + 1 \\ 
 \end{align*}
 of $u+1$ bits, with $64 > u > v > 0$.
+}
 
 \newpage
 \bibliographystyle{plain} 
