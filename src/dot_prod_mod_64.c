@@ -116,11 +116,40 @@ void split_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len,
 }
 
 
+/** simd2_add_cssaaaa(s1, s0, a1, a0, b1, b0)
+ *  Compute $cB^2 + s_1 B + s_0 = (a_1 B + a_0) + (b_1 B + b_0)$ like ssaaaa, but
+ *  for vectors. Also return the carry
+ */
+__m256i simd2_add_cssaaaa(__m256i *hi, __m256i *lo, __m256i ahi, __m256i alo, __m256i bhi, __m256i blo)
+{
+    const __m256i v_one = _mm256_set1_epi64x(1);
+    __m256i aleast = _mm256_and_si256(alo, v_one);
+    __m256i bleast = _mm256_and_si256(blo, v_one);
+    __m256i least = _mm256_add_epi64(aleast, bleast);
+    __m256i c = _mm256_srli_epi64(least, 1);
+
+    __m256i sum = _mm256_add_epi64(_mm256_srli_epi64(alo, 1), _mm256_srli_epi64(blo, 1));
+    sum = _mm256_add_epi64(sum, c);
+    *lo = _mm256_add_epi64(_mm256_slli_epi64(sum, 1), _mm256_and_si256(least, v_one));
+    c = _mm256_srli_epi64(sum, 63);
+
+    aleast = _mm256_and_si256(ahi, v_one);
+    bleast = _mm256_and_si256(bhi, v_one);
+    least = _mm256_add_epi64(aleast, bleast);
+    least = _mm256_add_epi64(least, c);
+    c = _mm256_srli_epi64(least, 1);
+
+    sum = _mm256_add_epi64(_mm256_srli_epi64(ahi, 1), _mm256_srli_epi64(bhi, 1));
+    sum = _mm256_add_epi64(sum, c);
+    *hi = _mm256_add_epi64(_mm256_slli_epi64(sum, 1), _mm256_and_si256(least, v_one));
+    return _mm256_srli_epi64(sum, 63);
+}
+
 void simd2_dot_prod_mod_64(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod)
 {
-    //__m256i vt_hi = _mm256_setzero_si256();
-    //__m256i vt_mi = _mm256_setzero_si256();
-    //__m256i vt_lo = _mm256_setzero_si256();
+    __m256i vt_hi = _mm256_setzero_si256();
+    __m256i vt_mi = _mm256_setzero_si256();
+    __m256i vt_lo = _mm256_setzero_si256();
 
     __m256i vq_hi = _mm256_setzero_si256();
     __m256i vq_lo = _mm256_setzero_si256();
@@ -134,8 +163,27 @@ void simd2_dot_prod_mod_64(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod
         // umulppmm-avx2
         avx2_mul_split(&vq_hi, &vq_lo, va, vb);
 
-        // TODO
+        (void)0;
+        __m256i c = simd2_add_cssaaaa(&vt_mi, &vt_lo, vt_mi, vt_lo, vq_hi, vq_lo);
+        vt_hi = _mm256_add_epi64(vt_hi, c);
     }
+
+    ulong t_hi=0, t_mi=0, t_lo=0;
+    ulong rhi[4], rmi[4], rlo[4];
+    _mm256_storeu_si256((__m256i*)rhi, vt_hi);
+    _mm256_storeu_si256((__m256i*)rmi, vt_mi);
+    _mm256_storeu_si256((__m256i*)rlo, vt_lo);
+    for (slong j = 0; j < 4; j++)
+        add_sssaaaaaa(t_hi, t_mi, t_lo, t_hi, t_mi, t_lo, rhi[j], rmi[j], rlo[j]);
+
+    for (; i < len; i++)
+    {
+        ulong q_hi, q_lo;
+        umul_ppmm(q_hi, q_lo, a[i], b[i]);
+        add_sssaaaaaa(t_hi, t_mi, t_lo, t_hi, t_mi, t_lo, 0, q_hi, q_lo);
+    }
+    NMOD_RED(t_hi, t_hi, mod);
+    NMOD_RED3(*res, t_hi, t_mi, t_lo, mod);
 }
 
 void simd2_split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)

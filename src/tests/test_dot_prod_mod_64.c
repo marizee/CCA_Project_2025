@@ -85,7 +85,7 @@ int main()
     end = clock();
     tsimd2 = ((double) (end - start)) / CLOCKS_PER_SEC;
     ////printf("res=%ld\n", res5);
-    //printf("simd2=\t\t%.5es\n", tsimd2);
+    printf("simd2=\t\t%.5es\n", tsimd2);
     ////printf("\n");
 
 
@@ -93,11 +93,10 @@ int main()
     int s1 = (res1 == res2);
     int s2 = (res1 == res3);
     int s3 = (res1 == res4);
+    int s4 = (res1 == res5);
 
-    //int v2_1 = (res1 == res5);
-
-    if (!s1 || !s2 || !s3)
-        printf("ff - s1=%d s2=%d s3=%d\n", s1, s2, s3);
+    if (!s1 || !s2 || !s3 || !s4)
+        printf("ff - s1=%d s2=%d s3=%d s4=%d\n", s1, s2, s3, s4);
     else
         printf("OK!\n");
 
