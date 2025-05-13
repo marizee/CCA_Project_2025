@@ -2,7 +2,7 @@
 #include "mulsplit.h"
 
 #define SPLIT 32
-#define MASK ((1L << SPLIT) - 1)
+//#define MASK ((1L << SPLIT) - 1)
 
 // FIXME better to do two versions: one assuming <= 32 bits, another one
 // assuming <= 64 bits (or maybe 30 and 62, I will explain when we meet)
@@ -19,8 +19,6 @@
 // 32 bit high part
 // 
 // both versions are interesting!
-
-
 
 
 void seq_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
@@ -72,32 +70,6 @@ void preinv_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
     }
 }
 
-//__attribute__((optimize("-fno-tree-vectorize")))
-// note: la vectorisation automatique joue un role ici
-// (mais la vectorisation manuelle est plus efficace)
-/*
-void mulhi_split(ulong* res, ulong a, ulong b)
-{
-    // returns high part of the product of a and b over at most 64 bits integers.
-
-    ulong r_hi, r_mi; //, r_lo;
-    ulong a_lo, a_hi;
-    ulong b_lo, b_hi;
-
-    a_lo = a & MASK;
-    a_hi = a >> SPLIT;
-    b_lo = b & MASK;
-    b_hi = b >> SPLIT;
-
-    //r_lo = a_lo*b_lo;
-    r_hi = a_hi*b_hi;
-    r_mi = a_lo*b_hi + a_hi*b_lo;
-
-    // hi = (umi >> 38) + (uhi >> 12)
-    *res = (r_mi >> (64-SPLIT)) + (r_hi >> (64-2*SPLIT));
-}
-*/
-
 void preinv_split_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
 {
     // returns modular butterfly fft with precomputation and split over at most 64 bits integers. 
@@ -129,57 +101,6 @@ void preinv_split_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
     }
 }
 
-/*
-void avx2_mulhi_split(__m256i* high, __m256i a, __m256i b)
-{
-    // returns high part of the product of a and b over at most 64 bits integers
-    // using avx2 intrinsics.
-
-    __m256i r_hi, r_mi; //, r_lo;
-    __m256i a_lo, a_hi;
-    __m256i b_lo, b_hi;
-
-    const __m256i vMASK = _mm256_set1_epi64x(MASK);
-
-    a_lo = _mm256_and_si256(a, vMASK);
-    a_hi = _mm256_srli_epi64(a, SPLIT);
-    b_lo = _mm256_and_si256(b, vMASK);
-    b_hi = _mm256_srli_epi64(b, SPLIT);
-
-    //r_lo = _mm256_mul_epu32(a_lo, b_lo);
-    r_hi = _mm256_mul_epu32(a_hi, b_hi);
-    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
-
-    // hi = (umi >> 38) + (uhi >> 12)
-    *high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
-}
-
-// #if preprocessor: if the machine has avx512, use _mm256_mullo_epi64 | _mm512_mullo_epi64
-void avx2_mullo_split(__m256i* low, __m256i a, __m256i b)
-{
-    // returns low part of the product of a and b over at most 64 bits integers
-    // using avx2 intrinsics.
-
-    __m256i r_hi, r_mi, r_lo;
-    __m256i a_lo, a_hi;
-    __m256i b_lo, b_hi;
-    const __m256i vMASK = _mm256_set1_epi64x(MASK);
-
-    a_lo = _mm256_and_si256(a, vMASK);
-    a_hi = _mm256_srli_epi64(a, SPLIT);
-    b_lo = _mm256_and_si256(b, vMASK);
-    b_hi = _mm256_srli_epi64(b, SPLIT);
-
-    r_lo = _mm256_mul_epu32(a_lo, b_lo);
-    r_hi = _mm256_mul_epu32(a_hi, b_hi);
-    r_mi = _mm256_add_epi64(_mm256_mul_epu32(a_lo, b_hi), _mm256_mul_epu32(a_hi, b_lo));
-
-    // lo = (umi << 26) + (uhi << 52) + ulo
-    //high = _mm256_add_epi64(_mm256_srli_epi64(r_mi, (64-SPLIT)), _mm256_srli_epi64(r_hi, (64-2*SPLIT)));
-    *low = _mm256_add_epi64(r_lo, _mm256_add_epi64(_mm256_slli_epi64(r_mi, SPLIT), _mm256_slli_epi64(r_hi, 2*SPLIT)));
-}
-*/
-
 void avx2_preinv_split_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
 {
     ulong w_pre = n_mulmod_precomp_shoup(w, mod.n);
@@ -201,19 +122,12 @@ void avx2_preinv_split_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
         __m256i vb = _mm256_loadu_si256((const __m256i *)(b+i));
 
         // step1: q_hi st b*w_pre = q_hi*2^32 + q_lo
-        vq_hi = avx2_mulhi_split(vw_pre, vb); // OK
+        vq_hi = avx2_mulhi_split_v2(vw_pre, vb); // OK
 
         // step2: r := b*w - q_hi*p OK
-        __m256i llo = avx2_mullo_split(vw, vb);
-        __m256i rlo = avx2_mullo_split(vq_hi, vmod);
-
+        __m256i llo = avx2_mullo_epi64(vw, vb);
+        __m256i rlo = avx2_mullo_epi64(vq_hi, vmod);
         vres = _mm256_sub_epi64(llo, rlo); // only low part is needed
-
-        // OK
-        //vres[0] = vw[0]*vb[0] - vq_hi[0]*vmod[0];
-        //vres[1] = vw[1]*vb[1] - vq_hi[1]*vmod[1];
-        //vres[2] = vw[2]*vb[2] - vq_hi[2]*vmod[2];
-        //vres[3] = vw[3]*vb[3] - vq_hi[3]*vmod[3];
 
         // step3: (res >= p) ? res-p : res
         __m256i cmp = _mm256_cmpgt_epi64(vres, vmod);
@@ -236,13 +150,13 @@ void avx2_preinv_split_fft(nn_ptr a, nn_ptr b, ulong w, slong len, nmod_t mod)
         _mm256_storeu_si256((__m256i *)&b[i], sub);
     }
 
-    ulong q_hi=0;
+    ulong q_hi=0, q_lo=0;
     ulong res;
     
     for ( ; i<len; i++)
     {
         // step1: q_hi st b*w_pre = q_hi*2^64 + q_lo
-        q_hi = mulhi_split(b[i], w_pre);
+        umul_ppmm(q_hi, q_lo, b[i], w_pre);
 
         // step2: r := b*w - q_hi*p
         res = w*b[i] - q_hi*mod.n;

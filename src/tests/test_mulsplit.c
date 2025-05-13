@@ -19,7 +19,7 @@ int main()
 #endif
 
     // init modulus structure
-    ulong n = 18446744073709551615;
+    ulong n = 18446744073709551615ULL;
     nmod_init(&mod, n); // 2**64 - 1
 
     // init vector

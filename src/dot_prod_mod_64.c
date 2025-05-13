@@ -3,7 +3,7 @@
 
 #include "flint/machine_vectors.h"
 
-#define MASK ((1L << 32) - 1)
+//#define MASK ((1L << 32) - 1)
 
 // TODO : DELAYED REDUCTION IF POSSIBLE
 

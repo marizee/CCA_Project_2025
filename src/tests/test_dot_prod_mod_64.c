@@ -85,7 +85,7 @@ int main()
     end = clock();
     tsimd2 = ((double) (end - start)) / CLOCKS_PER_SEC;
     ////printf("res=%ld\n", res5);
-    //printf("simd2=\t\t%.5es\n", tsimd2);
+    printf("simd2=\t\t%.5es\n", tsimd2);
     ////printf("\n");
 
 

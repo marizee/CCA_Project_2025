@@ -6,7 +6,7 @@
 int main()
 {
     slong len = 1 << 25;
-    flint_bitcnt_t bits = 63;
+    //flint_bitcnt_t bits = 63;
 
     FLINT_TEST_INIT(state);
 
