@@ -18,7 +18,8 @@
         \rule{\linewidth}{0.5mm} \\[1cm]
         {\large 24 January 2025 - 20 May 2025}\\[3cm]
 
-        {\Large Damien ASSIRE \& Marie BONBOIRE}
+        {\Large Damien ASSIRE - \\
+                Marie BONBOIRE - 21100552}
 
 
     \end{center}
@@ -34,25 +35,25 @@
 \tableofcontents
 \newpage
 
-\paragraph{NOTATIONS:} (to be removed from report, just for consistency)
-\begin{itemize}
-    \item $B$ the max bitsize, either $32$ or $64$,
-    \item $n$ the modulus,
-    \item $N$ the size of a vector,
-    \item $a,b$ vectors, coefficients are $a_i$, $b_i$,
-    \item $x,y$ for integers,
-    \item $p_{hi}, p_{lo}$ temp variables,
-    \item $p$ prime number,
-    \item todo: Choose between writting high, middle and low part as $\{hi,mi,lo\}$ or $\{high, middle, low\}$ but not both,
-\end{itemize}
-
-\paragraph{Color code:}
-\begin{itemize}
-    \item \textcolor{orange}{orange}: Vincent
-    \item \textcolor{blue}{blue}: todo
-\end{itemize}
-
-\newpage
+%\paragraph{NOTATIONS:} (to be removed from report, just for consistency)
+%\begin{itemize}
+%    \item $B$ the max bitsize, either $32$ or $64$,
+%    \item $n$ the modulus,
+%    \item $N$ the size of a vector,
+%    \item $a,b$ vectors, coefficients are $a_i$, $b_i$,
+%    \item $x,y$ for integers,
+%    \item $p_{hi}, p_{lo}$ temp variables,
+%    \item $p$ prime number,
+%    \item todo: Choose between writting high, middle and low part as $\{hi,mi,lo\}$ or $\{high, middle, low\}$ but not both,
+%\end{itemize}
+%
+%\paragraph{Color code:}
+%\begin{itemize}
+%    \item \textcolor{orange}{orange}: Vincent
+%    \item \textcolor{blue}{blue}: todo
+%\end{itemize}
+%
+%\newpage
 \section{Preface}
 
 Modular integer arithmetic takes part in most of the computer algebra problems and many
@@ -60,14 +61,14 @@ cryptographic algorithms. The basic arithmetic operations therefore need highly 
 that take the most of the processor features.
 
 The goal of this project is to study the recent tools and techniques to provide state-of-the-art implementations.
-We will focus on the Intel R Advanced Vector Extensions sets for a Single Instruction Multiple Data (SIMD) vectorization,
+We will focus on the Intel® Advanced Vector Extensions sets for the Single Instruction Multiple Data (SIMD) vectorization,
 and highlight their benefits and limitations using an advanced profiling function.
 
-The outcomes of our study will be applied to a form of butterfly Fast Fourier Transform that we look forward to see it being merged
-into FLINT.
+The outcomes of our analysis will be applied to a form of butterfly Fast Fourier Transform.
 
 \bigskip
-Each of the studied operation have been implemented in C over the ring $\mathbb{Z}/n\mathbb{Z}$ with $n \in \mathbb{N}$.
+Each of the studied operations have been implemented in C over the ring $\mathbb{Z}/n\mathbb{Z}$ with $n \in \mathbb{N}$
+using the Fast Library for Number Theory (FLINT) library.
 We have separated the case where $n$ can fit in a 32-bit word from the case in which it doesn't 
 since working over 64-bit words might require an additional care to handle potential overflows.
 
@@ -102,7 +103,7 @@ of processors that have different features (clock speed, throughputs, cache size
     \draw[<-,thick,color=black] ($(P1)+(0,0.2)$) -- ($(P1)+(0,1.5)$) node [above=0pt,align=center,black] 
     {Intel® xeon® Gold 6248 Processor \\ (Cascade Lake, AVX512) \\ 2.5 GHz};
     \draw[<-,thick,color=black] ($(P2)+(0,0.2)$) -- ($(P2)+(0,0.7)$) node [above=0pt,align=center,black] 
-    {Intel(R) xeon(R) Gold 6354 \\ (Ice Lake, AVX512) \\ 3.0 GHz};
+    {Intel® xeon® Gold 6354 \\ (Ice Lake, AVX512) \\ 3.0 GHz};
     \draw[<-,thick,color=black] ($(P3)+(0,0.2)$) -- ($(P3)+(0,1.5)$) node [above=0pt,align=center,black] 
     {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVX512) \\ 3.3 GHz};
     \draw[<-,thick,color=gray] ($(P3)-(0,0.6)$) -- ($(P3)-(0,1.5)$) node [below=0pt,align=center,gray] 
@@ -122,45 +123,25 @@ of processors that have different features (clock speed, throughputs, cache size
 \end{tikzpicture}
 
 \bigskip
-The processor marked in gray corresponds to a machine that does not provide AVX2 so it is only used to check the
+The processor marked in gray corresponds to a machine that does not provide AVX512 so it is only used to check the
 correctness of the algorithms and will not appear in the timing comparisons of this document.
 
-\subsection{Profiler}
+\subsection{Vectorization}
 
-Timings were measured using a profiler function that resembles the ones provided by FLINT.
-It compares the different implementations of given operation and bitsize for the modulus.
-
-%\subsection{Impact of caches} % todo Draft
-%In the benchmarks, we observes bigger factors than expected between two sizes,
-%e.g. during the unrolling of non modular dot product. This happen when a vector
-%become too big to fit in a certain cache, and must be stored in a lower level
-%cache or in the primary memory. In the previously cited case, it happen for sizes
-%65536 and 131072 on ppti-gpu-4. % todo detail of calculation
+\subsubsection{Auto-vectorization}
 
 \textcolor{blue}{
 \begin{itemize}
-    \item explain timings in seconds vs cycle/limb
-    \item explain choice of sizes
-    \item remarks on timings could be stated here ? (expect factor 4/8, estimate timings with clockspeed, memory issuess)
-\end{itemize} }
-
-\section{Vectorization}
-
-\subsection{Auto-vectorization}
-
-\textcolor{blue}{
-\begin{itemize}
-    \item explain recent compilers....
-    \item explain loop-unrolling
+    \item auto-vec, flag \texttt{-O3}, help with loop unrolling
     \item \_\_attribute\_\_((optimize("-fno-tree-vectorize")))
 \end{itemize}}
 
-\subsection{Single Instruction Multiple Data}
+\subsubsection{Single Instruction Multiple Data}
 
 The SIMD instructions of Intel form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
 of a fixed size allowing to significantly improve the execution speed.
 
-They are separated in families allowing different operations on the basic types (int, long, float, double). We only used intrinsics from
+They are separated in families providing different operations on the basic types (int, long, float, double). We only used intrinsics from
 the AVX2 and AVX512 sets.
 
 \bigskip
@@ -207,6 +188,43 @@ We mainly used two types of register:
     The function \texttt{\_\_m256i \_mm256\_mul\_epu32(\_\_m256i a, \_\_m256i b)} performs the instruction \texttt{vpmuludq}
     on the 4 pairs of 64-bit integers stored in the registers a and b.
 \end{example}
+
+\subsection{Timings measurement}
+
+Timings were measured using a profiling function that resembles the ones provided by FLINT.
+It compares the different implementations of an operation for a given bit size of the modulus.
+
+\bigskip
+We have considered three ranges of sizes for the vectors:
+\begin{itemize}
+    \item small sizes: less than 200, 
+    \item medium sizes: between 200 and 8000,
+    \item large sizes: powers of two between $2^{13}=8192$ and $2^{22}=4194304$.
+\end{itemize}
+
+In some cases, timings obtained with small sizes and large sizes are not really conclusive because of
+the mutiple load and store operations and the memory issues that can arise from the size of the caches.
+
+\begin{remark}
+    For basic operations, one can check the coherency of the timings by considering the clock speed of
+    the processor used and the number of cycles it requires to complete the operation.
+    
+    For example, the Zen 4 processor has a clock speed of 3.3 GHz meaning it can handle about 
+    3.3 billion cycles per second. Thus, considering the throughput of an operation perfomed on
+    $N$ pairs of coefficients, we can expect a timing of about
+    \[
+    \dfrac{N\cdot throughput}{3.3\times 10^9}\quad \text{seconds}.
+    \]
+
+    This computation should only be used as an estimation since it does not take in account any
+    delaying factors such as the latency.
+\end{remark}
+
+\bigskip
+In theory, we could expect speed up factors of about 4 from the AVX2 intrinsics and of about 8 from the AVX512 intrinsics
+since it corresponds to the number of pairs of coefficients they can handle simultaneously.
+We will show that it is not particularly the case in practice.
+
 
 \section{Multiplication of $64$-bit integers} \label{mulsplit}
 
@@ -316,9 +334,9 @@ Hence, we provide versions of the missing functions used in our implementations.
 
 \subsection{Modular reduction}
 
-For basic arithmetic operations, the modular reduction is among the most costly. 
-Thus, to circumvent its high cost, one can try to delay it as long as there is no overflow occuring.
-Another way is to modify the required sizes of the manipulated integers such that the reduction boils down to
+Among the basic arithmetic operations, the modular reduction is one of the most costly. 
+Thus, to circumvent its high cost, one can consider delaying it as long as there is no overflow occuring.
+Another way is to modify the size requirements of the manipulated integers when the reduction boils down to
 only a few additions or substractions.
 
 These methods can't be applied on every operation. They will be more detailed when used.
@@ -400,9 +418,10 @@ a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
     \caption{Timings in seconds of the modular sum with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
+\newpage
 \textcolor{blue}{
 \begin{itemize}
-    \item comment results: avx slightly better; would expect factor 4/8 but lot of load/store;
+    \item comment results
 \end{itemize}}
 
 \subsection{Multiplication of a vector by a scalar or by another vector}
@@ -420,7 +439,7 @@ a_i \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \]
 
 \bigskip
-These two operations share about the same properties and have both been implemented using the multiplication of 64-bit integers described 
+These two operations share about the same properties and can both be implemented using the multiplication of 64-bit integers described 
 in Section \ref{mulsplit}.
 
 \begin{remark}
@@ -429,56 +448,37 @@ in Section \ref{mulsplit}.
 
 \textcolor{blue}{
     \begin{itemize}
-        \item timings + comments
+        \item Not done: todo or remove ?
+        \item Barrett reduction ?
     \end{itemize}
 }
 
 \subsection{Dot product}
 
-For two vectors $u$ and $v$ of $len$ integers of bit size $bitsize \le 32$, and an integer $n$ of some bit size, we want to compute
+Given two vectors $a,b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
+\[
+\left(a_1\cdot b_1 + a_2\cdot b_2 + \dots + a_N\cdot b_N\right) \mod n = \left(\sum_{i=1}^N a_i\cdot b_i\right) \mod n.
+\]
 
-\[\left(\sum_{i=0}^{len}u_iv_i\right) \mod n\]
+Each multiplication is perfomed by using the long multiplication of Section \ref{mulsplit} and then
+the products are classically added together.
+Like so, it requires to perfom a reduction for each binary operation.
 
-To compute the sum of products, we split the integers as described in subsection \ref{sub:split}. Then, we sum separately the three limbs $r_{high}$, $r_{mid}$, $r_{low}$. % TODO: Verify name
+\bigskip
+In fact, one can consider delaying the reduction according to the size of the modulus.
+For instance, given a $k$-bit modulus, with $k < 32$, a product $a_i\cdot b_i$ fits in a word of 64 bits so
+we can sum up to $2^{64 - 2k}$ terms before doing a reduction.
 
-\textcolor{orange}{(Here, this is a perfect problem for delaying reductions: e.g. if \(n < 2^{30}\), then a product \(u_iv_i\) is \(< 2^{60}\), so we can sum up to \(2^4 = 16\) terms before doing a reduction)}
+\begin{example}
+    If $n < 2^{30}$, then $a_i\cdot b_i < 2^{60}$ for all $i$, and we can sum up to $2^4 = 16$ terms without any overflow:
+    \[
+    \forall i, \qquad a_i\cdot b_i < 2^{60}  
+    \Longrightarrow \sum_{i=1}^{2^4} a_i\cdot b_i < \sum_{i=1}^{2^4} 2^{60} = 2^4 \cdot 2^{60} = 2^{64}.
+    \]
+\end{example}
 
-\subsubsection{Modular reduction}
-
-The modular is done with \texttt{NMOD2\_RED2} from the flint library. We first regroup the three limbs in two limbs $h$ and $l$ as follows:
-
-\begin{align}
-    l &= r_{mid}B &+ \left(r_{high}B^2 + r_{low}\right) \\
-    h &= \left\lfloor r_{mid}\frac{B}{2^{64}}\right\rfloor &+ \left\lfloor r_{hi}\frac{B^2}{2^{64}}\right\rfloor &+ c \quad{\text{where $c$ is $1$ if the computation of l overflows and 0 otherwise}}
-\end{align}
-
-Because of the cost of this operation, we only reduce at the end, adter the sum. As a consequence, the number of integers we can sum without overflows is limited, and depend of their size.
-
-\begin{proposition}\label{prop:sum}
-    For integers of size $\S$, the result of the sum of $2^n$ of such integers is at most $S + n$
-\end{proposition}
-
-\begin{proof}
-    By induction on $n\in\mathbf{N}$
-
-    \paragraph{Base case: $n = 0$}
-    $2^0 = 1$, thus no addition is done and the result has size $S = S + 0 = S + n$. Hence, $\Pi(0)$ is verified.
-
-    \paragraph{Induction}
-    Assume for some $i \in \mathbf{N}^*$, $\Pi(i - 1)$ is verified.
-
-    Let $u$ and $v$ be the sums of $2^{i-1}$ integers of size $ S $. By $\Pi(i-1)$, their sizes are at most $S + i - 1$. So the size of $u + v$ is at most $\left(S + i + 1\right) + 1 = S + i$, and $u + v$ is the sum of $2 \cdot 2^(i-1) = 2^i$ integers.
-    So $\Pi(i)$ is verified, hence $\Pi(i-1) \Rightarrow \Pi(i)$
-
-    \paragraph{By induction's principle:} $\Pi(0)$ is verified and $\forall i\in\mathbf{N},\ \Pi(i) \Rightarrow \Pi(i+1)$, So
-    \begin{displaymath}
-        \forall n\in\mathbf{N},\ \Pi(n)\text{ is verified}
-    \end{displaymath}
-\end{proof}
-
-This value can be computed using \ref{prop:sum}. In our case, because we sum the results of the products of two integers of bit size $bitsize,\ S = 2 bitsize$.
-
-TODO: Max for rhi, rmi and rlo
+\bigskip
+This can also be applied with the results of long multiplications thus allowing $n$ to have a greater bit size.
 
 \textcolor{blue}{
     \begin{itemize}
@@ -488,7 +488,7 @@ TODO: Max for rhi, rmi and rlo
 
 \section{Butterfly Fast Fourier Transform}
 
-The butterfly refers to an operation that takes place in Cooley-Tukey algorithm (todo:ref), a common algorithm to perfom 
+The butterfly refers to an operation that takes place in Cooley-Tukey algorithm \cite{Cooley_Tukey_1965}, a common algorithm to perfom 
 Fast Fourier Transform (FFT), which takes as inputs: $n, w$ a modulus and a scalar of at most 64 bits, and two integers 
 $x, y$ in $\mathbb{Z}_n$, and performs the in-place computation:
 \[
@@ -528,51 +528,35 @@ using the following algorithm:
     \end{algorithmic}
 \end{algorithm}
 
+\newpage
 The correctness of this algorithm relies on the definition of $w_{pre}$. 
 
-\begin{proposition}\label{prop:quorem}
-For $(x,y) \in \mathbb{Z}\times \mathbb{N}^*$, the quantities $q=\left\lfloor\frac{x}{y}\right\rfloor$ and 
-$r=x - \left\lfloor\frac{x}{y}\right\rfloor y$ are respectively the quotient and the remainder in the Euclidian division of $x$ by $y$.
-\end{proposition}
-    
-\begin{proof}
-From the definition of the floor of a rational number, we have:
-\[
-    \left\lfloor\dfrac{x}{y}\right\rfloor \leq \dfrac{x}{y} < \left\lfloor\dfrac{x}{y}\right\rfloor + 1 \Longleftrightarrow
-    \left\lfloor\dfrac{x}{y}\right\rfloor y \leq x < \left\lfloor\dfrac{x}{y}\right\rfloor y + y \Longleftrightarrow
-    0 \leq x - \left\lfloor\dfrac{x}{y}\right\rfloor y < y.
-\]
-We then consider $q=\left\lfloor\dfrac{x}{y}\right\rfloor$ and by the uniqueness of the quotient in the Euclidian division with remainder, 
-it implies that $x = yq + r$ with $r=x - \left\lfloor\dfrac{x}{y}\right\rfloor y$ and $0 \leq r < y$.
-\end{proof}
-
 \begin{proof} (Correctness of the algorithm)
-First, using \autoref{prop:quorem}, we have that $w_{pre}= \left\lfloor\frac{w\cdot 2^B}{n}\right\rfloor $ is the quotient in the division 
+First, we have that $w_{pre}= \left\lfloor\frac{w\cdot 2^B}{n}\right\rfloor $ is the quotient in the division 
 of $w\cdot 2^B$ by $n$. Thus,
 \[
     w\cdot 2^B = w_{pre}\cdot n + r \text{ with } 0 \leq r < n\ \Longleftrightarrow\ w_{pre} = \dfrac{w\cdot 2^B - r}{n}
 \]
 
-Thus, by definition of $p_{hi}$,
+Then, by definition of $p_{hi}$,
 \[
 p_{hi} = \left\lfloor\frac{w_{pre}\cdot b_i}{2^B}\right\rfloor
-= \left\lfloor\dfrac{wb_i}{n} - \dfrac{rb_i}{n\cdot 2^B} \right\rfloor.
+= \left\lfloor\dfrac{w\cdot b_i}{n} - \dfrac{r\cdot b_i}{n\cdot 2^B} \right\rfloor.
 \]
 
 From the requirements on $r$ and $b_i$ and the previous result, we have that
 \[
-\left\lfloor\dfrac{wb_i}{n}\right\rfloor - 1 \leq p_{hi} \leq \left\lfloor\dfrac{wb_i}{n}\right\rfloor
+\left\lfloor\dfrac{w\cdot b_i}{n}\right\rfloor - 1 \leq p_{hi} \leq \left\lfloor\dfrac{w\cdot b_i}{n}\right\rfloor
 \]
-and this means that $p_{hi}$ is either $\left\lfloor\frac{wb_i}{n}\right\rfloor - 1$ or $\left\lfloor\frac{wb_i}{n}\right\rfloor$.
+and this means that $p_{hi}$ is either $\left\lfloor\frac{w\cdot b_i}{n}\right\rfloor - 1$ or $\left\lfloor\frac{w\cdot b_i}{n}\right\rfloor$.
 
 
 It follows that we have
 \begin{align*}
-\text{either } &c=w\cdot b_i - \left\lfloor\frac{wb_i}{n}\right\rfloor n + n \\
-\text{or } &c=w\cdot b_i - \left\lfloor\frac{wb_i}{n}\right\rfloor n.
+\text{either } &c=w\cdot b_i - \left\lfloor\frac{w\cdot b_i}{n}\right\rfloor n + n = (w\cdot b_i \mod n)+n \\
+\text{or } &c=w\cdot b_i - \left\lfloor\frac{w\cdot b_i}{n}\right\rfloor n = w\cdot b_i \mod n.
 \end{align*}
-Using \autoref{prop:quorem} again, we have $c=wb_i \mod n$ or $c=(wb_i \mod n)+n$, and the last step of the algorithm ensures 
-that we retrieve $wb_i \mod n$.
+and the last step of the algorithm ensures that we retrieve $w\cdot b_i \mod n$.
 \end{proof}
 
 \begin{remark}
@@ -609,6 +593,7 @@ modular reductions compared to a basic implementation if one is able to restrict
     \end{algorithmic}
 \end{algorithm}
 
+\newpage
 \textcolor{blue}{
     \begin{itemize}
         \item timings + comments
@@ -618,13 +603,25 @@ modular reductions compared to a basic implementation if one is able to restrict
 
 \section{Conclusion}
 
-\textcolor{blue}{
-\begin{itemize}
-    \item forward integration to FLINT
-    \item case of special primes presented in \ref{app}
-    \item IFMA ?
-\end{itemize}
-}
+Altogether, the results are rather conclusive and we can hope for them to be later used in FLINT. 
+
+\bigskip
+To have a more complete study, we could have looked at the case in which the modulus is a prime number
+with a particular form such as the ones presented in the appendix \ref{app}. 
+
+This is possible in the context of the FFT, and could have enhance the butterfly FFT even more.
+
+\bigskip
+Another possible improvement is to use the Integer Fused Multiply Add Instructions (IFMA) that are part of
+the AVX512 family. This extension provides some intrinsics with a low throughput for operations that involve
+multiplications and additions but requires to lower the maximum bit size allowed to 52.
+
+
+\newpage
+\bibliographystyle{plain} 
+\bibliography{biblio} 
+\nocite{*}
+
 
 \newpage
 \appendix
@@ -651,17 +648,15 @@ x \mod M_n &= x_{hi}\cdot 2^{n} + x_{lo} \mod M_n \\
 
 
 \subsection{Generalized Mersenne primes}
-\textcolor{blue}{
+
+Following the same idea presented with Mersenne primes, one can expect to be able to significantly simplify
+the modular reduction using generalized Mersenne primes of the form:
 \begin{align*}
     p &= 2^u + 2^v + 1 \\ 
-    p &= 2^u - 2^v + 1 \\ 
+    p &= 2^u - 2^v + 1 
 \end{align*}
 of $u+1$ bits, with $64 > u > v > 0$.
-}
 
-\newpage
-\bibliographystyle{plain} 
-\bibliography{biblio} 
-\nocite{*}
+This needs a further analysis to be conclusive.
 
 \end{document}
