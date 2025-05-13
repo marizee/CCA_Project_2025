@@ -90,7 +90,7 @@ tests/test_lazy_fft_64: tests/test_lazy_fft_64.o lazy_butterfly_fft_64.o
 tests/test_mulsplit: tests/test_mulsplit.o mulsplit.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-tests/test_dot_product_mod: tests/test_dot_product_mod.o dot_product_32_mod.o
+tests/test_dot_product_mod: tests/test_dot_product_mod.o dot_product_32_mod.o dot_prod_mod_64.o mulsplit.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 tests/test_dot_prod_mod_64: tests/test_dot_prod_mod_64.o dot_prod_mod_64.o mulsplit.o

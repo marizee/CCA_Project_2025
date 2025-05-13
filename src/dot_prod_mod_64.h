@@ -14,12 +14,22 @@ void seq_dot_prod_mod_64(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod) 
 void seq_dot_prod_mod_64_vectorized(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod) ;
 void seq_dot_prod_mod_64_unrolled(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod) ;
 
+void split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) ;
+void split_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) ;
+
 void simd2_dot_prod_mod_64(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod) ;
 void simd2_dot_prod_mod_unrolled(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod) ;
+
+void simd2_split_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) ;
+void simd2_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) ;
+
 
 #if defined(__AVX512F__)
 void simd512_split_dot_product(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod) ;
 void simd512_kara_dot_product_mod(ulong* res, nn_ptr a, nn_ptr b, slong len, nmod_t mod) ;
+
+void simd512_split_dot_product(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) ;
+void simd512_kara_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod) ;
 #endif
 
 #endif

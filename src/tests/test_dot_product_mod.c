@@ -13,6 +13,7 @@
 #include "flint/profiler.h"
 
 #include "../dot_product_32_mod.h"
+#include "../dot_prod_mod_64.h"
 
 
 int main(int argc, char** argv) {
