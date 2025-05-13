@@ -189,11 +189,11 @@ static inline __m512i avx512_mulhi_split_lazy(__m512i a, __m512i b)
 
 static inline __m512i avx512_mulhi_split_lazy_v2(__m512i a, __m512i b)
 //#define HAVE_AVX512_IFMA
-#ifdef HAVE_AVX512_IFMA
-{
-    return _mm512_madd52hi_epu64(_mm512_setzero_si512(), a, b);
-}
-#else
+//#ifdef HAVE_AVX512_IFMA
+//{
+//    return _mm512_madd52hi_epu64(_mm512_setzero_si512(), a, b);
+//}
+//#else
 {
     __m512i r_hi, r_mi;
     __m512i a_hi;
@@ -207,7 +207,7 @@ static inline __m512i avx512_mulhi_split_lazy_v2(__m512i a, __m512i b)
 
     return _mm512_add_epi64(_mm512_srli_epi64(r_mi, 32), r_hi);
 }
-#endif
+//#endif
 
 void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slong len, ulong n, ulong n2, ulong p_hi, ulong p_lo, ulong tmp)
 {
@@ -228,10 +228,11 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
         __m512i va = _mm512_loadu_si512((const __m512i *)(a+i));
         __m512i vb = _mm512_loadu_si512((const __m512i *)(b+i));
 
-        // (a[i] >= n2) ? a[i] - n2 : a[i]
-        __mmask8 mask = _mm512_cmpge_epi64_mask(va, vmod2); // 1111111 if a[i] >= n2, 0 else
-        __m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
-        va = _mm512_sub_epi64(va, tmp2);
+        // (a[i] >= n2) ? a[i] - n2 : a[i] <=> min(a[i] - 2n, a[i])
+        //__mmask8 mask = _mm512_cmpge_epi64_mask(va, vmod2); // 1111111 if a[i] >= n2, 0 else
+        //__m512i tmp2 = _mm512_maskz_set1_epi64(mask, n2);
+        //va = _mm512_sub_epi64(va, tmp2);
+	va = _mm512_min_epu64(_mm512_sub_epi64(va, vmod2), va);
 
         __m512i vq_hi = avx512_mulhi_split_lazy_v2(vw_pr, vb);
 
