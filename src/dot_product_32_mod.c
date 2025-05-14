@@ -58,7 +58,7 @@ void simd2_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
 }
 
 #if defined(__AVX512F__)
-void simd512_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+void simd512_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod_t mod)
 {
     __m512i sum = _mm512_setzero_si512();
 

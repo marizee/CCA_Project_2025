@@ -404,7 +404,7 @@ int main(int argc, char** argv)
     };
 
     // all versions of the function
-    const func versions[][10] = {
+    const func versions[][15] = {
     {
         seq_add,
         seq_add_vectorized,
@@ -524,7 +524,7 @@ int main(int argc, char** argv)
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
         "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\tflint\t\tavx2",
-        "s-novec\t\ts-vec\t\ts-enr\t\tflint\t\tsplit\t\tkara\t\tavx2\t\tsplit avx2\tkara avx2",
+        "s-novec\t\ts-vec\t\ts-unr\t\tflint\t\tsplit\t\tkara\t\tavx2\t\tsplit avx2\tkara avx2",
         "seq\t\tpreinv\t\tsplit\t\tavx2-split\n",
         "seq\t\tavx2",
     };
@@ -536,7 +536,7 @@ int main(int argc, char** argv)
     strcat(header2[2], "\t\tavx512\t\tavx512u\n");
 
     strcat(header2[4], "\t\tavx512\t\tavx512u\n");
-    strcat(header2[5], "\tavx512\n");
+    strcat(header2[5], "\t\tavx512\n");
     strcat(header2[6], "\tsplit avx512\tkara avx512\n");
 
     strcat(header2[8], "\t\tavx512\n");
