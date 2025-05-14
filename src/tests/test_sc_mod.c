@@ -55,7 +55,7 @@ int main()
     
     // tests
     clock_t start, end;
-    double tseq, tseqv, tseq_unr, tsimd, tsimd_unr;
+    double tseq, tseqv, tseq_unr, tsimd; // tsimd_unr;
 
     start = clock();
     seq_mod_scalar_vector(res,b,vec,len,mod);

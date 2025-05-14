@@ -3,7 +3,7 @@
 
 #include "flint/machine_vectors.h"
 
-#define MASK ((1L << 32) - 1)
+//#define MASK ((1L << 32) - 1)
 
 #define SPLIT 20
 #define SMASK ((1L << SPLIT) - 1)
