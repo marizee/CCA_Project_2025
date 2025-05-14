@@ -8,6 +8,7 @@
 #include "scalar_vector_mod_32.h"
 #include "dot_product_32.h"
 #include "dot_product_32_mod.h"
+#include "dot_prod_mod_64.h"
 #include "butterfly_fft_64.h"
 #include "lazy_butterfly_fft_64.h"
 #include "add_64.h"
@@ -397,6 +398,7 @@ int main(int argc, char** argv)
         scalar_vector_mod,
         dot_prod,
         dot_prod_mod,
+        dot_prod_mod,
         butterfly_fft_64,
         lazy_butterfly_64,
     };
@@ -460,8 +462,19 @@ int main(int argc, char** argv)
         seq_dot_product_mod,
         seq_dot_product_mod_vectorized,
         flint_dot_product_mod,
+        simd2_dot_product_mod,
+#if defined(__AVX512F__)
+        simd512_dot_product_mod,
+#endif
+    },
+    {
+        seq_dot_prod_mod_64,
+        seq_dot_prod_mod_64_vectorized,
+        seq_dot_prod_mod_64_unrolled,
+        flint_dot_product_mod,
         split_dot_product_mod,
-        split_kara_dot_product_mod,        
+        split_kara_dot_product_mod,
+        simd2_dot_prod_mod_64,
         simd2_split_dot_product_mod,
         simd2_kara_dot_product_mod,
 #if defined(__AVX512F__)
@@ -485,9 +498,9 @@ int main(int argc, char** argv)
     };
 
     // number of versions for each function
-    slong nbv[] = {5, 5, 5, 4, 8, 7, 4, 2};
+    slong nbv[] = {5, 5, 5, 4, 8, 4, 9, 4, 2};
 #if defined(__AVX512F__)
-    nbv[0] += 2; nbv[1] += 2; nbv[2] += 2; nbv[4] += 2; nbv[5] += 2; nbv[7] += 1;
+    nbv[0] += 2; nbv[1] += 2; nbv[2] += 2; nbv[4] += 2; nbv[5] += 1; nbv[6] += 2; nbv[8] += 1;
 #endif
 
     // name of the function
@@ -496,8 +509,9 @@ int main(int argc, char** argv)
         "(64-bit) modular addition",
         "(32-bit) scalar-vector product",
         "(32-bit) modular scalar-vector product",
-        "(\?\?-bit) dot product",
-        "(\?\?-bit) modular dot product",
+        "(32-bit) dot product",
+        "(32-bit) modular dot product",
+        "(64-bit) modular dot product",
         "(64-bit) modular butterfly fft",
         "(64-bit) lazy butterfly fft (Harvey)",
     };
@@ -509,7 +523,8 @@ int main(int argc, char** argv)
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
         "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
-        "s-novec\t\ts-vec\t\tflint\t\tsplit\t\tkara\t\tsplit avx2\tkara avx2",
+        "s-novec\t\ts-vec\t\tflint\t\tavx2",
+        "s-novec\t\ts-vec\t\ts-enr\t\tflint\t\tsplit\t\tkara\t\tavx2\t\tsplit avx2\tkara avx2",
         "seq\t\tpreinv\t\tsplit\t\tavx2-split\n",
         "seq\t\tavx2",
     };
@@ -521,9 +536,10 @@ int main(int argc, char** argv)
     strcat(header2[2], "\t\tavx512\t\tavx512u\n");
 
     strcat(header2[4], "\t\tavx512\t\tavx512u\n");
-    strcat(header2[5], "\tsplit avx512\tkara avx512\n");
+    strcat(header2[5], "\tavx512\n");
+    strcat(header2[6], "\tsplit avx512\tkara avx512\n");
 
-    strcat(header2[7], "\t\tavx512\n");
+    strcat(header2[8], "\t\tavx512\n");
 #else
     strcat(header2[0], "\n");
     strcat(header2[1], "\n");
@@ -531,8 +547,9 @@ int main(int argc, char** argv)
 
     strcat(header2[4], "\n");
     strcat(header2[5], "\n");
+    strcat(header2[6], "\n");
 
-    strcat(header2[7], "\n");
+    strcat(header2[8], "\n");
 #endif
 
     char header1[][1024] = {
@@ -541,7 +558,8 @@ int main(int argc, char** argv)
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2\n",
         "seq no-vec | seq auto-vec | seq loop-unrolled | split-old | split-new | karatsuba | avx2 | avx2 loop-unrolled",
-        "seq no-vec | seq auto-vec | flint | seq split | seq karatsuba | avx2 split | avx2 karatsuba",
+        "seq no-vec | seq auto-vec | flint | avx2",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | flint | seq split | seq karatsuba | avx2 | avx2 split | avx2 karatsuba",
         "seq | preinvert | split-preinvert | avx2 split-preinvert\n",
         "seq | avx2",
     };
@@ -551,9 +569,10 @@ int main(int argc, char** argv)
     strcat(header1[2], " | avx512 | avx512 loop-unrolled\n");
 
     strcat(header1[4], " | avx512 | avx512 loop-unrolled\n");
-    strcat(header1[5], " | avx512 split | avx512 karatsuba\n");
+    strcat(header1[5], " | avx512\n");
+    strcat(header1[6], " | avx512 split | avx512 karatsuba\n");
 
-    strcat(header1[7], " | avx512\n");
+    strcat(header1[8], " | avx512\n");
 #else
     strcat(header1[0], "\n");
     strcat(header1[1], "\n");
@@ -561,8 +580,9 @@ int main(int argc, char** argv)
 
     strcat(header1[4], "\n");
     strcat(header1[5], "\n");
+    strcat(header1[6], "\n");
 
-    strcat(header1[7], "\n");
+    strcat(header1[8], "\n");
 #endif
 
 
@@ -583,10 +603,11 @@ int main(int argc, char** argv)
         flint_printf("      #1 --> (64-bit) modular addition\n");
         flint_printf("      #2 --> (32-bit) scalar-vector product\n");
         flint_printf("      #3 --> (32-bit) modular scalar-vector product\n");
-        flint_printf("      #4 --> (\?\?-bit) dot product\n");
-        flint_printf("      #5 --> (\?\?-bit) modular dot product\n");
-        flint_printf("      #6 --> (64-bit) modular butterfly fft\n");
-        flint_printf("      #7 --> (64-bit) lazy butterfly fft\n");
+        flint_printf("      #4 --> (32-bit) dot product\n");
+        flint_printf("      #5 --> (32-bit) modular dot product\n");
+        flint_printf("      #6 --> (64-bit) modular dot product\n");
+        flint_printf("      #7 --> (64-bit) modular butterfly fft\n");
+        flint_printf("      #8 --> (64-bit) lazy butterfly fft\n");
         return 0;
     }
 
