@@ -57,3 +57,26 @@ void simd2_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len, nmod
     NMOD_RED(*res, *res, mod);
 }
 
+#if defined(__AVX512F__)
+void simd512_dot_product_mod(ulong* res, nn_ptr vec1, nn_ptr vec2, slong len)
+{
+    __m512i sum = _mm512_setzero_si512();
+
+    slong i;
+    for (i=0; i+7 < len; i+=8)
+    {
+        __m512i va = _mm512_loadu_si512((const __m512i *)&vec1[i]);
+        __m512i vb = _mm512_loadu_si512((const __m512i *)&vec2[i]);
+        __m512i prod = _mm512_mul_epu32(va, vb);
+
+        sum = _mm512_add_epi64(sum, prod);
+    }
+
+    ulong rres = _mm512_reduce_add_epi64(sum);
+
+    // when len is not a multiple of 8
+    for (; i < len; i++)
+        rres += vec1[i]*vec2[i];
+    NMOD_RED(*res, rres, mod);
+}
+#endif
