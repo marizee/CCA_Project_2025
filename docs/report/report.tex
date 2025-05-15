@@ -18,8 +18,12 @@
         \rule{\linewidth}{0.5mm} \\[1cm]
         {\large 24 January 2025 - 20 May 2025}\\[3cm]
 
-        {\Large Damien ASSIRE - \\
-                Marie BONBOIRE - 21100552}
+        {\Large 
+            \begin{align*}
+                \textsc{Damien ASSIRE}  &- 21112838 \\
+                \textsc{Marie BONBOIRE} &- 21100552
+            \end{align*}
+        }
 
 
     \end{center}
@@ -77,6 +81,11 @@ We only present the results obtained with a modulus of more than 32 bits and les
 \bigskip
 The source code of this project, along with the timing measurements, is entirely available on GitHub\footnote{\url{https://github.com/marizee/CCA_Project_2025}}.
 
+\textcolor{blue}{
+    \begin{itemize}
+        \item code structure: makefile, readme, profiling, tests, ...
+    \end{itemize}
+}
 
 \subsection{Machines description}
 
@@ -125,6 +134,11 @@ of processors that have different features (clock speed, throughputs, cache size
 \bigskip
 The processor marked in gray corresponds to a machine that does not provide AVX512 so it is only used to check the
 correctness of the algorithms and will not appear in the timing comparisons of this document.
+
+\begin{itemize}
+    \item mention uops here ? allows to compare the performances 
+\end{itemize}
+
 
 \subsection{Vectorization}
 
@@ -210,7 +224,7 @@ the mutiple load and store operations and the memory issues that can arise from 
     the processor used and the number of cycles it requires to complete the operation.
     
     For example, the Zen 4 processor has a clock speed of 3.3 GHz meaning it can handle about 
-    3.3 billion cycles per second. Thus, considering the throughput of an operation perfomed on
+    3.3 billion cycles per second. Thus, considering the throughput of an operation performed on
     $N$ pairs of coefficients, we can expect a timing of about
     \[
     \dfrac{N\cdot throughput}{3.3\times 10^9}\quad \text{seconds}.
@@ -226,12 +240,12 @@ since it corresponds to the number of pairs of coefficients they can handle simu
 We will show that it is not particularly the case in practice.
 
 
-\section{Multiplication of $64$-bit integers} \label{mulsplit}
+\section{Multiplication of $64$-bit integers} 
 
 When multiplying two integers, a problem of overflow can arise since the result might be too big to be stored in a $64$-bit word. 
 To circumvent this issue, one needs to first split the two integers into two words of a given size and then apply the long multiplication.
 
-\subsection{Long multiplication}
+\subsection{Long multiplication} \label{mulsplit}
 
 The long multiplication consists in computing the multiplication of $64$-bit integers using multiplications and additions of
 integers with a lower size.
@@ -272,10 +286,10 @@ bits such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
 
 \bigskip
 The exact formulas for these elements are:
-\begin{align*}
-    (xy)_{lo} &= (r_{hi} \ll 2\cdot k) + (r_{mi} \ll k) + r_{lo} \\
-    (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) + c \\
-\end{align*}
+\begin{align}
+    (xy)_{lo} &= (r_{hi} \ll 2\cdot k) + (r_{mi} \ll k) + r_{lo} \nonumber \\
+    (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) + c \label{carry}
+\end{align}
 where $c$ corresponds to the carry coming from $(xy)_{lo}$.
 
 \begin{remark}
@@ -329,8 +343,110 @@ Hence, we provide versions of the missing functions used in our implementations.
     \item in the Vector Class library\footnote{\url{https://github.com/vectorclass/version2}} for \texttt{mullo} over 64-bit integers using AVX2,
     \item in the Intel HEXL library\cite{boemer2021intelhexlacceleratinghomomorphic} for \texttt{mulhi} over 64-bit integers using AVX512.
 \end{itemize}
+\textcolor{blue}{rewrite so that it doesn't seem like we just copy/pasted}
+
+\subsection{Modular multiplications with precomputation}
+
+In a context of several modular multiplications where one operand $w$ and the modulus $n$ are fixed,
+V. Shoup\cite{Bos_Stam_2021} introduced a step of precomputation on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
+
+\bigskip
+Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \in \mathbb{Z}_n$, one can compute a scaled approximation 
+of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
+
+Then, for a vector $b = (b_1,\dots, b_N)$, one can compute $(w\cdot b_i \mod n)$ for each $i\in \{1, \dots, N\}$
+using the following algorithm:
+
+\begin{algorithm}
+    \caption{Shoup modular multiplication}
+    \begin{algorithmic}[1]
+        \Require $n < 2^B$,
+        \Require $0 < w < n$ and its precomputation $0 < w_{pre} < 2^B$,
+        \Require $0 \leq b_i < n \qquad i\in \{1, \dots, N\}$.
+        \Ensure $(w\cdot b_i \mod n)$.
+
+        \State Compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \Comment{1 \texttt{mulhi}}
+        \State $c \gets w\cdot b_i - p_{hi}\cdot n$ \Comment{2 \texttt{mullo}}
+        \If {$c \geq n$}
+            \State \Return $c-n$
+        \Else
+            \State \Return $c$
+        \EndIf
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{remark}
+    The branching at lines 3 to 7 satisfies:
+    \[
+    c \mod n = 
+    \left\{
+        \begin{array}{ll}
+            c - n & \text{ if } c \geq n \\
+            c & 
+        \end{array}
+    \right.
+    = \min(c-n, c).
+    \]
+    Thus, using AVX512 intrinsics, one can use \texttt{\_mm512\_min\_epu64} to reduce $c$.
+\end{remark}
+
+\bigskip
+The correctness of this algorithm relies on the definition of $w_{pre}$. 
+
+\begin{proof} (Correctness of the algorithm)
+First, we have that $w_{pre}= \left\lfloor\frac{w\cdot 2^B}{n}\right\rfloor $ is the quotient in the division 
+of $w\cdot 2^B$ by $n$. Thus,
+\[
+    w\cdot 2^B = w_{pre}\cdot n + r \text{ with } 0 \leq r < n\ \Longleftrightarrow\ w_{pre} = \dfrac{w\cdot 2^B - r}{n}
+\]
+
+Then, by definition of $p_{hi}$,
+\[
+p_{hi} = \left\lfloor\frac{w_{pre}\cdot b_i}{2^B}\right\rfloor
+= \left\lfloor\dfrac{w\cdot b_i}{n} - \dfrac{r\cdot b_i}{n\cdot 2^B} \right\rfloor.
+\]
+
+From the requirements on $r$ and $b_i$ and the previous result, we have that
+\[
+\left\lfloor\dfrac{w\cdot b_i}{n}\right\rfloor - 1 \leq p_{hi} \leq \left\lfloor\dfrac{w\cdot b_i}{n}\right\rfloor
+\]
+and this means that $p_{hi}$ is either $\left\lfloor\frac{w\cdot b_i}{n}\right\rfloor - 1$ or $\left\lfloor\frac{w\cdot b_i}{n}\right\rfloor$.
+
+
+It follows that we have
+\begin{align*}
+\text{either } &c=w\cdot b_i - \left\lfloor\frac{w\cdot b_i}{n}\right\rfloor n + n = (w\cdot b_i \mod n)+n \\
+\text{or } &c=w\cdot b_i - \left\lfloor\frac{w\cdot b_i}{n}\right\rfloor n = w\cdot b_i \mod n
+\end{align*}
+and the last step of the algorithm ensures that we retrieve $w\cdot b_i \mod n$.
+\end{proof}
+
+\begin{remark}
+    In this particular case, one can omit the computation of the carry in equation (\ref{carry}) when performing the \texttt{mulhi} operation on $w_{pre}\cdot b_i$.
+
+    If so, $p_{hi}$ might be off by one bit meaning that at the step 2 of the algorithm, we have 
+    \[
+    c = 
+    \left\{
+    \begin{array}{ll}
+        & \ w\cdot b_i \mod n \\
+        \text{or } & (w\cdot b_i \mod n) + n \\
+        \text{or } & (w\cdot b_i \mod n) + 2n
+    \end{array}
+    \right.
+    \]
+    and the last case requires an additional substraction by $n$.
+
+    This is the approach we used as it significantly speeds up the operation.
+\end{remark}
 
 \section{Classic arithmetic operations on vectors}
+
+\textcolor{blue}{
+    \begin{itemize}
+        \item to get familiar with vectorization
+    \end{itemize}
+}
 
 \subsection{Modular reduction}
 
@@ -443,15 +559,12 @@ These two operations share about the same properties and can both be implemented
 in Section \ref{mulsplit}.
 
 \begin{remark}
-    None of the mentioned methods to bypass the modular reduction can be applied here. It has to be perfomed after each multiplication.
+    None of the mentioned methods to bypass the modular reduction can be applied here. It has to be performed after each multiplication.
 \end{remark}
 
-\textcolor{blue}{
-    \begin{itemize}
-        \item Not done: todo or remove ?
-        \item Barrett reduction ?
-    \end{itemize}
-}
+We only show the results obtained with the scalar-vector product that was implemented using Shoup algorithm.
+
+\textcolor{blue}{ timings +comments}
 
 \subsection{Dot product}
 
@@ -460,9 +573,9 @@ Given two vectors $a,b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we comp
 \left(a_1\cdot b_1 + a_2\cdot b_2 + \dots + a_N\cdot b_N\right) \mod n = \left(\sum_{i=1}^N a_i\cdot b_i\right) \mod n.
 \]
 
-Each multiplication is perfomed by using the long multiplication of Section \ref{mulsplit} and then
+Each multiplication is performed by using the long multiplication of Section \ref{mulsplit} and then
 the products are classically added together.
-Like so, it requires to perfom a reduction for each binary operation.
+Like so, it requires to perform a reduction for each binary operation.
 
 \bigskip
 In fact, one can consider delaying the reduction according to the size of the modulus.
@@ -488,7 +601,7 @@ This can also be applied with the results of long multiplications thus allowing 
 
 \section{Butterfly Fast Fourier Transform}
 
-The butterfly refers to an operation that takes place in Cooley-Tukey algorithm \cite{Cooley_Tukey_1965}, a common algorithm to perfom 
+The butterfly refers to an operation that takes place in Cooley-Tukey algorithm \cite{Cooley_Tukey_1965}, a common algorithm to perform 
 Fast Fourier Transform (FFT), which takes as inputs: $n, w$ a modulus and a scalar of at most 64 bits, and two integers 
 $x, y$ in $\mathbb{Z}_n$, and performs the in-place computation:
 \[
@@ -499,79 +612,10 @@ Looking at the more global picture, in the FFT algorithm such a butterfly will
 be applied to a long vector of different \(x_i, y_i\) but with the same \(w\) and \(n\).
 
 
-\subsection{Modular multiplication with precomputation}
-
-To take the most of the fixed parameters, V. Shoup\cite{Bos_Stam_2021} introduced a step of precomputations on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
-
-\bigskip
-Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \in \mathbb{Z}_n$, one can compute a scaled approximation 
-of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
-
-Then, for a vector $b = (b_1,\dots, b_N)$, one can compute $(w\cdot b_i \mod n)$ for each $i\in \{1, \dots, N\}$
-using the following algorithm:
-
-\begin{algorithm}
-    \caption{Shoup modular multiplication}
-    \begin{algorithmic}[1]
-        \Require $n < 2^B$,
-        \Require $0 < w < n$ and its precomputation $0 < w_{pre} < 2^B$,
-        \Require $0 \leq b_i < n \qquad i\in \{1, \dots, N\}$.
-        \Ensure $(w\cdot b_i \mod n)$.
-
-        \State Compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \Comment{1 \texttt{mulhi}}
-        \State $c \gets w\cdot b_i - p_{hi}\cdot n$ \Comment{2 \texttt{mullo}}
-        \If {$c \geq n$}
-            \State \Return $c-n$
-        \Else
-            \State \Return $c$
-        \EndIf
-    \end{algorithmic}
-\end{algorithm}
-
-\newpage
-The correctness of this algorithm relies on the definition of $w_{pre}$. 
-
-\begin{proof} (Correctness of the algorithm)
-First, we have that $w_{pre}= \left\lfloor\frac{w\cdot 2^B}{n}\right\rfloor $ is the quotient in the division 
-of $w\cdot 2^B$ by $n$. Thus,
-\[
-    w\cdot 2^B = w_{pre}\cdot n + r \text{ with } 0 \leq r < n\ \Longleftrightarrow\ w_{pre} = \dfrac{w\cdot 2^B - r}{n}
-\]
-
-Then, by definition of $p_{hi}$,
-\[
-p_{hi} = \left\lfloor\frac{w_{pre}\cdot b_i}{2^B}\right\rfloor
-= \left\lfloor\dfrac{w\cdot b_i}{n} - \dfrac{r\cdot b_i}{n\cdot 2^B} \right\rfloor.
-\]
-
-From the requirements on $r$ and $b_i$ and the previous result, we have that
-\[
-\left\lfloor\dfrac{w\cdot b_i}{n}\right\rfloor - 1 \leq p_{hi} \leq \left\lfloor\dfrac{w\cdot b_i}{n}\right\rfloor
-\]
-and this means that $p_{hi}$ is either $\left\lfloor\frac{w\cdot b_i}{n}\right\rfloor - 1$ or $\left\lfloor\frac{w\cdot b_i}{n}\right\rfloor$.
-
-
-It follows that we have
-\begin{align*}
-\text{either } &c=w\cdot b_i - \left\lfloor\frac{w\cdot b_i}{n}\right\rfloor n + n = (w\cdot b_i \mod n)+n \\
-\text{or } &c=w\cdot b_i - \left\lfloor\frac{w\cdot b_i}{n}\right\rfloor n = w\cdot b_i \mod n.
-\end{align*}
-and the last step of the algorithm ensures that we retrieve $w\cdot b_i \mod n$.
-\end{proof}
-
-\begin{remark}
-    In this particular case, one can omit the computation of the carry when perfoming the \texttt{mulhi} operation on $w_{pre}\cdot b_i$.
-
-    If so, $p_{hi}$ might be off by one bit meaning that in the step 2 of the algorithm, we either compute $p_{hi}\cdot n$
-    or $(p_{hi}-1)\cdot n$ which leads to a result up to $2n$ and thus requires to adapt the step of correction at the end of the algorithm.
-
-    This is the approach we used as it significantly speeds up the operation.
-\end{remark}
-
-
 \subsection{Harvey lazy butterfly FFT}
 
-Harvey proposes a strategy\cite{DBLP:journals/corr/abs-1205-2926} to compute the butterfly FFT that allows to save two
+Harvey proposes a strategy\cite{DBLP:journals/corr/abs-1205-2926} to compute the butterfly FFT base on Shoup multiplication
+with the precomputation step that allows to save two
 modular reductions compared to a basic implementation if one is able to restrict the sizes of the modulus. 
 
 \begin{algorithm}
@@ -582,20 +626,23 @@ modular reductions compared to a basic implementation if one is able to restrict
         \Require $0 \leq x, y < 4n$.
         \Ensure $(x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n), \qquad 0 \leq x,y < 4p.$
 
-        \If {$x \geq 2p$}
-            \State $x \gets x - 2p$
+        \If {$x \geq 2n$}
+            \State $x \gets x - 2n$
         \EndIf
         \State Compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot y = p_{hi}\cdot 2^B + p_{lo}$ \Comment{1 \texttt{mulhi}}
         \State $t \gets w\cdot y - p_{hi}\cdot n$ \Comment{2 \texttt{mullo}}
+        \If {$t \geq 2n$}
+            \State $t \gets t - 2n$
+        \EndIf
         \State $x \gets x + t$
-        \State $y \gets x - t + 2p$
+        \State $y \gets x - t + 2n$
         \State \Return $x,y$
     \end{algorithmic}
 \end{algorithm}
 
-\newpage
 \textcolor{blue}{
     \begin{itemize}
+        \item explain this is our version, and one can find a similar one in hexl
         \item timings + comments
     \end{itemize}
 }
@@ -614,7 +661,7 @@ This is possible in the context of the FFT, and could have enhance the butterfly
 \bigskip
 Another possible improvement is to use the Integer Fused Multiply Add Instructions (IFMA) that are part of
 the AVX512 family. This extension provides some intrinsics with a low throughput for operations that involve
-multiplications and additions but requires to lower the maximum bit size allowed to 52.
+multiplications and additions but requires to lower the maximum bit size allowed to 52. \textcolor{blue}{$\Rightarrow$floating-point arithmetic}
 
 
 \newpage
