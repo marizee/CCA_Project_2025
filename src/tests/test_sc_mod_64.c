@@ -112,7 +112,7 @@ int main()
     printf("avx512=\t\t%.5es\n", tavx512);
 
     start = clock();
-    simd2_mod_scalar_vector_unrolled(res8, b, vec, len);
+    avx512_shoup_scalar_vector_mod_64_unrolled(res8,w,b,len,mod);
     //_nmod_vec_print_pretty(res8, len, mod);
     end = clock();
     tavx512_unr = ((double) (end - start)) / CLOCKS_PER_SEC;
