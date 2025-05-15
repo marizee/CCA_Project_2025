@@ -575,7 +575,7 @@ int main(int argc, char** argv)
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
-        "s-novec\t\ts-vec\t\tflint\t\tavx2\n",
+        "s-novec\t\ts-vec\t\tflint\t\tavx2",
         "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\tflint\t\tavx2",
         "s-novec\t\ts-vec\t\ts-unr\t\tflint\t\tsplit\t\tkara\t\tavx2\t\tsplit avx2\tkara avx2",
