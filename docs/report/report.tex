@@ -592,32 +592,33 @@ we can sum up to $2^{64 - 2k}$ terms before doing a reduction.
 
 \bigskip
 This can also be applied with the results of long multiplications thus allowing $n$ to have a greater bit size.
-
-In this case, we don't retrieve the high and low parts immediately, but instead compute the sum of each $r_{lo}$, $r_{mi}$ and $r_{lo}$. If we split at $l$ bits with $l \leq 32$, we end up with
+In this case, we don't retrieve the high and low parts immediately, but instead
+compute the sum of each $r_{lo}$, $r_{mi}$ and $r_{lo}$ computed like in section
+\ref{mulsplit}. If we split at $l$ bits with $l \leq 32$, we end up with:
 \begin{itemize}
     \item $r_{lo}$ of size $2 l$
     \item $r_{mi}$ of size $(k - l) + l + 1 = k$
     \item $r_{hi}$ of size $2 \left(k - l\right)$
 \end{itemize}
 
-Hence, we can sum up to $2^{64 - \max\left(2 l, k + 1, 2 \left(k - l\right)\right)}$ terms without overflow.
+Hence, we can sum up to
+$2^{64 - \max\left(2 l, k + 1, 2 \left(k - l\right)\right)}$ terms without
+overflow.
 
 % TODO:
 % - label for sec 2
 
 \begin{remark}
-    The size of the result is not a limit for the number of term we can sum. This result is stored in 128 bits in total, so if $k \in [\![2, 64]\!]$ is the size of the terms, up to $2^{128 - 2k}$, which is higher than the previous value.
-    %\begin{align*}
-    %    2^{128 - 2k} &= 2^{2\left(64 - k\right)} \\
-    %        &\geq 2^{64 - k} \\
-    %        &\geq 2^{64 - (k+1)} \\
-    %        &\geq 2^{64 - \max\left(2 l, (k+1), 2 \left(k - l\right)\right)}
-    %\end{align*}
+    The size of the result is not a limit for the number of term we can sum.
+    This result is stored in 128 bits in total, so if $k \in \{2, \dots, 64\}$ is
+    the size of the terms, up to $2^{128 - 2k}$, which is higher than the
+    previous value.
 \end{remark}
 
 \textcolor{blue}{
     \begin{itemize}
         \item timings + comments
+        \item Speak a little bit more about reconstruction and mod?
     \end{itemize}
 }
 
