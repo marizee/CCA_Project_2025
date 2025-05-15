@@ -112,7 +112,7 @@ void avx512_preinv_split_fft_lazy44(nn_ptr a, nn_ptr b, ulong w, ulong w_pr, slo
         rlo = _mm512_mullo_epi64(vq_hi, vmod);
         __m512i vres = _mm512_sub_epi64(llo, rlo);
 
-	    vres = _mm512_min_epu64(_mm512_sub_epi64(res, vmod2), vres);
+	    vres = _mm512_min_epu64(_mm512_sub_epi64(vres, vmod2), vres);
 
         __m512i add = _mm512_add_epi64(va, vres);
         __m512i sub = _mm512_add_epi64(_mm512_sub_epi64(va, vres), vmod2);
