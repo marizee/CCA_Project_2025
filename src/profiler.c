@@ -462,7 +462,8 @@ int main(int argc, char** argv)
     {   // add mod 64
         seq_add_mod,
         seq_add_mod_vectorized,
-        seq_add_mod_unrolled,    
+        seq_add_mod_unrolled,
+        flint_add_mod,  
         simd2_add_mod,
         simd2_add_mod_unrolled,
 #if defined(__AVX512F__)
@@ -556,7 +557,7 @@ int main(int argc, char** argv)
     };
 
     // number of versions for each function
-    slong nbv[] = {5, 5, 5, 4, 6, 8, 6, 9, 4, 2};
+    slong nbv[] = {5, 6, 5, 4, 6, 8, 6, 9, 4, 2};
 #if defined(__AVX512F__)
     nbv[0] += 2; nbv[1] += 2; nbv[2] += 2; nbv[4] += 2; nbv[5] += 2; nbv[6] += 2; nbv[7] += 2; nbv[9] += 1;
 #endif
@@ -578,7 +579,7 @@ int main(int argc, char** argv)
     // headers 
     char header2[][1024] = {
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
-        "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
+        "s-novec\t\ts-vec\t\ts-unr\t\tflint\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
         "s-novec\t\ts-vec\t\ts-unr\t\tflint\t\tavx2\t\tavx2u",
@@ -616,7 +617,7 @@ int main(int argc, char** argv)
 
     char header1[][1024] = {
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
-        "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | flint | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2\n",
         "seq no-vec | seq auto-vec | seq loop-unrolled | flint | avx2 | avx2 loop-unrolled",

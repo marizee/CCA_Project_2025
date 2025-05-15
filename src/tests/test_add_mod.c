@@ -13,6 +13,7 @@ int main()
     nmod_t mod;
     ulong n;
     nn_ptr a, b;
+    nn_ptr res;
     nn_ptr res1, res2, res3;
     nn_ptr res4, res5;
 
@@ -30,6 +31,7 @@ int main()
         a[i] = n_randint(state, n); //9223372036854775807;
         b[i] = n_randint(state, n); //9223372036854775807;
     }
+    res = _nmod_vec_init(len);
     res1 = _nmod_vec_init(len);
     res2 = _nmod_vec_init(len);
     res3 = _nmod_vec_init(len);
@@ -46,7 +48,15 @@ int main()
     
     // tests
     clock_t start, end;
-    double tseq, tseqv, tseq_unr, tsimd2, tsimd2_unr;
+    double tflint, tseq, tseqv, tseq_unr, tsimd2, tsimd2_unr;
+
+    start = clock();
+    flint_add_mod(res,a,b,len,mod);
+    end = clock();
+    tflint = ((double) (end - start)) / CLOCKS_PER_SEC;
+    //_nmod_vec_print_pretty(res, len, mod);
+    printf("flint=\t\t%.5es\n", tflint);
+    //printf("\n");
 
     start = clock();
     seq_add_mod(res1,a,b,len,mod);
@@ -117,21 +127,22 @@ int main()
 #endif
     
     // checks
-    int s1 = _nmod_vec_equal(res1, res2, len);
-    int s2 = _nmod_vec_equal(res1, res3, len);
+    int s1 = _nmod_vec_equal(res, res1, len);
+    int s2 = _nmod_vec_equal(res, res2, len);
+    int s3 = _nmod_vec_equal(res, res3, len);
 
-    int v2_1 = _nmod_vec_equal(res1, res4, len);
-    int v2_2 = _nmod_vec_equal(res1, res5, len);
+    int v2_1 = _nmod_vec_equal(res, res4, len);
+    int v2_2 = _nmod_vec_equal(res, res5, len);
 
 #if defined(__AVX512F__)
-    int v512_1 = _nmod_vec_equal(res1, res6, len);
-    int v512_2 = _nmod_vec_equal(res1, res7, len);
+    int v512_1 = _nmod_vec_equal(res, res6, len);
+    int v512_2 = _nmod_vec_equal(res, res7, len);
 
-    if (!s1 || !s2 || !v2_1 || !v2_2 || !v512_1 || !v512_2)
-        printf("ff - s1=%d s2=%d v2_1=%d v2_2=%d v512_1=%d v512_2=%d\n", s1, s2, v2_1, v2_2, v512_1, v512_2);
+    if (!s1 || !s2 || !s3 || !v2_1 || !v2_2 || !v512_1 || !v512_2)
+        printf("ff - s1=%d s2=%d s3=%d v2_1=%d v2_2=%d v512_1=%d v512_2=%d\n", s1, s2, s3, v2_1, v2_2, v512_1, v512_2);
 #else
-    if (!s1 || !s2 || !v2_1 || !v2_2)
-        printf("ff - s1=%d s2=%d v2_1=%d v2_2=%d\n", s1, s2, v2_1, v2_2);
+    if (!s1 || !s2 || !s3 || !v2_1 || !v2_2)
+        printf("ff - s1=%d s2=%d s3=%d v2_1=%d v2_2=%d\n", s1, s2, s3, v2_1, v2_2);
 #endif
     else 
         printf("OK!\n");

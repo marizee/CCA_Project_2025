@@ -1,5 +1,11 @@
 #include "add_mod_64.h"
 
+
+void flint_add_mod(nn_ptr res, nn_ptr a, nn_ptr b, slong len, nmod_t mod)
+{
+    _nmod_vec_add(res, a, b, len, mod);
+}
+
 __attribute__((optimize("-fno-tree-vectorize")))
 void seq_add_mod(nn_ptr res, nn_ptr a, nn_ptr b, slong len, nmod_t mod)
 {
