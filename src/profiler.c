@@ -490,10 +490,13 @@ int main(int argc, char** argv)
     {   // scalar vector mod 64
         seq_shoup_scalar_vector_mod_64,
         seq_shoup_scalar_vector_mod_64_vectorized,
+        seq_shoup_scalar_vector_mod_64_unrolled,
         flint_shoup_scalar_vector_mod_64,
         avx2_shoup_scalar_vector_mod_64,
+        avx2_shoup_scalar_vector_mod_64_unrolled,
 #if defined(__AVX512F__)
         avx512_shoup_scalar_vector_mod_64,
+        avx512_shoup_scalar_vector_mod_64_unrolled,
 #endif
     },
     {   // dot prod 32
@@ -553,9 +556,9 @@ int main(int argc, char** argv)
     };
 
     // number of versions for each function
-    slong nbv[] = {5, 5, 5, 4, 4, 8, 6, 9, 4, 2};
+    slong nbv[] = {5, 5, 5, 4, 6, 8, 6, 9, 4, 2};
 #if defined(__AVX512F__)
-    nbv[0] += 2; nbv[1] += 2; nbv[2] += 2; nbv[4] += 1; nbv[5] += 2; nbv[6] += 2; nbv[7] += 2; nbv[9] += 1;
+    nbv[0] += 2; nbv[1] += 2; nbv[2] += 2; nbv[4] += 2; nbv[5] += 2; nbv[6] += 2; nbv[7] += 2; nbv[9] += 1;
 #endif
 
     // name of the function
@@ -578,7 +581,7 @@ int main(int argc, char** argv)
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tavx2\n",
-        "s-novec\t\ts-vec\t\tflint\t\tavx2",
+        "s-novec\t\ts-vec\t\ts-unr\t\tflint\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tsplit-o\t\tsplit-n\t\tkara\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tflint\t\tavx2\t\tavx2u",
         "s-novec\t\ts-vec\t\ts-unr\t\tflint\t\tsplit\t\tkara\t\tavx2\t\tsplit avx2\tkara avx2",
@@ -592,7 +595,7 @@ int main(int argc, char** argv)
     strcat(header2[1], "\t\tavx512\t\tavx512u\n");
     strcat(header2[2], "\t\tavx512\t\tavx512u\n");
 
-    strcat(header2[4], "\t\tavx512\n");
+    strcat(header2[4], "\t\tavx512\t\tavx512u\n");
     strcat(header2[5], "\t\tavx512\t\tavx512u\n");
     strcat(header2[6], "\t\tavx512\t\tavx512u\n");
     strcat(header2[7], "\tsplit avx512\tkara avx512\n");
@@ -616,7 +619,7 @@ int main(int argc, char** argv)
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | avx2\n",
-        "seq no-vec | seq auto-vec | flint | avx2",
+        "seq no-vec | seq auto-vec | seq loop-unrolled | flint | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | split-old | split-new | karatsuba | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | flint | avx2 | avx2 loop-unrolled",
         "seq no-vec | seq auto-vec | seq loop-unrolled | flint | seq split | seq karatsuba | avx2 | avx2 split | avx2 karatsuba",
@@ -628,7 +631,7 @@ int main(int argc, char** argv)
     strcat(header1[1], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[2], " | avx512 | avx512 loop-unrolled\n");
 
-    strcat(header1[4], " | avx512\n");
+    strcat(header1[4], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[5], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[6], " | avx512 | avx512 loop-unrolled\n");
     strcat(header1[7], " | avx512 split | avx512 karatsuba\n");
