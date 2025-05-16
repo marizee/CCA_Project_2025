@@ -792,16 +792,20 @@ overflow.
 
 \textcolor{blue}{
     \begin{itemize}
-        \item timings + comments
+        \item meaning that
         \item Speak a little bit more about reconstruction and mod?
     \end{itemize}
 }
 
 % TODO: Reformulate this
-The timings for the dot product are %TODO
-The versions with AVX are faster than FLINT's implementation. However,
-we can see that the AVX512 version is not that faster than AVX2 one on
-the CPU used.
+The speedups for the Ice Lake and Zen 4 processors are very satisfying. On those
+two processors, the versions with AVX are faster than FLINT's implementation.
+However, the Cascade Lake processor got no speedup over the sequential version
+for the AVX2 version, and the timings for both AVX2 and AVX512 are very similar.
+%, meaning that
+%we can see that the AVX512 version is not that faster than AVX2 one on
+%the processor used.
+%processor
 
 \section{Butterfly Fast Fourier Transform}
 
