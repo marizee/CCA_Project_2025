@@ -889,6 +889,98 @@ modular reductions compared to a basic implementation if one is able to restrict
     \end{itemize}
 }
 
+\subsection{results for complete fft}
+
+%Le nombre premier choisi est un premier FFT de 50 bits. Le code marche aussi
+%jusqu'à 62 bits avec les mêmes performances, mais j'ai mesuré sur 50 bits pour
+%pouvoir comparer à la FFT basée sur les flottants déjà dans FLINT (qui elle ne
+%peut pas aller au-delà de 50 bits).
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|r|*{4}{c|}}
+        \hline
+        \rowcolor{myGray}
+        depth & sd\_fft & dft4 & dft4s & dft2s \\
+        \hline
+        \cellcolor{myGray} 3 & 1.5e-08 & 1.4e-08 & 1.5e-08 & 1.5e-08 \\
+        \hline
+        \cellcolor{myGray} 4 & 2.1e-08 & 3.5e-08 & 2.2e-08 & 2.4e-08 \\
+        \hline
+        \cellcolor{myGray} 5 & 2.7e-08 & 8.2e-08 & 5.4e-08 & 5.3e-08 \\
+        \hline
+        \cellcolor{myGray} 6 & 6.2e-08 & 2.0e-07 & 9.7e-08 & 1.1e-07 \\
+        \hline
+        \cellcolor{myGray} 7 & 1.1e-07 & 4.4e-07 & 2.3e-07 & 2.3e-07 \\
+        \hline
+        \cellcolor{myGray} 8 & 2.9e-07 & 1.1e-06 & 4.8e-07 & 5.2e-07 \\
+        \hline
+        \cellcolor{myGray} 9 & 5.6e-07 & 2.3e-06 & 1.1e-06 & 1.1e-06 \\
+        \hline
+        \cellcolor{myGray} 10 & 1.3e-06 & 5.4e-06 & 2.2e-06 & 2.5e-06 \\
+        \hline
+        \cellcolor{myGray} 11 & 2.9e-06 & 1.1e-05 & 5.0e-06 & 5.0e-06 \\
+        \hline
+        \cellcolor{myGray} 12 & 6.1e-06 & 2.5e-05 & 1.0e-05 & 1.1e-05 \\
+        \hline
+        \cellcolor{myGray} 13 & 1.3e-05 & 5.3e-05 & 2.4e-05 & 2.4e-05 \\
+        \hline
+        \cellcolor{myGray} 14 & 2.9e-05 & 1.2e-04 & 4.8e-05 & 5.0e-05 \\
+        \hline
+        \cellcolor{myGray} 15 & 6.1e-05 & 2.4e-04 & 1.0e-04 & 1.1e-04 \\
+        \hline
+        \cellcolor{myGray} 16 & 1.3e-04 & 5.2e-04 & 2.0e-04 & 2.2e-04 \\
+        \hline
+        \cellcolor{myGray} 17 & 2.7e-04 & 1.1e-03 & 4.5e-04 & 4.6e-04 \\
+        \hline
+        \cellcolor{myGray} 18 & 5.8e-04 & 2.4e-03 & 9.1e-04 & 9.6e-04 \\
+        \hline
+        \cellcolor{myGray} 19 & 1.2e-03 & 4.9e-03 & 2.0e-03 & 2.0e-03 \\
+        \hline
+        \cellcolor{myGray} 20 & 2.6e-03 & 1.1e-02 & 4.1e-03 & 4.3e-03 \\
+        \hline
+        \cellcolor{myGray} 21 & 6.0e-03 & 2.2e-02 & 9.2e-03 & 9.6e-03 \\
+        \hline
+        \cellcolor{myGray} 22 & 1.3e-02 & 4.8e-02 & 2.0e-02 & 2.3e-02 \\
+        \hline
+        \cellcolor{myGray} 23 & 2.8e-02 & 9.9e-02 & 4.2e-02 & 4.7e-02 \\
+        \hline
+        \cellcolor{myGray} 24 & 6.2e-02 & 2.1e-01 & 8.3e-02 & 9.8e-02 \\
+        \hline
+        \cellcolor{myGray} 25 & 1.3e-01 & 4.4e-01 & 1.8e-01 & 2.1e-01 \\
+        \hline
+    \end{tabular}
+    \caption{Timings in seconds and ratios of the Harvey lazy butterfly FFT with a 60-bit modulus.}
+\end{table}
+
+\textcolor{blue}{
+\begin{itemize}
+    \item depth: profondeur de l'arbre FFT (c'est une FFT en 2**depth points, sur un
+    tableau de longueur 2**depth : par exemple pour depth == 10 c'est en longueur
+    1024)
+    \item sd\_fft : c'est le temps de la FFT AVX flottante déjà dans FLINT (jusqu'à 50
+    bits)
+    \item dft4 : c'est le temps de la FFT non vectorisée (jusqu'à 62 bits) du pull request
+    https://github.com/flintlib/flint/pull/2107
+    \item dft4s : temps de la FFT AVX512 entière, jusqu'à 62 bits, en mode "FFT radix 4"
+    \item dft2s : idem en FFT radix 2.
+\end{itemize}
+}
+
+\textcolor{blue}{
+    Vous voyez que les temps se rapprochent sensiblement de la version flottante,
+même s'il y a encore une petite marge (qui sera peut-être comblée avec les
+futurs processeurs, comme les AMD zen5 qui ont un mullo\_epi64 deux fois plus
+rapide que les AMD zen4).
+}
+
+
+
+
+
+
+
+
 
 \section{Conclusion}
 
