@@ -1008,18 +1008,19 @@ In columns, we have:
 %\end{table}
 
 The vectorized versions using our implementation (columns \texttt{dft4s} and \texttt{dft2s}) provide
-a speedup factor up to 2.7 over the version with no vectorization (column \texttt{dft4}).
+an average speedup factor of 2.2 over the version with no vectorization (column \texttt{dft4}).
 
-This factor is also the one obtained by Intel HEXL and we have about the same timings as above
-when running their benchmark of the FFT on the Zen 4 processor.
+This is slightly worse than Intel HEXL whose speedup factor is around 2.7-2.8.
+Nevertheless, we have about the same timings as above when running their benchmark of the FFT on the
+Zen 4 processor which means that, considering the improvements to be made on the FFT implementation,
+we can expect to reach such results.
 
-The timings are very encouraging as we can see that they are not too far from the version using the vectorization
-based on floating point numbers.
+\bigskip
+We can also notice that the timings are not too far from the version using the vectorization
+based on floating point numbers which is very encouraging.
 
-We can hope for even better results with recent generations of processors. For example, AMD Zen 5 processors
+One can hope for even better results with more recent generations of processors. For example, AMD Zen 5 processors
 have a \texttt{mullo\_epi64} that is two times faster than the AMD Zen 4 processors.
-
-\textcolor{blue}{comparison to hexl results (cf mail Vincent)}
 
 \section{Conclusion}
 
