@@ -205,14 +205,19 @@ optimization flag. In the case of \texttt{gcc}, those flags are given by the
 flags\footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html}}.
 To help the compiler to vectorize the code of a loop, it is possible to
 unroll it, meaning to repeat the code of the loop body in one iteration.
+%With
+%\texttt{-O3} optimization level, \texttt{gcc} can also unroll some loops,
+%allowing it to automatically vectorize some loops.
 
 For the timings, it is also possible to disable the compiler's
-auto-vectorization using the \texttt{-fno-tree-vectorize} for gcc.
+auto-vectorization using the \texttt{-fno-tree-vectorize} for gcc. Using it with
+C \texttt{\_\_attribute\_\_((...))}, this allow us to have a version with the
+maximum level of optimization but without SIMD to use as a reference for our
+benchmarks.
 
 \textcolor{blue}{
 \begin{itemize}
     \item Maybe mention that the compiler can also unroll w/ \texttt{-O3}
-    \item and speak of \texttt{\_\_attribute\_\_((...))} (C syntax)
 \end{itemize}}
 
 \subsection{Timings measurement}
