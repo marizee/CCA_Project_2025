@@ -885,20 +885,42 @@ modular reductions compared to a basic implementation if one is able to restrict
     \begin{itemize}
         \item explain this is our version, and one can find a similar one in hexl
         \item  comments
-        \item subsection with Vincent's results
     \end{itemize}
 }
 
-\subsection{results for complete fft}
+\subsection{Consequences on a complete FFT implementation}
+
+
 
 %Le nombre premier choisi est un premier FFT de 50 bits. Le code marche aussi
 %jusqu'à 62 bits avec les mêmes performances, mais j'ai mesuré sur 50 bits pour
 %pouvoir comparer à la FFT basée sur les flottants déjà dans FLINT (qui elle ne
 %peut pas aller au-delà de 50 bits).
 
-\begin{table}[h!]
-    \centering
-    \begin{tabular}{|r|*{4}{c|}}
+The table below shows the results one can obtain by using our implementation of the Harvey lazy butterfly
+in the context of a FFT.
+It has not been done by us since it requires a further knowledge and analysis of the algorithm
+which is out of the scope of this project.
+
+\bigskip
+The modulus used is a 50-bit prime number that respects the requirements for this kind of FFT.
+In columns, we have:
+\begin{itemize}
+    \item \texttt{depth}: value of the depth for the FFT tree with $2^{depth}$ points
+    in an array of length $2^{depth}$,
+    \item \texttt{sd\_fft}: timings in seconds of the FFT with AVX vectorization based on floating point numbers
+    already implemented in FLINT (with a modulus up to 50 bits).
+    \item \texttt{dft4}: timings in seconds of the FFT without AVX vectorization from the pull request
+    \footnote{\url{https://github.com/flintlib/flint/pull/2107}} that implements an integer-based 
+    version of small prime FFT in FLINT (with modulus up to 62 bits).    
+    \item \texttt{dft4s}: timings in seconds of the radix-4 FFT with AVX512 vectorization based on integers (with a modulus up to 62 bits),
+    \item \texttt{dft2s}: timings in seconds of the radix-2 FFT with AVX512 vectorization based on integers (with a modulus up to 62 bits).
+\end{itemize}
+
+%\begin{table}[h!]
+%    \centering
+\begin{center}
+    \begin{longtable}{|r|*{4}{c|}}
         \hline
         \rowcolor{myGray}
         depth & sd\_fft & dft4 & dft4s & dft2s \\
@@ -949,38 +971,15 @@ modular reductions compared to a basic implementation if one is able to restrict
         \hline
         \cellcolor{myGray} 25 & 1.3e-01 & 4.4e-01 & 1.8e-01 & 2.1e-01 \\
         \hline
-    \end{tabular}
-    \caption{Timings in seconds and ratios of the Harvey lazy butterfly FFT with a 60-bit modulus.}
-\end{table}
+    \end{longtable}
+\end{center}
+%\end{table}
 
-\textcolor{blue}{
-\begin{itemize}
-    \item depth: profondeur de l'arbre FFT (c'est une FFT en 2**depth points, sur un
-    tableau de longueur 2**depth : par exemple pour depth == 10 c'est en longueur
-    1024)
-    \item sd\_fft : c'est le temps de la FFT AVX flottante déjà dans FLINT (jusqu'à 50
-    bits)
-    \item dft4 : c'est le temps de la FFT non vectorisée (jusqu'à 62 bits) du pull request
-    https://github.com/flintlib/flint/pull/2107
-    \item dft4s : temps de la FFT AVX512 entière, jusqu'à 62 bits, en mode "FFT radix 4"
-    \item dft2s : idem en FFT radix 2.
-\end{itemize}
-}
+The timings are very encouraging as we can see that they are not too far from the version using the vectorization
+based on floating point numbers.
 
-\textcolor{blue}{
-    Vous voyez que les temps se rapprochent sensiblement de la version flottante,
-même s'il y a encore une petite marge (qui sera peut-être comblée avec les
-futurs processeurs, comme les AMD zen5 qui ont un mullo\_epi64 deux fois plus
-rapide que les AMD zen4).
-}
-
-
-
-
-
-
-
-
+We can hope for even better results with recent generations of processors. For example, AMD Zen 5 processors
+have a \texttt{mullo\_epi64} that is two times faster than the AMD Zen 4 processors.
 
 \section{Conclusion}
 
