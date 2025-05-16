@@ -137,7 +137,7 @@ correctness of our implementations and will not appear in the timing comparisons
 
 \subsubsection{Single Instruction Multiple Data}
 
-The SIMD instructions of Intel form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
+The SIMD instructions of Intel form a set of assembly instructions that simultaneously perform an operation on multiple data stored in registers
 of a fixed size allowing to significantly improve the execution speed.
 
 They are separated in families providing different operations on the basic types (int, long, float, double). We only used intrinsics from
@@ -287,7 +287,7 @@ This formula is mathematically correct but is not used in practice since it woul
         \item For a value of $k$ lower than $32$, one has to check that each of the four products computed during the long multiplication can fit in a
         $64$-bit word, otherwise it can yield a wrong result.
         \item The addition involved in the computation of $r_{mi}$ can produce an overflow if the inputs are really up to $64$ bits.
-        For this reason, we restrict the size of $x$ and $y$ to $63$ in practice. 
+        For this reason, we restrict the size of $x$ and $y$ to $63$ bits in practice. 
     \end{itemize}
 \end{remark}
 
@@ -555,10 +555,14 @@ a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 \end{figure}
 
 \newpage
-\textcolor{blue}{
-\begin{itemize}
-    \item comment results
-\end{itemize}}
+We observe a speedup factor that ranges between 2.1 and 4.7 over the sequential version with the AVX2 set
+and between 1.8 and 5.8 with the AVX512 set.
+There is no significant differences between the enhancements offered by AVX2 and by AVX512 on this operation.
+
+For the modular sum over 64 bits integers, the speedup factor obtained by Mathemagix with AVX2 intrinsics is about 1.8
+which is less than what we have measured. 
+This can be explained by the evolution of the architectures as the difference of throughput of the instruction
+\texttt{\_mm256\_add\_epi64} demonstrates\footnote{\url{https://uops.info/table.html?search=vpaddq&cb_lat=on&cb_tp=on&cb_uops=on&cb_HSW=on&cb_ZEN4=on&cb_measurements=on&cb_doc=on&cb_avx2=on}}.
 
 \subsection{Multiplication of a vector by a scalar or by another vector}
 
@@ -998,6 +1002,12 @@ In columns, we have:
     \end{longtable}
 \end{center}
 %\end{table}
+
+The vectorized versions using our implementation (columns \texttt{dft4s} and \texttt{dft2s}) provide
+a speedup factor up to 2.7 over the version with no vectorization (column \texttt{dft4}).
+
+This factor is also the one obtained by Intel HEXL and we have about the same timings as above
+when running their benchmark of the FFT on the Zen 4 processor.
 
 The timings are very encouraging as we can see that they are not too far from the version using the vectorization
 based on floating point numbers.
