@@ -142,14 +142,6 @@ correctness of the algorithms and will not appear in the timing comparisons of t
 
 \subsection{Vectorization}
 
-\subsubsection{Auto-vectorization}
-
-\textcolor{blue}{
-\begin{itemize}
-    \item auto-vec, flag \texttt{-O3}, help with loop unrolling
-    \item \_\_attribute\_\_((optimize("-fno-tree-vectorize")))
-\end{itemize}}
-
 \subsubsection{Single Instruction Multiple Data}
 
 The SIMD instructions of Intel form a set of assembly instructions that simultaneously perform an operation on multiple datas stored in registers
@@ -202,6 +194,24 @@ We mainly used two types of register:
     The function \texttt{\_\_m256i \_mm256\_mul\_epu32(\_\_m256i a, \_\_m256i b)} performs the instruction \texttt{vpmuludq}
     on the 4 pairs of 64-bit integers stored in the registers a and b.
 \end{example}
+
+\subsubsection{Auto-vectorization}
+
+The compiler can also use SIMD instructions when asked with the corresponding
+optimization flag. In the case of \texttt{gcc}, those flags are given by the
+\texttt{-O2} and \texttt{-ftree-vectorize}
+flags\footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html}}.
+To help the compiler to vectorize the code of a loop, it is possible to
+unroll it, meaning to repeat the code of the loop body in one iteration.
+
+For the timings, it is also possible to disable the compiler's
+auto-vectorization using the \texttt{-fno-tree-vectorize} for gcc.
+
+\textcolor{blue}{
+\begin{itemize}
+    \item Maybe mention that the compiler can also unroll w/ \texttt{-O3}
+    \item and speak of \texttt{\_\_attribute\_\_((...))} (C syntax)
+\end{itemize}}
 
 \subsection{Timings measurement}
 
