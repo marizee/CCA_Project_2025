@@ -14,7 +14,7 @@
     \begin{center}
         {\LARGE PCCA}\\[0.3cm]
         \rule{\linewidth}{0.5mm} \\[0.4cm]
-        {\huge \textbf{Modular arithmetic and vectorization using\\ SIMD and AVX}}\\[0.4cm]
+        {\huge \textbf{Modular integer arithmetic and SIMD \\ vectorization using Intel AVX}}\\[0.4cm]
         \rule{\linewidth}{0.5mm} \\[1cm]
         {\large 24 January 2025 - 20 May 2025}\\[3cm]
 
@@ -72,21 +72,18 @@ The outcomes of our analysis will be applied to a form of butterfly Fast Fourier
 
 \bigskip
 Each of the studied operations have been implemented in C over the ring $\mathbb{Z}/n\mathbb{Z}$ with $n \in \mathbb{N}$
-using the Fast Library for Number Theory (FLINT) library.
+using the Fast Library for Number Theory (FLINT) library v. 20.0.0.
 We have separated the case where $n$ can fit in a 32-bit word from the case in which it doesn't 
 since working over 64-bit words might require an additional care to handle potential overflows.
 
 We only present the results obtained with a modulus of more than 32 bits and less than 64 bits.
 
 \bigskip
-The source code of this project, along with the timing measurements, is entirely available on GitHub\footnote{\url{https://github.com/marizee/CCA_Project_2025}}.
+The source code of this project, which represents about 5300 lines of code, along with the timing measurements, 
+is entirely available on GitHub\footnote{\url{https://github.com/marizee/CCA_Project_2025}}.
 
-\textcolor{blue}{
-    \begin{itemize}
-        \item code structure: makefile, readme, profiling, tests, ...
-        \item about 5300 lines of code
-    \end{itemize}
-}
+The repository also contains a basic README, a Makefile, a profiling function and elementary tests to check
+the correctness of our implementations.
 
 \subsection{Machines description}
 
@@ -134,12 +131,7 @@ of processors that have different features (clock speed, throughputs, cache size
 
 \bigskip
 The processor marked in gray corresponds to a machine that does not provide AVX512 so it is only used to check the
-correctness of the algorithms and will not appear in the timing comparisons of this document.
-
-\begin{itemize}
-    \item mention uops here ? allows to compare the performances 
-\end{itemize}
-
+correctness of our implementations and will not appear in the timing comparisons of this document.
 
 \subsection{Vectorization}
 
@@ -172,10 +164,13 @@ where
 \end{center}
 
 
-\begin{example}
-    \texttt{vpmuludq} is an AVX instruction that multiplies the low unsigned 32-bit integers from packed 64-bit elements
-    and store the unsigned 64-bit results.
-\end{example}
+\begin{remark}
+    The \texttt{size} part usually refers to the size of the output but in some cases, it can contain both the
+    size of the input and of the output.
+    
+    For example, \texttt{vpmuludq} is an AVX instruction that multiplies the low unsigned 32-bit integers from 
+    packed 64-bit elements and store the unsigned 64-bit results.
+\end{remark}
 
 \bigskip
 Rather than directly use these instructions that would lead to writing assembly code, Intel proposes C-style functions
@@ -195,6 +190,12 @@ We mainly used two types of register:
     The function \texttt{\_\_m256i \_mm256\_mul\_epu32(\_\_m256i a, \_\_m256i b)} performs the instruction \texttt{vpmuludq}
     on the 4 pairs of 64-bit integers stored in the registers a and b.
 \end{example}
+
+\bigskip
+The enhancements one can obtain with the AVX sets depend to a great extent on the processor used.
+The interactive uops.info table \footnote{\url{https://uops.info/table.html}} gives reliable values
+for the latency and the throughput of an instruction allowing to have an idea of the possible speedup 
+a processor can offer.
 
 \subsubsection{Auto-vectorization}
 
@@ -216,7 +217,7 @@ auto-vectorization using the \texttt{-fno-tree-vectorize} for gcc.
 
 \subsection{Timings measurement}
 
-Timings were measured using a profiling function that resembles the ones provided by FLINT.
+Timings were measured using a profiling function that resembles the ones used in FLINT.
 It compares the different implementations of an operation for a given bit size of the modulus.
 
 \bigskip
@@ -228,7 +229,7 @@ We have considered three ranges of sizes for the vectors:
 \end{itemize}
 
 In some cases, timings obtained with small sizes and large sizes are not really conclusive because of
-the mutiple load and store operations and the memory issues that can arise from the size of the caches.
+the mutiple load and store operations, and the memory issues that can arise from the size of the caches.
 
 \begin{remark}
     For basic operations, one can check the coherency of the timings by considering the clock speed of
@@ -241,7 +242,7 @@ the mutiple load and store operations and the memory issues that can arise from 
     \dfrac{N\cdot throughput}{3.3\times 10^9}\quad \text{seconds}.
     \]
 
-    This computation should only be used as an estimation since it does not take in account any
+    This computation should only be used as an estimation, as it does not take in account any
     delaying factors such as the latency.
 \end{remark}
 
@@ -258,12 +259,12 @@ To circumvent this issue, one needs to first split the two integers into two wor
 
 \subsection{Long multiplication} \label{mulsplit}
 
-The long multiplication consists in computing the multiplication of $64$-bit integers using multiplications and additions of
-integers with a lower size.
+The long multiplication consists in computing the product of $64$-bit integers using multiplications and additions of
+integers with a smaller size.
 
 \bigskip
-Given two integers $x,y$ both of at most $64$ bits, we start by splitting them into 2 words, one of $k$ bits and the other one of at most $64-k$
-bits with $k\leq32$:
+Given two integers $x,y$ both of at most $64$ bits, we start by splitting them into a low part of $k$ bits
+and a high one of at most $64-k$ bits with $k\leq32$:
 
 \begin{align*}
     x &= x_{hi}\cdot 2^{k} + x_{lo} \\
@@ -301,7 +302,7 @@ The exact formulas for these elements are:
     (xy)_{lo} &= (r_{hi} \ll 2\cdot k) + (r_{mi} \ll k) + r_{lo} \nonumber \\
     (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) + c \label{carry}
 \end{align}
-where $c$ corresponds to the carry coming from $(xy)_{lo}$.
+where $c$ corresponds to the carry coming from the computation of $(xy)_{lo}$.
 
 \begin{remark}
     If one fixes $k=32$, then the above formulas can be slightly simplified:
@@ -329,7 +330,7 @@ In the AVX2 family, one can find intrinsics for \texttt{mullo} but only for inte
 \texttt{mulhi} but only for integers up to 16 bits.
 
 In the AVX512 family, one can only find intrinsics for \texttt{mullo} (up to 64 bits) but they were rather slow
-until recent processors such as ones of the Zen 4 generation.
+until recent processors such as ones of the Zen 4 generation\footnote{\url{https://uops.info/table.html?search=vpmullq\%20zmm&cb_lat=on&cb_tp=on&cb_uops=on&cb_CLX=on&cb_ICL=on&cb_ZEN4=on&cb_measurements=on&cb_doc=on&cb_avx512=on}}.
 
 \bigskip
 \begin{table}[h!]
@@ -346,15 +347,18 @@ until recent processors such as ones of the Zen 4 generation.
         \cellcolor{myGray} Throughput & 1.5 & 3.0 & 1.0 \\
         \hline
     \end{tabularx}
-    \caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm} on different processors.}
+    \caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm}.}
 \end{table}
 
-Hence, we provide versions of the missing functions used in our implementations. They stick to the ones that can be found:
-\begin{itemize}
-    \item in the Vector Class library\footnote{\url{https://github.com/vectorclass/version2}} for \texttt{mullo} over 64-bit integers using AVX2,
-    \item in the Intel HEXL library\cite{boemer2021intelhexlacceleratinghomomorphic} for \texttt{mulhi} over 64-bit integers using AVX512.
-\end{itemize}
-\textcolor{blue}{rewrite so that it doesn't seem like we just copy/pasted}
+Hence, we have implemented the versions of \texttt{mullo} and \texttt{mulhi} we needed for the arithmetic operations. 
+
+\begin{remark}
+    Equivalent implementations can be found: 
+    \begin{itemize}
+        \item in the Vector Class library\footnote{\url{https://github.com/vectorclass/version2}} for \texttt{mullo} over 64-bit integers using AVX2,
+        \item in the Intel HEXL library\cite{boemer2021intelhexlacceleratinghomomorphic} for \texttt{mulhi} over 64-bit integers using AVX512.
+    \end{itemize}
+\end{remark}
 
 \subsection{Modular multiplications with precomputation}
 
@@ -433,7 +437,8 @@ and the last step of the algorithm ensures that we retrieve $w\cdot b_i \mod n$.
 \end{proof}
 
 \begin{remark}
-    In this particular case, one can omit the computation of the carry in equation (\ref{carry}) when performing the \texttt{mulhi} operation on $w_{pre}\cdot b_i$.
+    In this particular case, one can omit the computation of the carry that appears in equation (\ref{carry})
+    when performing the \texttt{mulhi} operation on $w_{pre}\cdot b_i$.
 
     If so, $p_{hi}$ might be off by one bit meaning that at the step 2 of the algorithm, we have 
     \[
@@ -446,18 +451,16 @@ and the last step of the algorithm ensures that we retrieve $w\cdot b_i \mod n$.
     \end{array}
     \right.
     \]
-    and the last case requires an additional substraction by $n$.
+    and the last case requires an additional correction to ensure that the output will be lower than $n$.
 
     This is the approach we used as it significantly speeds up the operation.
 \end{remark}
 
 \section{Classic arithmetic operations on vectors}
 
-\textcolor{blue}{
-    \begin{itemize}
-        \item to get familiar with vectorization
-    \end{itemize}
-}
+The main goal of these implementations is to get familiar with the FLINT library and the Intel intrinsics.
+It allowed us to highlight the contrasts between the different ways of vectorization, and the performances
+offered by the processors we used. 
 
 \subsection{Modular reduction}
 
@@ -643,24 +646,23 @@ We only show the results obtained with the scalar-vector product that was implem
         \cellcolor{myGray} FLINT & 2.40e-07 & 1.0x & 9.29e-07 & 1.0x & 1.59e-05 & 1.0x \\
         \hline
     \end{tabular}
-    \caption{Timings in seconds and ratios of the modular scalar vector prodcut with a 60-bit modulus.}
+    \caption{Timings in seconds and ratios of the modular scalar vector product with a 60-bit modulus.}
 \end{table}
 
 \begin{figure}[h!]
     \begin{center}
         \includegraphics[width=0.8\textwidth]{scalar-vector-mod_argiope.png}
     \end{center}
-    \caption{Timings in seconds of the modular scalar vector prodcut with a 60-bit modulus on a Zen 4 processor.}
+    \caption{Timings in seconds of the modular scalar vector product with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
 \newpage
-Note that the sequential version is basically what is done by FLINT in the function \\
+Notice that the sequential version is basically what is done by FLINT in the function \\
 \texttt{\_nmod\_vec\_scalar\_mul\_nmod\_shoup} which is why the two implementations have about the same timings.
-With vectorization, we obtain a speedup factor up to 1.4 with the AVX2 and up to 2.9 with the AVX512.
 
-However, Intel HEXL does not show any speedup over the sequential version with the AVX512-DQ set.  
+With the vectorization, we obtain a speedup factor up to 1.4 with the AVX2 and up to 2.9 with the AVX512.
 
-\textcolor{blue}{comments}
+However, Intel HEXL does not obtain any speedup over the sequential version with the AVX512-DQ set.  
 
 \newpage
 \subsection{Dot product}
@@ -774,14 +776,14 @@ overflow.
         \cellcolor{myGray} FLINT & 2.70e-07 & 1.3x & 8.48e-07 & 1.2x & 1.34e-05 & 1.3x \\
         \hline
     \end{tabular}
-    \caption{Timings in seconds and ratios of the modular dot prodcut with a 60-bit modulus.}
+    \caption{Timings in seconds and ratios of the modular dot product with a 60-bit modulus.}
 \end{table}
 
 \begin{figure}[h!]
     \begin{center}
         \includegraphics[width=0.8\textwidth]{dot-prod-mod_argiope.png}
     \end{center}
-    \caption{Timings in seconds of the modular dot prodcut with a 60-bit modulus on a Zen 4 processor.}
+    \caption{Timings in seconds of the modular dot product with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
 \textcolor{blue}{
@@ -842,8 +844,8 @@ The algorithm below shows our implementation.
 \end{algorithm}
 
 \begin{remark}
-    A similar version exists in the Intel HEXL library\cite{boemer2021intelhexlacceleratinghomomorphic}. The main difference with
-    our implementation comes from the computation of $p_{hi}$ where ours needs an additional correction for the outputs to be
+    A similar version exists in the Intel HEXL library. The main difference between
+    the two implementations comes from our computation of $p_{hi}$ which requires an additional correction for the outputs to be
     lower than $4n$.
 \end{remark}
 
@@ -913,18 +915,9 @@ The algorithm below shows our implementation.
     \caption{Timings in seconds of the Harvey lazy butterfly FFT with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
-The timings show that we can reach a significant 1.9x speedup with the AVX2 and 3.7x with the AVX512 over the
-sequential versions.
+The timings show that we can reach a speedup factor of 1.9x with the AVX2 and a significant one of 3.7x with the AVX512 over the
+sequential version.
 
-%The Intel HEXL library depicts results for the Cooley-Tukey algorithm only -> 2.7x-2.8x speedup
-
-\newpage
-\textcolor{blue}{
-    \begin{itemize}
-        \item explain this is our version, and one can find a similar one in hexl
-        \item  comments
-    \end{itemize}
-}
 
 \subsection{Consequences on a complete FFT implementation}
 
@@ -1011,6 +1004,8 @@ based on floating point numbers.
 
 We can hope for even better results with recent generations of processors. For example, AMD Zen 5 processors
 have a \texttt{mullo\_epi64} that is two times faster than the AMD Zen 4 processors.
+
+\textcolor{blue}{comparison to hexl results (cf mail Vincent)}
 
 \section{Conclusion}
 
