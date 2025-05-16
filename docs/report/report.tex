@@ -642,6 +642,13 @@ We only show the results obtained with the scalar-vector product that was implem
     \caption{Timings in seconds of the modular scalar vector prodcut with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
+\newpage
+Note that the sequential version is basically what is done by FLINT in the function \\
+\texttt{\_nmod\_vec\_scalar\_mul\_nmod\_shoup} which is why the two implementations have about the same timings.
+With vectorization, we obtain a speedup factor up to 1.4 with the AVX2 and up to 2.9 with the AVX512.
+
+However, Intel HEXL does not show any speedup over the sequential version with the AVX512-DQ set.  
+
 \textcolor{blue}{comments}
 
 \newpage
@@ -794,9 +801,12 @@ be applied to a long vector of different \(x_i, y_i\) but with the same \(w\) an
 
 \subsection{Harvey lazy butterfly FFT}
 
-Harvey proposes a strategy\cite{DBLP:journals/corr/abs-1205-2926} to compute the butterfly FFT base on Shoup multiplication
-with the precomputation step that allows to save two
-modular reductions compared to a basic implementation if one is able to restrict the sizes of the modulus. 
+Harvey proposes a strategy\cite{DBLP:journals/corr/abs-1205-2926} to compute the butterfly FFT based on Shoup multiplication
+with the precomputation step. It allows to save some modular reductions compared to a basic implementation, if one is able to 
+restrict the sizes of the modulus.
+
+\bigskip
+The algorithm below shows our implementation.
 
 \begin{algorithm}
     \caption{Harvey lazy butterfly FFT}
@@ -819,6 +829,12 @@ modular reductions compared to a basic implementation if one is able to restrict
         \State \Return $x,y$
     \end{algorithmic}
 \end{algorithm}
+
+\begin{remark}
+    A similar version exists in the Intel HEXL library\cite{boemer2021intelhexlacceleratinghomomorphic}. The main difference with
+    our implementation comes from the computation of $p_{hi}$ where ours needs an additional correction for the outputs to be
+    lower than $4n$.
+\end{remark}
 
 \begin{table}[h!]
     \centering
@@ -886,6 +902,11 @@ modular reductions compared to a basic implementation if one is able to restrict
     \caption{Timings in seconds of the Harvey lazy butterfly FFT with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
+The timings show that we can reach a significant 1.9x speedup with the AVX2 and 3.7x with the AVX512 over the
+sequential versions.
+
+%The Intel HEXL library depicts results for the Cooley-Tukey algorithm only -> 2.7x-2.8x speedup
+
 \newpage
 \textcolor{blue}{
     \begin{itemize}
@@ -895,13 +916,6 @@ modular reductions compared to a basic implementation if one is able to restrict
 }
 
 \subsection{Consequences on a complete FFT implementation}
-
-
-
-%Le nombre premier choisi est un premier FFT de 50 bits. Le code marche aussi
-%jusqu'à 62 bits avec les mêmes performances, mais j'ai mesuré sur 50 bits pour
-%pouvoir comparer à la FFT basée sur les flottants déjà dans FLINT (qui elle ne
-%peut pas aller au-delà de 50 bits).
 
 The table below shows the results one can obtain by using our implementation of the Harvey lazy butterfly
 in the context of a FFT.
@@ -998,9 +1012,10 @@ with a particular form such as the ones presented in the appendix \ref{app}.
 This is possible in the context of the FFT, and could have enhance the butterfly FFT even more.
 
 \bigskip
-Another possible improvement is to use the Integer Fused Multiply Add Instructions (IFMA) that are part of
+Another possible improvement is to use the Integer Fused Multiply Add instructions (IFMA) that are part of
 the AVX512 family. This extension provides some intrinsics with a low throughput for operations that involve
-multiplications and additions but requires to lower the maximum bit size allowed to 52. \textcolor{blue}{$\Rightarrow$floating-point arithmetic}
+multiplications and additions but requires to lower the maximum bit size allowed to 52 which would need the
+study of floating point arithmetic.
 
 
 \newpage
