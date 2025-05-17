@@ -120,12 +120,161 @@
 \section{Classic arithmetic operations on vectors}
 \subsection{Addition of two vectors}
 \begin{frame}
-    Addition
+    \frametitle{timings add mod on argiope}
+
+    \begin{table}[h!]
+        \centering
+        
+        % Proc 1: ppti
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray} 
+            \multicolumn{7}{|c|}{\textsc{Cascade Lake}} \\
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 1.57e-07 & 1.0x & 7.17e-07 & 1.0x & 1.35e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 1.25e-07 & 3.7x & 6.77e-07 & 2.7x & 1.31e-05 & 2.1x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 9.34e-08 & 5.8x & 6.73e-07 & 3.1x & 1.27e-05 & 2.4x \\
+            \hline
+            \cellcolor{myGray} FLINT & 1.50e-07 & 4.3x & 8.10e-07 & 2.9x & 1.56e-05 & 2.3x \\
+            \hline
+        \end{tabular}
+    
+        % Proc 2: groebner
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray} 
+            \multicolumn{7}{|c|}{\textsc{Ice Lake}} \\
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 7.55e-08 & 1.0x & 3.34e-07 & 1.0x & 1.14e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 7.74e-08 & 4.1x & 2.93e-07 & 4.5x & 9.59e-06 & 2.5x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 1.80e-07 & 4.0x & 4.90e-07 & 4.1x & 1.36e-05 & 1.8x \\
+            \hline
+            \cellcolor{myGray} FLINT & 1.50e-07 & 5.5x & 3.75e-07 & 5.6x & 1.80e-05 & 2.6x \\
+            \hline
+        \end{tabular}
+    
+        % Proc 3: argiope
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray}
+            \multicolumn{7}{|c|}{\textsc{Zen 4}} \\
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 7.17e-08 & 1.0x & 3.66e-07 & 1.0x & 6.16e-06 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 5.27e-08 & 4.7x & 3.48e-07 & 3.4x & 6.55e-06 & 2.7x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 5.91e-08 & 4.3x & 3.58e-07 & 3.2x & 5.97e-06 & 3.0x \\
+            \hline
+            \cellcolor{myGray} FLINT & 5.55e-08 & 4.9x & 3.43e-07 & 3.1x & 6.61e-06 & 3.0x \\
+            \hline
+        \end{tabular}
+        \caption{Timings in seconds and ratios of the modular sum with a 60-bit modulus.}
+    \end{table}
+\end{frame}
+
+\begin{frame}
+    \frametitle{timings add mod on argiope}
+
+    \begin{figure}[h!]
+        \begin{center}
+            \includegraphics[width=0.8\textwidth]{add-mod_argiope.png}
+        \end{center}
+        \caption{Timings in seconds of the modular sum with a 60-bit modulus on a Zen 4 processor.}
+    \end{figure}
 \end{frame}
 
 \subsection{Multiplication of a vector by a scalar}
 \begin{frame}
-    Scalar-vector
+    \frametitle{timings scalar vector prod}
+
+    \begin{table}[h!]
+        \centering
+        
+        % Proc 1: ppti
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray} 
+            \multicolumn{7}{|c|}{\textsc{Cascade Lake}} \\
+    
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 5.92e-07 & 1.0x & 2.25e-06 & 1.0x & 5.58e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 7.26e-07 & 0.8x & 2.78e-06 & 0.8x & 4.88e-05 & 0.9x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 3.52e-07 & 1.7x & 1.23e-06 & 1.8x & 2.36e-05 & 1.4x \\
+            \hline
+            \cellcolor{myGray} FLINT & 7.38e-07 & 1.0x & 2.82e-06 & 1.0x & 4.77e-05 & 0.9x \\
+            \hline
+        \end{tabular}
+    
+        % Proc 2: groebner
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray} 
+            \multicolumn{7}{|c|}{\textsc{Ice Lake}} \\
+    
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 4.96e-07 & 1.0x & 1.92e-06 & 1.0x & 3.58e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 4.38e-07 & 1.1x & 1.70e-06 & 1.1x & 3.27e-05 & 0.9x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 1.96e-07 & 2.5x & 7.44e-07 & 2.5x & 1.55e-05 & 2.1x \\
+            \hline
+            \cellcolor{myGray} FLINT & 4.50e-07 & 1.0x & 1.76e-06 & 1.0x & 3.36e-05 & 0.9x \\
+            \hline
+        \end{tabular}
+    
+        % Proc 3: argiope
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray}
+            \multicolumn{7}{|c|}{\textsc{Zen 4}} \\
+    
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 3.35e-07 & 1.0x & 1.29e-06 & 1.0x & 2.17e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 2.35e-07 & 1.4x & 9.19e-07 & 1.4x & 1.56e-05 & 1.3x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 1.16e-07 & 2.9x & 4.55e-07 & 2.8x & 7.53e-06 & 2.8x \\
+            \hline
+            \cellcolor{myGray} FLINT & 2.40e-07 & 1.0x & 9.29e-07 & 1.0x & 1.59e-05 & 1.0x \\
+            \hline
+        \end{tabular}
+        \caption{Timings in seconds and ratios of the modular scalar vector product with a 60-bit modulus.}
+    \end{table}
+\end{frame}
+
+\begin{frame}
+    \frametitle{timings scalar vector prod on argiope}
+
+    \begin{figure}[h!]
+        \begin{center}
+            \includegraphics[width=0.8\textwidth]{scalar-vector-mod_argiope.png}
+        \end{center}
+        \caption{Timings in seconds of the modular scalar vector product with a 60-bit modulus on a Zen 4 processor.}
+    \end{figure}
 \end{frame}
 
 \subsection{Dot product}
@@ -157,6 +306,86 @@
     \end{itemize}
 \end{frame}
 
+\begin{frame}
+    \frametitle{timings dot prod}
+
+    \begin{table}[h!]
+        \centering
+        
+        % Proc 1: ppti
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray} 
+            \multicolumn{7}{|c|}{\textsc{Cascade Lake}} \\
+    
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 2.84e-07 & 1.0x & 1.11e-06 & 1.0x & 1.92e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 2.97e-07 & 1.0x & 1.12e-06 & 1.0x & 1.94e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 2.16e-07 & 1.3x & 7.74e-07 & 1.4x & 1.44e-05 & 1.3x \\
+            \hline
+            \cellcolor{myGray} FLINT & 3.18e-07 & 0.9x & 1.18e-06 & 0.9x & 1.98e-05 & 1.0x \\
+            \hline
+        \end{tabular}
+    
+        % Proc 2: groebner
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray} 
+            \multicolumn{7}{|c|}{\textsc{Ice Lake}} \\
+    
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 4.20e-07 & 1.0x & 1.54e-06 & 1.0x & 2.50e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 1.72e-07 & 2.3x & 6.45e-07 & 2.4x & 1.20e-05 & 2.1x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 1.67e-07 & 2.4x & 6.13e-07 & 2.5x & 1.30e-05 & 1.9x \\
+            \hline
+            \cellcolor{myGray} FLINT & 2.87e-07 & 1.4x & 9.58e-07 & 1.6x & 1.77e-05 & 1.4x \\
+            \hline
+        \end{tabular}
+    
+        % Proc 3: argiope
+        \begin{tabular}{|r|*{3}{c c|}}
+            \hline
+            \rowcolor{myGray}
+            \multicolumn{7}{|c|}{\textsc{Zen 4}} \\
+    
+            \hline
+            \rowcolor{myGray}
+            Ver.\textbackslash N & 510 & & 2010 & & 32768 & \\
+            \hline
+            \cellcolor{myGray} Seq. & 2.70e-07 & 1.0x & 1.20e-06 & 1.0x & 1.68e-05 & 1.0x \\
+            \hline
+            \cellcolor{myGray} AVX2 & 1.20e-07 & 2.6x & 3.87e-07 & 2.6x & 5.85e-06 & 2.9x \\
+            \hline
+            \cellcolor{myGray} AVX512 & 1.10e-07 & 2.7x & 3.78e-07 & 2.7x & 5.46e-06 & 3.1x \\
+            \hline
+            \cellcolor{myGray} FLINT & 2.70e-07 & 1.3x & 8.48e-07 & 1.2x & 1.34e-05 & 1.3x \\
+            \hline
+        \end{tabular}
+        \caption{Timings in seconds and ratios of the modular dot product with a 60-bit modulus.}
+    \end{table}
+\end{frame}
+    
+\begin{frame}
+    \frametitle{timings dot prod on argiope}
+
+    \begin{figure}[h!]
+        \begin{center}
+            \includegraphics[width=0.8\textwidth]{dot-prod-mod_argiope.png}
+        \end{center}
+        \caption{Timings in seconds of the modular dot product with a 60-bit modulus on a Zen 4 processor.}
+    \end{figure}
+\end{frame}
+
 \section{Butterfly Fast Fourier Transform}
 \subsection{Harvey lazy butterfly FFT}
 \begin{frame}
@@ -167,6 +396,8 @@
 \end{frame}
 
 \begin{frame}
+    \frametitle{timings lazy butterfly}
+
     \begin{table}[h!]
         \centering
         
@@ -225,6 +456,17 @@
         \end{tabular}
         \caption{Timings in seconds and ratios of the Harvey lazy butterfly FFT with a 60-bit modulus.}
     \end{table}
+\end{frame}
+
+\begin{frame}
+    \frametitle{timings lazy butterfly on argiope}
+
+    \begin{figure}[h!]
+        \begin{center}
+            \includegraphics[width=0.75\textwidth]{lazy-butterfly_argiope.png}
+        \end{center}
+        \caption{Timings in seconds of the Harvey lazy butterfly FFT with a 60-bit modulus on a Zen 4 processor.}
+    \end{figure}
 \end{frame}
 
 \subsection{Consequences on a complete FFT implementation}
