@@ -205,10 +205,10 @@ optimization flag. In the case of \texttt{gcc}, those flags are given by the
 flags\footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html}}.
 To help the compiler to vectorize the code of a loop, it is possible to
 unroll it, meaning to repeat the code of the loop body in one iteration.
-\begin{example}
+
+\begin{example} % Remove if not necessary
 \texttt{n} even, \texttt{a}, \texttt{b}, \texttt{r} arrays of size \texttt{n}.
 \begin{lstlisting}
-// n even, a, b, r arrays of size n
 for(int i = 0; i < n; i++)
     r[i] = a[i] + b[i]
 
@@ -722,9 +722,6 @@ Hence, we can sum up to
 $2^{64 - \max\left(2 l, k + 1, 2 \left(k - l\right)\right)}$ terms without
 overflow.
 
-% TODO:
-% - label for sec 2
-
 \begin{remark}
     The size of the result is not a limit for the number of term we can sum.
     This result is stored in 128 bits in total, so if $k \in \{2, \dots, 64\}$ is
@@ -804,22 +801,12 @@ overflow.
     \caption{Timings in seconds of the modular dot product with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
-\textcolor{blue}{
-    \begin{itemize}
-        \item meaning that
-        \item Speak a little bit more about reconstruction and mod?
-    \end{itemize}
-}
-
 % TODO: Reformulate this
 The speedups for the Ice Lake and Zen 4 processors are very satisfying. On those
-two processors, the versions with AVX are faster than FLINT's implementation.
-However, the Cascade Lake processor got no speedup over the sequential version
+two processors, the versions with AVX are faster than FLINT's implementation for
+integers of size 60 bits.
+However, the Cascade Lake processor got no significant speedup over the sequential version
 for the AVX2 version, and the timings for both AVX2 and AVX512 are very similar.
-%, meaning that
-%we can see that the AVX512 version is not that faster than AVX2 one on
-%the processor used.
-%processor
 
 \section{Butterfly Fast Fourier Transform}
 
