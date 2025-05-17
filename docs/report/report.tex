@@ -144,7 +144,7 @@ They are separated in families providing different operations on the basic types
 the AVX2 and AVX512 sets.
 
 \bigskip
-All he SIMD instructions have a name of the form:
+All the SIMD instructions have a name of the form:
 \begin{center} 
     \texttt{<gen><prefix><op><type><size>}
 \end{center}
@@ -165,7 +165,7 @@ where
 
 
 \begin{remark}
-    The \texttt{size} part usually refers to the size of the output but in some cases, it can contain both the
+    The \texttt{size} part usually refers to the size of the input but in some cases, it can contain both the
     size of the input and of the output.
     
     For example, \texttt{vpmuludq} is an AVX instruction that multiplies the low unsigned 32-bit integers from 
@@ -199,35 +199,22 @@ a processor can offer.
 
 \subsubsection{Auto-vectorization}
 
-The compiler can also use SIMD instructions when asked with the corresponding
-optimization flag. In the case of \texttt{gcc}, those flags are given by the
+The compiler can use SIMD instructions when asked with the corresponding
+optimization flags. In the case of \texttt{gcc}, one can use the
 \texttt{-O2} and \texttt{-ftree-vectorize}
 flags\footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html}}.
-To help the compiler to vectorize the code of a loop, it is possible to
-unroll it, meaning to repeat the code of the loop body in one iteration.
+Conversely, the auto-vectorization of \texttt{gcc} can be disabled using the \texttt{-fno-tree-vectorize} flag.
 
-\begin{example} % Remove if not necessary
-\texttt{n} even, \texttt{a}, \texttt{b}, \texttt{r} arrays of size \texttt{n}.
-\begin{lstlisting}
-for(int i = 0; i < n; i++)
-    r[i] = a[i] + b[i]
+In our timing measurements, we wanted a high level of optimization for our implementations but no vectorization
+of any kind on the sequential versions. This can be done by using the flag \texttt{-O3} and by adding
+to each sequential function \texttt{\_\_attribute\_\_((optimize("-fno-tree-vectorize")))}.
 
-// unrolled version
-for(int i = 0; i+1 < n; i += 2) {
-    r[i+0] = a[i+0] + b[i+0]
-    r[i+1] = a[i+1] + b[i+1]
-}
-\end{lstlisting}
-\end{example}
-%With
-%\texttt{-O3} optimization level, \texttt{gcc} can also unroll some loops,
-%allowing it to automatically vectorize some loops.
 
-For the timings, it is also possible to disable the compiler's
-auto-vectorization using the \texttt{-fno-tree-vectorize} for gcc. Using it with
-C \texttt{\_\_attribute\_\_((...))}, this allows us to have a version with the
-maximum level of optimization but without SIMD to use as a reference for our
-benchmarks.
+\bigskip
+To help the compiler vectorize the code of a loop, we used the loop unrolling technique
+where the body of the loop is replicated $k$ times and the increment step is set to $k$
+which can sometimes increase the program efficiency.
+
 
 \subsection{Timings measurement}
 
@@ -249,7 +236,7 @@ the multiple load and store operations, and the memory issues that can arise fro
     For basic operations, one can check the coherency of the timings by considering the clock speed of
     the processor used and the number of cycles it requires to complete the operation.
     
-    For example, the Zen 4 processor has a clock speed of 3.3 GHz meaning it can handle about 
+    For example, the Zen 4 processor has a clock speed of 3.3 GHz which means that it can handle about 
     3.3 billion cycles per second. Thus, considering the throughput of an operation performed on
     $N$ pairs of coefficients, we can expect a timing of about
     \[
@@ -262,7 +249,7 @@ the multiple load and store operations, and the memory issues that can arise fro
 
 \bigskip
 In theory, we could expect speed up factors of about 4 from the AVX2 intrinsics and of about 8 from the AVX512 intrinsics
-since it corresponds to the number of pairs of coefficients they can handle simultaneously.
+since they correspond to the number of pairs of coefficients they can handle simultaneously.
 We will show that it is not particularly the case in practice.
 
 
@@ -467,13 +454,13 @@ and the last step of the algorithm ensures that we retrieve $w\cdot b_i \mod n$.
     \]
     and the last case requires an additional correction to ensure that the output will be lower than $n$.
 
-    This is the approach we used as it significantly speeds up the operation.
+    This is the approach we used as it significantly speeds up the \texttt{mulhi} operation.
 \end{remark}
 
 \section{Classic arithmetic operations on vectors}
 
 The main goal of these implementations is to get familiar with the FLINT library and the Intel intrinsics.
-It allowed us to highlight the contrasts between the different ways of vectorization, and the performances
+It allowed us to highlight the contrasts between the different methods of vectorization and measure the performances
 offered by the processors we used. 
 
 \subsection{Modular reduction}
@@ -573,15 +560,15 @@ We observe a speedup factor that ranges between 2.1 and 4.7 over the sequential 
 and between 1.8 and 5.8 with the AVX512 set.
 There is no significant differences between the enhancements offered by AVX2 and by AVX512 on this operation.
 
-For the modular sum over 64 bits integers, the speedup factor obtained by Mathemagix with AVX2 intrinsics is about 1.8
+For the modular sum over 64-bit integers, the speedup factor obtained by Mathemagix with AVX2 intrinsics is about 1.8
 which is less than what we have measured. 
-This can be explained by the evolution of the architectures as the difference of throughput of the instruction
+This can be explained by the evolution of the architectures as the difference in the throughput of the instruction
 \texttt{\_mm256\_add\_epi64} demonstrates\footnote{\url{https://uops.info/table.html?search=vpaddq&cb_lat=on&cb_tp=on&cb_uops=on&cb_HSW=on&cb_ZEN4=on&cb_measurements=on&cb_doc=on&cb_avx2=on}}.
 
 \subsection{Multiplication of a vector by a scalar or by another vector}
 
 
-\paragraph{Scalar-vector multiplication} Given an integer $w \in \mathbb{Z}/n\mathbb{Z}$ vector $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
+\paragraph{Scalar-vector multiplication} Given an integer $w \in \mathbb{Z}/n\mathbb{Z}$ and a vector $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
 
 \[
 w \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
@@ -679,7 +666,6 @@ Notice that the sequential version is basically what is done by FLINT in the fun
 \texttt{\_nmod\_vec\_scalar\_mul\_nmod\_shoup} which is why the two implementations have about the same timings.
 
 With the vectorization, we obtain a speedup factor up to 1.4 with the AVX2 and up to 2.9 with the AVX512.
-
 However, Intel HEXL does not obtain any speedup over the sequential version with the AVX512-DQ set.  
 
 \newpage
@@ -709,8 +695,8 @@ we can sum up to $2^{64 - 2k}$ terms before doing a reduction.
 
 \bigskip
 This can also be applied with the results of long multiplications thus allowing $n$ to have a greater bit size.
-In this case, we don't retrieve the high and low parts immediately, but instead
-compute the sum of each $r_{lo}$, $r_{mi}$ and $r_{lo}$ computed like in section
+In this case, we don't retrieve the high and low parts immediately. Instead,
+we compute the sum of each $r_{lo}$, $r_{mi}$ and $r_{hi}$ computed like in section
 \ref{mulsplit}. If we split at $l$ bits with $l \leq 32$, we end up with:
 \begin{itemize}
     \item $r_{lo}$ of size $2 l$
@@ -723,7 +709,7 @@ $2^{64 - \max\left(2 l, k + 1, 2 \left(k - l\right)\right)}$ terms without
 overflow.
 
 \begin{remark}
-    The size of the result is not a limit for the number of term we can sum.
+    The size of the result is not a limit for the number of terms we can sum.
     This result is stored in 128 bits in total, so if $k \in \{2, \dots, 64\}$ is
     the size of the terms, up to $2^{128 - 2k}$, which is higher than the
     previous value.
@@ -801,6 +787,7 @@ overflow.
     \caption{Timings in seconds of the modular dot product with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
+\newpage
 % TODO: Reformulate this
 The speedups for the Ice Lake and Zen 4 processors are very satisfying. On those
 two processors, the versions with AVX are faster than FLINT's implementation for
@@ -810,9 +797,9 @@ for the AVX2 version, and the timings for both AVX2 and AVX512 are very similar.
 
 \section{Butterfly Fast Fourier Transform}
 
-The butterfly refers to an operation that takes place in Cooley-Tukey algorithm \cite{Cooley_Tukey_1965}, a common algorithm to perform 
-Fast Fourier Transform (FFT), which takes as inputs: $n, w$ a modulus and a scalar of at most 64 bits, and two integers 
-$x, y$ in $\mathbb{Z}_n$, and performs the in-place computation:
+The butterfly refers to an operation that takes place in the Cooley-Tukey algorithm \cite{Cooley_Tukey_1965}, a common algorithm to perform 
+a Fast Fourier Transform (FFT), which takes as inputs a modulus $n$ and a scalar $w$ of at most 64 bits, and two integers 
+$x, y$ in $\mathbb{Z}/n\mathbb{Z}$, and performs the in-place computation:
 \[
 (x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n).
 \]
@@ -828,7 +815,7 @@ with the precomputation step. It allows saving some modular reductions compared 
 restrict the sizes of the modulus.
 
 \bigskip
-The algorithm below shows our implementation.
+The algorithm 2 below shows our implementation of the Harvey's butterfly FFT.
 
 \begin{algorithm}
     \caption{Harvey lazy butterfly FFT}
@@ -919,11 +906,12 @@ The algorithm below shows our implementation.
 
 \begin{figure}[h!]
     \begin{center}
-        \includegraphics[width=0.8\textwidth]{lazy-butterfly_argiope.png}
+        \includegraphics[width=0.75\textwidth]{lazy-butterfly_argiope.png}
     \end{center}
     \caption{Timings in seconds of the Harvey lazy butterfly FFT with a 60-bit modulus on a Zen 4 processor.}
 \end{figure}
 
+\newpage
 The timings show that we can reach a speedup factor of 1.9x with the AVX2 and a significant one of 3.7x with the AVX512 over the
 sequential version.
 
@@ -932,7 +920,7 @@ sequential version.
 
 The table below shows the results one can obtain by using our implementation of the Harvey lazy butterfly
 in the context of an FFT.
-It has not been done by us since it requires a further knowledge and analysis of the algorithm
+It has not been done by us since it requires a further knowledge and analysis of the FFT algorithm
 which is out of the scope of this project.
 
 \bigskip
@@ -943,9 +931,8 @@ In columns, we have:
     in an array of length $2^{depth}$,
     \item \texttt{sd\_fft}: timings in seconds of the FFT with AVX vectorization based on floating point numbers
     already implemented in FLINT (with a modulus up to 50 bits).
-    \item \texttt{dft4}: timings in seconds of the FFT without AVX vectorization from the pull request
-    \footnote{\url{https://github.com/flintlib/flint/pull/2107}} that implements an integer-based 
-    version of small prime FFT in FLINT (with modulus up to 62 bits).    
+    \item \texttt{dft4}: timings in seconds of the FFT without AVX vectorization from the pull request\footnote{\url{https://github.com/flintlib/flint/pull/2107}} that implements an integer-based 
+    version of small prime FFT in FLINT (with a modulus up to 62 bits).    
     \item \texttt{dft4s}: timings in seconds of the radix-4 FFT with AVX512 vectorization based on integers (with a modulus up to 62 bits),
     \item \texttt{dft2s}: timings in seconds of the radix-2 FFT with AVX512 vectorization based on integers (with a modulus up to 62 bits).
 \end{itemize}
@@ -1011,14 +998,14 @@ In columns, we have:
 The vectorized versions using our implementation (columns \texttt{dft4s} and \texttt{dft2s}) provide
 an average speedup factor of 2.2 over the version with no vectorization (column \texttt{dft4}).
 
-This is slightly worse than Intel HEXL whose speedup factor is around 2.7-2.8.
+This is not as well as Intel HEXL version whose speedup factor is around 2.7-2.8.
 Nevertheless, we have about the same timings as above when running their benchmark of the FFT on the
 Zen 4 processor which means that, considering the improvements to be made on the FFT implementation,
 we can expect to reach such results.
 
 \bigskip
 We can also notice that the timings are not too far from the version using the vectorization
-based on floating point numbers which is very encouraging.
+based on floating point numbers which is also very encouraging.
 
 One can hope for even better results with more recent generations of processors. For example, AMD Zen 5 processors
 have a \texttt{mullo\_epi64} that is two times faster than the AMD Zen 4 processors.
