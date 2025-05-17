@@ -69,7 +69,23 @@
 \section{Multiplication of 64-bit integers}
 \subsection{Long multiplication}
 \begin{frame}
-    Long multiplication
+    \frametitle{Long multiplication}
+    \begin{example}
+        For some $k \leq 32$, let
+        \begin{itemize}
+            \item $x = x_{hi} \cdot 2^k + x_{lo}$
+            \item $y = y_{hi} \cdot 2^k + y_{lo}$
+        \end{itemize}
+        be integers of at most 64 bots, we can compute
+        \begin{itemize}
+            \item $r_{lo} = x_{lo} \cdot y_{lo}$
+            \item $r_{mi} = x_{lo} \cdot y_{hi} + x_{hi} \cdot y_{lo}$
+            \item $r_{hi} = x_{hi} \cdot y_{hi}$
+        \end{itemize}
+    \end{example}
+    \begin{itemize}
+        \item $xy = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$
+    \end{itemize}
 \end{frame}
 
 \subsection{Retrieve high and low part of the result}
