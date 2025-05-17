@@ -6,6 +6,12 @@
 \usepackage{tikz} \usetikzlibrary{calc}
 \usepackage{algpseudocode}
 \usepackage{algorithm}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage[table]{xcolor}
+\usepackage{longtable}
+\usepackage{subfigure}
+
 
 
 %\usepackage{listings}
@@ -29,8 +35,18 @@
 \usetheme{Madrid}
 \usecolortheme{seahorse}
 
-\beamertemplatenavigationsymbolsempty
+\colorlet{myGray}{white!90!black}
 
+\beamertemplatenavigationsymbolsempty
+\setbeamertemplate{bibliography entry title}{}
+\setbeamertemplate{bibliography entry location}{}
+\setbeamertemplate{bibliography entry note}{}
+\setbeamertemplate{bibliography item}{\insertbiblabel}
+\setbeamercolor{bibliography item}{fg=black}
+\setbeamercolor{bibliography entry author}{fg=black}
+\setbeamercolor{bibliography entry title}{fg=black}
+\setbeamercolor{bibliography entry location}{fg=black}
+\setbeamercolor{bibliography entry note}{fg=black}
 
 \title[PCCA]{\textbf{Advanced Vector Extensions for modular arithmetic}}
 \date{20 May 2025}
@@ -39,8 +55,8 @@
 
 \AtBeginSection[]
 {
-  \begin{frame}
+  \begin{frame}[noframenumbering]
     \frametitle{Table of Contents}
-    \tableofcontents[currentsection]
+    \tableofcontents[currentsection, hideothersubsections]
   \end{frame}
 }
