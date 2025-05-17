@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[10pt]{beamer}
 \input{preamble_slides}
 
 \begin{document}
@@ -25,10 +25,42 @@
 
 \section{Preface}
 \begin{frame}
-    
-    1 - 2 slides
+    \frametitle{Machines description}
+    \begin{tikzpicture}[very thick, black]
+
+        %coordinates
+        \coordinate (O) at (0,0); % Origin
+        \coordinate (F) at (9.25,0); %End
+        \coordinate (P1) at (1,0); %ppti
+        \coordinate (P2) at (4.75,0); %groebner
+        \coordinate (P3) at (8.25,0); %mariz+argiope
+
+        %proc
+        \draw[<-,thick,color=black] ($(P1)+(0,0.2)$) -- ($(P1)+(0,1.5)$) node [above=0pt,align=center,black] 
+        {Intel® xeon® Gold 6248 Processor \\ (Cascade Lake, AVX512) \\ 2.5 GHz};
+        \draw[<-,thick,color=black] ($(P2)+(0,0.2)$) -- ($(P2)+(0,0.7)$) node [above=0pt,align=center,black] 
+        {Intel® xeon® Gold 6354 \\ (Ice Lake, AVX512) \\ 3.0 GHz};
+        \draw[<-,thick,color=black] ($(P3)+(0,0.2)$) -- ($(P3)+(0,1.5)$) node [above=0pt,align=center,black] 
+        {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVX512) \\ 3.3 GHz};
+        \draw[<-,thick,color=gray] ($(P3)-(0,0.6)$) -- ($(P3)-(0,1.5)$) node [below=0pt,align=center,gray] 
+        {Intel(R) Core(TM) Ultra 5 125H \\ (Meteor Lake) \\ 4.5 GHz};
+
+        %main arrow
+        \draw[->] (O) -- (F);
+
+        %ticks
+        \foreach \x in {1,4.75,8.25}
+        \draw(\x cm,3pt) -- (\x cm,-3pt);
+        %labels
+        \foreach \i \j in {1/2019,4.75/2021,8.25/2023}{
+        	\draw (\i,0) node[below=3pt] {\j} ;
+        }
+
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
     \begin{itemize}
-        \item Machines description
         \item Vectorization
         \item Timings measurements
     \end{itemize}
@@ -47,7 +79,26 @@
 
 \subsection{Modular multiplication with a precomputation step}
 \begin{frame}
-    Shoup
+    \frametitle{Modular multiplication with a precomputation step}
+
+    \begin{example}
+    Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). \\
+    Given $n$ and $w \in \mathbb{Z}/n\mathbb{Z}$, one can compute a scaled approximation 
+    of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
+    \end{example}
+
+    \bigskip
+    For a vector $b = (b_1,\dots, b_N)$, one can compute 
+    $$(w\cdot b_i \mod n) \text{ for each } i\in \{1, \dots, N\}$$
+
+    using Shoup algorithm:
+
+    \begin{enumerate}
+        \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \texttt{mulhi})
+        \item compute $c = w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \texttt{mullo})
+        \item if $c \geq n$, return $c-n$, else return $c$ \\
+            $\Longleftrightarrow \min(c-n, c)$.
+    \end{enumerate}
 \end{frame}
 
 \section{Classic arithmetic operations on vectors}
@@ -70,8 +121,12 @@
 \section{Butterfly Fast Fourier Transform}
 \subsection{Harvey lazy butterfly FFT}
 \begin{frame}
-    1 - 2 slides
-    Harvey
+    \frametitle{Harvey lazy butterfly FFT}
+    \[
+    (x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n).
+    \]
+
+
 \end{frame}
 
 \subsection{Consequences on a complete FFT implementation}
