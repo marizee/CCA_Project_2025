@@ -130,7 +130,7 @@ of processors that have different features (clock speed, throughputs, cache size
 \end{tikzpicture}
 
 \bigskip
-The processor marked in gray corresponds to a machine that does not provide AVX512 so it is only used to check the
+The processor marked in gray corresponds to a machine that does not provide AVX512, so it is only used to check the
 correctness of our implementations and will not appear in the timing comparisons of this document.
 
 \subsection{Vectorization}
@@ -144,7 +144,7 @@ They are separated in families providing different operations on the basic types
 the AVX2 and AVX512 sets.
 
 \bigskip
-All of the SIMD instructions have a name of the form:
+All he SIMD instructions have a name of the form:
 \begin{center} 
     \texttt{<gen><prefix><op><type><size>}
 \end{center}
@@ -225,7 +225,7 @@ for(int i = 0; i+1 < n; i += 2) {
 
 For the timings, it is also possible to disable the compiler's
 auto-vectorization using the \texttt{-fno-tree-vectorize} for gcc. Using it with
-C \texttt{\_\_attribute\_\_((...))}, this allow us to have a version with the
+C \texttt{\_\_attribute\_\_((...))}, this allows us to have a version with the
 maximum level of optimization but without SIMD to use as a reference for our
 benchmarks.
 
@@ -243,7 +243,7 @@ We have considered three ranges of sizes for the vectors:
 \end{itemize}
 
 In some cases, timings obtained with small sizes and large sizes are not really conclusive because of
-the mutiple load and store operations, and the memory issues that can arise from the size of the caches.
+the multiple load and store operations, and the memory issues that can arise from the size of the caches.
 
 \begin{remark}
     For basic operations, one can check the coherency of the timings by considering the clock speed of
@@ -377,7 +377,7 @@ Hence, we have implemented the versions of \texttt{mullo} and \texttt{mulhi} we 
 \subsection{Modular multiplications with precomputation}
 
 In a context of several modular multiplications where one operand $w$ and the modulus $n$ are fixed,
-V. Shoup\cite{Bos_Stam_2021} introduced a step of precomputation on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
+V. Shoup \cite{Bos_Stam_2021} introduced a step of precomputation on $w$ and $n$ that will speed up subsequent multiplications by $w \mod n$.
 
 \bigskip
 Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). Given $n$ and $w \in \mathbb{Z}_n$, one can compute a scaled approximation 
@@ -479,7 +479,7 @@ offered by the processors we used.
 \subsection{Modular reduction}
 
 Among the basic arithmetic operations, the modular reduction is one of the most costly. 
-Thus, to circumvent its high cost, one can consider delaying it as long as there is no overflow occuring.
+Thus, to circumvent its high cost, one can consider delaying it as long as there is no overflow occurring.
 Another way is to modify the size requirements of the manipulated integers when the reduction boils down to
 only a few additions or substractions.
 
@@ -494,7 +494,7 @@ a_i + b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
 
 
 \begin{remark}
-    The modular reduction is done by only performing substractions and additions. It takes advantage of
+    The modular reduction is done by only performing subtractions and additions. It takes advantage of
     the fact that the sum of two integers $0 \leq x,y < n$ is less than $2n$.
 \end{remark}
 
@@ -581,7 +581,7 @@ This can be explained by the evolution of the architectures as the difference of
 \subsection{Multiplication of a vector by a scalar or by another vector}
 
 
-\paragraph{Scalar-vector multiplication} Given a integer $w \in \mathbb{Z}/n\mathbb{Z}$ vector $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
+\paragraph{Scalar-vector multiplication} Given an integer $w \in \mathbb{Z}/n\mathbb{Z}$ vector $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we compute
 
 \[
 w \cdot b_i \mod n \qquad \forall i\in \{1,\dots,N\}.
@@ -692,7 +692,7 @@ Given two vectors $a,b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$, we comp
 
 Each multiplication is performed by using the long multiplication of Section \ref{mulsplit} and then
 the products are classically added together.
-Like so, it requires to perform a reduction for each binary operation.
+Like so, it requires performing a reduction for each binary operation.
 
 \bigskip
 In fact, one can consider delaying the reduction according to the size of the modulus.
@@ -824,7 +824,7 @@ be applied to a long vector of different \(x_i, y_i\) but with the same \(w\) an
 \subsection{Harvey lazy butterfly FFT}
 
 Harvey proposes a strategy\cite{DBLP:journals/corr/abs-1205-2926} to compute the butterfly FFT based on Shoup multiplication
-with the precomputation step. It allows to save some modular reductions compared to a basic implementation, if one is able to 
+with the precomputation step. It allows saving some modular reductions compared to a basic implementation, if one is able to 
 restrict the sizes of the modulus.
 
 \bigskip
@@ -931,7 +931,7 @@ sequential version.
 \subsection{Consequences on a complete FFT implementation}
 
 The table below shows the results one can obtain by using our implementation of the Harvey lazy butterfly
-in the context of a FFT.
+in the context of an FFT.
 It has not been done by us since it requires a further knowledge and analysis of the algorithm
 which is out of the scope of this project.
 
@@ -1031,12 +1031,12 @@ Altogether, the results are rather conclusive and we can hope for them to be lat
 To have a more complete study, we could have looked at the case in which the modulus is a prime number
 with a particular form such as the ones presented in the appendix \ref{app}. 
 
-This is possible in the context of the FFT, and could have enhance the butterfly FFT even more.
+This is possible in the context of the FFT, and could have enhanced the butterfly FFT even more.
 
 \bigskip
 Another possible improvement is to use the Integer Fused Multiply Add instructions (IFMA) that are part of
 the AVX512 family. This extension provides some intrinsics with a low throughput for operations that involve
-multiplications and additions but requires to lower the maximum bit size allowed to 52 which would need the
+multiplications and additions but requires lowering the maximum bit size allowed to 52 which would need the
 study of floating point arithmetic.
 
 
