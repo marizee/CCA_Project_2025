@@ -114,8 +114,31 @@
 
 \subsection{Dot product}
 \begin{frame}
-    1 - 2 slides
-    dot product
+    \frametitle{Dot product}
+    \begin{example}
+        Given two vector $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$
+        \[
+            \left(\sum^N_{i=1}a_i\cdot b_i\right) \mod n
+        \]
+        with $n$ of size $l \leq 32$ bits
+    \end{example}
+
+    \pause
+    Modular reduction performed at the end of the sum
+    \begin{itemize}
+        \item[$+$] Improve performance
+        \item[$-$] Limit the vectors size to $2^{64 - 2l}$ before overflow
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{With long multiplication} % mb merge w/ previous
+    % TODO
+    \begin{itemize}
+        \item Long multiplication allow $n$ to have bigger bit size
+        \item Sum the three limbs ($r_{hi}$, $r_{mi}$, $r_{lo}$)
+        \item The result is reconstructed at the end, before the modulo
+    \end{itemize}
 \end{frame}
 
 \section{Butterfly Fast Fourier Transform}
