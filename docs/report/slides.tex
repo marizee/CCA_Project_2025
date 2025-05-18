@@ -83,16 +83,24 @@
     \frametitle{Introduction}
 
     \textbf{Vectorization}
+    
+    Goal: Use SIMD instructions to improve performance for some modular arthmetic operations
+
     \begin{itemize}
-        \item SIMD/AVX
-        \item autovec
-        \item uops
+        \item Use SIMD from AVX families (AVX2 and AVX512)
+            \begin{itemize}
+                \item Used with Intel intrinsics
+                \item Tested compiler auto-vectorization vs manual vectorization
+            \end{itemize}
+        \item uops.info tables give timings for SIMD for different processors
     \end{itemize}
     
+    \bigskip
     \textbf{Timings measurement}
+
+    Compared timings from different versions using profiling function
     \begin{itemize}
-        \item profiling function
-        \item sizes
+        \item[$\rightarrow$] Test those versions with diffrent input sizes
     \end{itemize}
 \end{frame}
 
