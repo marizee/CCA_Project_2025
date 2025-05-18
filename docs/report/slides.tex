@@ -29,8 +29,8 @@
 
     \textbf{Environment}
     \begin{itemize}
-        \item Language C,
-        \item Fast Library for Number Theory library v. 20.0.0,
+        \item C Language,
+        \item Fast Library for Number Theory (FLINT) library v. 20.0.0,
         \item Ring $\mathbb{Z}/n\mathbb{Z}, n < 2^{64}$.
     \end{itemize}
 
@@ -108,13 +108,14 @@
 \subsection{Long multiplication}
 \begin{frame}
     \frametitle{Long multiplication}
+    Let $x,y$ be two integers of at most 64 bits, $0 < k \leq 32$, we write:
+    \begin{align*}
+        x &= x_{hi} \cdot 2^k + x_{lo}, \\
+        y &= y_{hi} \cdot 2^k + y_{lo}.
+    \end{align*}
 
+    \pause
     \begin{mybox}
-        Let $x,y$ be two integers of at most 64 bits, $0 < k \leq 32$, we write:
-        \begin{align*}
-            x &= x_{hi} \cdot 2^k + x_{lo}, \\
-            y &= y_{hi} \cdot 2^k + y_{lo}.
-        \end{align*}
         The product $xy$ by the \textit{long multiplication} is given by
         $$xy = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$$
         where:
@@ -138,6 +139,7 @@
         such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
     \end{mybox}
 
+    \pause
     \begin{itemize}
         \item \code{mullo(a,b)}: multiply the $x$-bit integers in $a$ and $b$, producing intermediate $2x$-bit integers, 
         and store the low $x$ bits of the intermediate integers.
@@ -145,9 +147,11 @@
         and store the high $x$ bits of the intermediate integers.
     \end{itemize}
 
+    \pause
     \medskip
     \textbf{FLINT} $\longrightarrow$ \code{umul\_ppmm}
 
+    \pause
     \medskip
     \textbf{AVX512} $\longrightarrow$ \code{\_mm512\_mullo\_epi64}
 
@@ -181,11 +185,12 @@
         of $\frac{w}{n}$: $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
     \end{mybox}
 
+    \pause
     \bigskip
     For a vector $b = (b_1,\dots, b_N) \in (\mathbb{Z}/n\mathbb{Z})^N$, we compute 
     $$(w\cdot b_i \mod n) \text{ for each } i\in \{1, \dots, N\}$$
 
-    using Shoup algorithm\cite{Bos_Stam_2021}:
+    using \textbf{Shoup algorithm}\cite{Bos_Stam_2021}:
     \medskip
     \begin{enumerate}
         \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \code{mulhi})
@@ -471,6 +476,7 @@
     \]
     \end{mybox}
     
+    \pause
     \bigskip
     \textbf{Harvey lazy butterfly algorithm\cite{DBLP:journals/corr/abs-1205-2926}:}
 
@@ -626,10 +632,25 @@
 
 \section{Conclusion}
 \begin{frame}
+    \frametitle{Open questions}
+
+    \textbf{Special primes}
     \begin{itemize}
-        \item special primes
-        \item ifma
+        \item Mersenne numbers: $n\in \mathbb{N}$,
+            $$M_n = 2^n - 1.$$
+        \item Generalized Mersenne primes of the form:
+            \begin{align*}
+                p &= 2^u + 2^v + 1 \\ 
+                p &= 2^u - 2^v + 1 
+            \end{align*}
+            of $u+1$ bits, with $64 > u > v > 0$.
     \end{itemize}
+
+    \bigskip
+    \textbf{Integer Fused Multiply Add (IFMA) instructions}
+    
+    $\Longrightarrow$ Vectorization based on floating-point arithmetic.
+
 \end{frame}
 
 \section{References}
