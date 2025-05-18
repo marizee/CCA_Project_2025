@@ -97,21 +97,21 @@
 \begin{frame}
     \frametitle{Modular multiplication with a precomputation step}
 
-    \begin{example}
-    Let $B$ be the maximum bitsize of a word ($B\in \{32, 64\}$). \\
-    Given $n$ and $w \in \mathbb{Z}/n\mathbb{Z}$, one can compute a scaled approximation 
-    of $\frac{w}{n}$, which is precisely $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
-    \end{example}
+    \begin{mybox}
+        Let $B$ be the maximum bit size of a word ($B\in \{32, 64\}$). \\
+        Given $n$ and $w \in \mathbb{Z}/n\mathbb{Z}$, one can compute a \textit{scaled approximation} 
+        of $\frac{w}{n}$: $$ w_{pre} = \biggl\lfloor\dfrac{w\cdot 2^{B}}{n} \biggr\rfloor.$$
+    \end{mybox}
 
     \bigskip
-    For a vector $b = (b_1,\dots, b_N)$, one can compute 
+    For a vector $b = (b_1,\dots, b_N)$, we compute 
     $$(w\cdot b_i \mod n) \text{ for each } i\in \{1, \dots, N\}$$
 
-    using Shoup algorithm%\cite{Bos_Stam_2021}:
-
+    using Shoup algorithm\cite{Bos_Stam_2021}:
+    \medskip
     \begin{enumerate}
         \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \texttt{mulhi})
-        \item compute $c = w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \texttt{mullo})
+        \item $c \gets w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \texttt{mullo})
         \item if $c \geq n$, return $c-n$, else return $c$ \\
             $\Longleftrightarrow \min(c-n, c)$.
     \end{enumerate}
@@ -120,7 +120,7 @@
 \section{Classic arithmetic operations on vectors}
 \subsection{Addition of two vectors}
 \begin{frame}
-    \frametitle{timings add mod on argiope}
+    \frametitle{Vector addition with a 60-bit modulus (1)}
 
     \begin{table}[h!]
         \centering
@@ -181,24 +181,24 @@
             \cellcolor{myGray} FLINT & 5.55e-08 & 4.9x & 3.43e-07 & 3.1x & 6.61e-06 & 3.0x \\
             \hline
         \end{tabular}
-        \caption{Timings in seconds and ratios of the modular sum with a 60-bit modulus.}
+        %\caption{Timings in seconds and ratios of the modular sum with a 60-bit modulus.}
     \end{table}
 \end{frame}
 
 \begin{frame}
-    \frametitle{timings add mod on argiope}
+    \frametitle{Vector addition with a 60-bit modulus (2)}
 
     \begin{figure}[h!]
         \begin{center}
-            \includegraphics[width=0.8\textwidth]{add-mod_argiope.png}
+            \includegraphics[width=1\textwidth]{add-mod_argiope.png}
         \end{center}
-        \caption{Timings in seconds of the modular sum with a 60-bit modulus on a Zen 4 processor.}
+        %\caption{Timings in seconds of the modular sum with a 60-bit modulus on a Zen 4 processor.}
     \end{figure}
 \end{frame}
 
 \subsection{Multiplication of a vector by a scalar}
 \begin{frame}
-    \frametitle{timings scalar vector prod}
+    \frametitle{Scalar vector product with a 60-bit modulus (1)}
 
     \begin{table}[h!]
         \centering
@@ -262,18 +262,18 @@
             \cellcolor{myGray} FLINT & 2.40e-07 & 1.0x & 9.29e-07 & 1.0x & 1.59e-05 & 1.0x \\
             \hline
         \end{tabular}
-        \caption{Timings in seconds and ratios of the modular scalar vector product with a 60-bit modulus.}
+        %\caption{Timings in seconds and ratios of the modular scalar vector product with a 60-bit modulus.}
     \end{table}
 \end{frame}
 
 \begin{frame}
-    \frametitle{timings scalar vector prod on argiope}
+    \frametitle{Scalar vector product with a 60-bit modulus (2)}
 
     \begin{figure}[h!]
         \begin{center}
-            \includegraphics[width=0.8\textwidth]{scalar-vector-mod_argiope.png}
+            \includegraphics[width=1\textwidth]{scalar-vector-mod_argiope.png}
         \end{center}
-        \caption{Timings in seconds of the modular scalar vector product with a 60-bit modulus on a Zen 4 processor.}
+        %\caption{Timings in seconds of the modular scalar vector product with a 60-bit modulus on a Zen 4 processor.}
     \end{figure}
 \end{frame}
 
@@ -307,7 +307,7 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{timings dot prod}
+    \frametitle{Dot product with a 60-bit modulus (1)}
 
     \begin{table}[h!]
         \centering
@@ -371,32 +371,52 @@
             \cellcolor{myGray} FLINT & 2.70e-07 & 1.3x & 8.48e-07 & 1.2x & 1.34e-05 & 1.3x \\
             \hline
         \end{tabular}
-        \caption{Timings in seconds and ratios of the modular dot product with a 60-bit modulus.}
+        %\caption{Timings in seconds and ratios of the modular dot product with a 60-bit modulus.}
     \end{table}
 \end{frame}
     
 \begin{frame}
-    \frametitle{timings dot prod on argiope}
+    \frametitle{Dot product with a 60-bit modulus (2)}
 
     \begin{figure}[h!]
         \begin{center}
-            \includegraphics[width=0.8\textwidth]{dot-prod-mod_argiope.png}
+            \includegraphics[width=1\textwidth]{dot-prod-mod_argiope.png}
         \end{center}
-        \caption{Timings in seconds of the modular dot product with a 60-bit modulus on a Zen 4 processor.}
+        %\caption{Timings in seconds of the modular dot product with a 60-bit modulus on a Zen 4 processor.}
     \end{figure}
 \end{frame}
 
 \section{Butterfly Fast Fourier Transform}
 \subsection{Harvey lazy butterfly FFT}
 \begin{frame}
-    \frametitle{Harvey lazy butterfly FFT}
+    \frametitle{Butterfly Fast Fourier Transform}
+    \begin{mybox}
+    Let $w, n$ be integers, $x,y \in \mathbb{Z}/n\mathbb{Z}$, 
+    the \textit{butterfly FFT} is the in-place transformation: 
     \[
     (x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n).
     \]
+    \end{mybox}
+    
+    \bigskip
+    \textbf{Harvey lazy butterfly algorithm\cite{DBLP:journals/corr/abs-1205-2926}:}
+
+    \medskip
+    For $n < \textcolor{red}{2^B /4}$, $x,y < \textcolor{red}{4n}$, $(w, w_{pre})$,
+    \begin{enumerate}
+        \item $x \gets \min(x-2n, x)$,
+        \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \texttt{mulhi})
+        \item $c \gets w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \texttt{mullo})
+        \item $c \gets \min(c-2n, c)$,
+        \item $x\gets x + c$ \\
+            $y \gets x - c + 2n$
+        \item return $x,y$
+    \end{enumerate}
+
 \end{frame}
 
 \begin{frame}
-    \frametitle{timings lazy butterfly}
+    \frametitle{Lazy butterfly FFT with a 60-bit modulus (1)}
 
     \begin{table}[h!]
         \centering
@@ -454,24 +474,24 @@
             \cellcolor{myGray} AVX512 & 1.44e-07 & 3.5x & 5.80e-07 & 3.5x & 9.12e-06 & 3.7x \\
             \hline
         \end{tabular}
-        \caption{Timings in seconds and ratios of the Harvey lazy butterfly FFT with a 60-bit modulus.}
+        %\caption{Timings in seconds and ratios of the Harvey lazy butterfly FFT with a 60-bit modulus.}
     \end{table}
 \end{frame}
 
 \begin{frame}
-    \frametitle{timings lazy butterfly on argiope}
+    \frametitle{Lazy butterfly FFT with a 60-bit modulus (2)}
 
     \begin{figure}[h!]
         \begin{center}
-            \includegraphics[width=0.75\textwidth]{lazy-butterfly_argiope.png}
+            \includegraphics[width=1\textwidth]{lazy-butterfly_argiope.png}
         \end{center}
-        \caption{Timings in seconds of the Harvey lazy butterfly FFT with a 60-bit modulus on a Zen 4 processor.}
+        %\caption{Timings in seconds of the Harvey lazy butterfly FFT with a 60-bit modulus on a Zen 4 processor.}
     \end{figure}
 \end{frame}
 
 \subsection{Consequences on a complete FFT implementation}
 \begin{frame}
-    \frametitle{timings fft}
+    \frametitle{FFT with a 50-bit prime modulus}
     \begin{center}
         \begin{longtable}{|r|*{4}{c|}}
             \hline
@@ -536,7 +556,7 @@
     \end{itemize}
 \end{frame}
 
-\section*{References}
+\section{References}
 \begin{frame}
     \frametitle{References}
 

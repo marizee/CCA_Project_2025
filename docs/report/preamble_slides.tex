@@ -11,6 +11,7 @@
 \usepackage[table]{xcolor}
 \usepackage{longtable}
 \usepackage{subfigure}
+\usepackage[most]{tcolorbox}
 
 
 
@@ -47,6 +48,16 @@
 \setbeamercolor{bibliography entry title}{fg=black}
 \setbeamercolor{bibliography entry location}{fg=black}
 \setbeamercolor{bibliography entry note}{fg=black}
+\setbeamertemplate{enumerate items}[default]
+
+
+\newtcolorbox{mybox}{
+    colback=white!95!black,
+    frame hidden,
+    enhanced jigsaw,
+    breakable
+    %fonttitle=\bfseries,
+}
 
 \title[PCCA]{\textbf{Advanced Vector Extensions for modular arithmetic}}
 \date{20 May 2025}
