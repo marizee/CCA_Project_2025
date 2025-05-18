@@ -350,29 +350,24 @@
 \subsection{Dot product}
 \begin{frame}
     \frametitle{Dot product}
-    \begin{example}
-        Given two vector $a$, $b$ of $N$ coefficients in $\mathbb{Z}/n\mathbb{Z}$
-        \[
-            \left(\sum^N_{i=1}a_i\cdot b_i\right) \mod n
-        \]
-        with $n$ of size $l \leq 32$ bits
-    \end{example}
+    Given two vector $a = (a_1,\cdots,a_N), b = (b_1,\cdots b_N) \in \left(\mathbb{Z}/n\mathbb{Z}\right)^N$
+    \[
+        \left(\sum^N_{i=1}a_i\cdot b_i\right) \mod n
+    \]
+    %with $n$ of size $k$ bits
 
-    \pause
-    Modular reduction performed at the end of the sum
+    \medskip
     \begin{itemize}
-        \item[$+$] Improve performance
-        \item[$-$] Limit the vectors size to $2^{64 - 2l}$ before overflow
-    \end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{With long multiplication} % mb merge w/ previous
-    % TODO
-    \begin{itemize}
-        \item Long multiplication allow $n$ to have bigger bit size
-        \item Sum the three limbs ($r_{hi}$, $r_{mi}$, $r_{lo}$)
-        \item The result is reconstructed at the end, before the modulo
+        \item<+-> Modular reduction performed at the end of the sum
+            \begin{itemize}
+                \item[$+$] Improve performance
+                \item[$-$] Limit the vectors size to avoid overflow
+            \end{itemize}
+        \item<+-> When using long multiplication
+            \begin{enumerate}
+                \item Compute separate sums for the three limbs ($r_{hi}$, $r_{mi}$, $r_{lo}$)
+                \item Reconstruct the result
+            \end{enumerate}
     \end{itemize}
 \end{frame}
 
