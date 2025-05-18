@@ -25,44 +25,74 @@
 
 \section{Preface}
 \begin{frame}
-    \frametitle{Machines description}
-    \begin{tikzpicture}[very thick, black]
+    \frametitle{Introduction}
 
-        %coordinates
-        \coordinate (O) at (0,0); % Origin
-        \coordinate (F) at (9.25,0); %End
-        \coordinate (P1) at (1,0); %ppti
-        \coordinate (P2) at (4.75,0); %groebner
-        \coordinate (P3) at (8.25,0); %mariz+argiope
+    \textbf{Environment}
+    \begin{itemize}
+        \item Language C,
+        \item Fast Library for Number Theory library v. 20.0.0,
+        \item Ring $\mathbb{Z}/n\mathbb{Z}, n < 2^{64}$.
+    \end{itemize}
 
-        %proc
-        \draw[<-,thick,color=black] ($(P1)+(0,0.2)$) -- ($(P1)+(0,1.5)$) node [above=0pt,align=center,black] 
-        {Intel® xeon® Gold 6248 Processor \\ (Cascade Lake, AVX512) \\ 2.5 GHz};
-        \draw[<-,thick,color=black] ($(P2)+(0,0.2)$) -- ($(P2)+(0,0.7)$) node [above=0pt,align=center,black] 
-        {Intel® xeon® Gold 6354 \\ (Ice Lake, AVX512) \\ 3.0 GHz};
-        \draw[<-,thick,color=black] ($(P3)+(0,0.2)$) -- ($(P3)+(0,1.5)$) node [above=0pt,align=center,black] 
-        {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVX512) \\ 3.3 GHz};
-        \draw[<-,thick,color=gray] ($(P3)-(0,0.6)$) -- ($(P3)-(0,1.5)$) node [below=0pt,align=center,gray] 
-        {Intel(R) Core(TM) Ultra 5 125H \\ (Meteor Lake) \\ 4.5 GHz};
+    \medskip
+    \textbf{State-of-the-art}
+    \begin{itemize}
+        \item Intel HEXL library\cite{boemer2021intelhexlacceleratinghomomorphic}
+        \item Mathemagix library\cite{vanderhoeven2014modularsimdarithmeticmathemagix}
+    \end{itemize}
 
-        %main arrow
-        \draw[->] (O) -- (F);
+    \medskip
+    \textbf{Machines description}
+    \begin{center}
+        \scalebox{0.5}{
+        \begin{tikzpicture}[very thick, black]
 
-        %ticks
-        \foreach \x in {1,4.75,8.25}
-        \draw(\x cm,3pt) -- (\x cm,-3pt);
-        %labels
-        \foreach \i \j in {1/2019,4.75/2021,8.25/2023}{
-        	\draw (\i,0) node[below=3pt] {\j} ;
+            %coordinates
+            \coordinate (O) at (0,0); % Origin
+            \coordinate (F) at (9.25,0); %End
+            \coordinate (P1) at (1,0); %ppti
+            \coordinate (P2) at (4.75,0); %groebner
+            \coordinate (P3) at (8.25,0); %mariz+argiope
+
+            %proc
+            \draw[<-,thick,color=black] ($(P1)+(0,0.2)$) -- ($(P1)+(0,1.5)$) node [above=0pt,align=center,black] 
+            {Intel® xeon® Gold 6248 Processor \\ (Cascade Lake, AVX512) \\ 2.5 GHz};
+            \draw[<-,thick,color=black] ($(P2)+(0,0.2)$) -- ($(P2)+(0,0.7)$) node [above=0pt,align=center,black] 
+            {Intel® xeon® Gold 6354 \\ (Ice Lake, AVX512) \\ 3.0 GHz};
+            \draw[<-,thick,color=black] ($(P3)+(0,0.2)$) -- ($(P3)+(0,1.5)$) node [above=0pt,align=center,black] 
+            {AMD Ryzen 7 PRO 7840U \\ (Zen 4, AVX512) \\ 3.3 GHz};
+            \draw[<-,thick,color=gray] ($(P3)-(0,0.6)$) -- ($(P3)-(0,1.5)$) node [below=0pt,align=center,gray] 
+            {Intel(R) Core(TM) Ultra 5 125H \\ (Meteor Lake) \\ 4.5 GHz};
+
+            %main arrow
+            \draw[->] (O) -- (F);
+
+            %ticks
+            \foreach \x in {1,4.75,8.25}
+            \draw(\x cm,3pt) -- (\x cm,-3pt);
+            %labels
+            \foreach \i \j in {1/2019,4.75/2021,8.25/2023}{
+            	\draw (\i,0) node[below=3pt] {\j} ;
+            }
+        \end{tikzpicture}
         }
-
-\end{tikzpicture}
+    \end{center}
 \end{frame}
 
 \begin{frame}
+    \frametitle{Introduction}
+
+    \textbf{Vectorization}
     \begin{itemize}
-        \item Vectorization
-        \item Timings measurements
+        \item SIMD/AVX
+        \item autovec
+        \item uops
+    \end{itemize}
+    
+    \textbf{Timings measurement}
+    \begin{itemize}
+        \item profiling function
+        \item sizes
     \end{itemize}
 \end{frame}
 
@@ -70,27 +100,67 @@
 \subsection{Long multiplication}
 \begin{frame}
     \frametitle{Long multiplication}
-    \begin{example}
-        For some $k \leq 32$, let
-        \begin{itemize}
-            \item $x = x_{hi} \cdot 2^k + x_{lo}$
-            \item $y = y_{hi} \cdot 2^k + y_{lo}$
-        \end{itemize}
-        be integers of at most 64 bots, we can compute
-        \begin{itemize}
-            \item $r_{lo} = x_{lo} \cdot y_{lo}$
-            \item $r_{mi} = x_{lo} \cdot y_{hi} + x_{hi} \cdot y_{lo}$
-            \item $r_{hi} = x_{hi} \cdot y_{hi}$
-        \end{itemize}
-    \end{example}
-    \begin{itemize}
-        \item $xy = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$
-    \end{itemize}
+
+    \begin{mybox}
+        Let $x,y$ be two integers of at most 64 bits, $0 < k \leq 32$, we write:
+        \begin{align*}
+            x &= x_{hi} \cdot 2^k + x_{lo}, \\
+            y &= y_{hi} \cdot 2^k + y_{lo}.
+        \end{align*}
+        The product $xy$ by the \textit{long multiplication} is given by
+        $$xy = r_{lo} + (r_{mi} \ll k) + (r_{hi} \ll 2k)$$
+        where:
+        \begin{align*}
+            r_{lo} &= x_{lo} \cdot y_{lo}, \\
+            r_{mi} &= x_{lo} \cdot y_{hi} + x_{hi} \cdot y_{lo}, \\
+            r_{hi} &= x_{hi} \cdot y_{hi}. 
+        \end{align*}
+    \end{mybox}
 \end{frame}
 
-\subsection{Retrieve high and low part of the result}
+\subsection{Retrieve the high and the low part of the result}
 \begin{frame}
-    Low/high part of the result
+    \frametitle{Retrieve high and low part of the result}
+    \begin{mybox}
+        The product $xy$ is represented as:
+        \begin{align*}
+            (xy)_{lo} &= (r_{hi} \ll 2\cdot k) + (r_{mi} \ll k) + r_{lo}, \\
+            (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) + carry_{lo},
+        \end{align*}
+        such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
+    \end{mybox}
+
+    \begin{itemize}
+        \item \code{mullo(a,b)}: multiply the $x$-bit integers in $a$ and $b$, producing intermediate $2x$-bit integers, 
+        and store the low $x$ bits of the intermediate integers.
+        \item \code{mulhi(a,b)}: multiply the $x$-bit integers in $a$ and $b$, producing intermediate $2x$-bit integers, 
+        and store the high $x$ bits of the intermediate integers.
+    \end{itemize}
+
+    \medskip
+    \textbf{FLINT} $\longrightarrow$ \code{umul\_ppmm}
+
+    \medskip
+    \textbf{AVX512} $\longrightarrow$ \code{\_mm512\_mullo\_epi64}
+
+    \begin{table}[h!]
+        \centering
+        \scalebox{0.7}{
+        \begin{tabularx}{0.9\textwidth} { 
+            | >{\centering\arraybackslash}X 
+            | >{\centering\arraybackslash}X
+            | >{\centering\arraybackslash}X 
+            | >{\centering\arraybackslash}X | }
+            \hline
+            \rowcolor{myGray} 
+            Processor & Cascade Lake & IceLake & Zen 4 \\
+            \hline
+            \cellcolor{myGray} Throughput & 1.5 & 3.0 & 1.0 \\
+            \hline
+        \end{tabularx}
+        }
+        %\caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm}.}
+    \end{table}
 \end{frame}
 
 \subsection{Modular multiplication with a precomputation step}
@@ -104,14 +174,14 @@
     \end{mybox}
 
     \bigskip
-    For a vector $b = (b_1,\dots, b_N)$, we compute 
+    For a vector $b = (b_1,\dots, b_N) \in (\mathbb{Z}/n\mathbb{Z})^N$, we compute 
     $$(w\cdot b_i \mod n) \text{ for each } i\in \{1, \dots, N\}$$
 
     using Shoup algorithm\cite{Bos_Stam_2021}:
     \medskip
     \begin{enumerate}
-        \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \texttt{mulhi})
-        \item $c \gets w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \texttt{mullo})
+        \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \code{mulhi})
+        \item $c \gets w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \code{mullo})
         \item if $c \geq n$, return $c-n$, else return $c$ \\
             $\Longleftrightarrow \min(c-n, c)$.
     \end{enumerate}
@@ -405,8 +475,8 @@
     For $n < \textcolor{red}{2^B /4}$, $x,y < \textcolor{red}{4n}$, $(w, w_{pre})$,
     \begin{enumerate}
         \item $x \gets \min(x-2n, x)$,
-        \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \texttt{mulhi})
-        \item $c \gets w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \texttt{mullo})
+        \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \code{mulhi})
+        \item $c \gets w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \code{mullo})
         \item $c \gets \min(c-2n, c)$,
         \item $x\gets x + c$ \\
             $y \gets x - c + 2n$
@@ -492,8 +562,10 @@
 \subsection{Consequences on a complete FFT implementation}
 \begin{frame}
     \frametitle{FFT with a 50-bit prime modulus}
+
     \begin{center}
-        \begin{longtable}{|r|*{4}{c|}}
+        \scalebox{0.75}{
+        \begin{tabular}{|r|*{4}{c|}}
             \hline
             \rowcolor{myGray}
             depth & sd\_fft & dft4 & dft4s & dft2s \\
@@ -530,21 +602,22 @@
             \hline
             \cellcolor{myGray} 18 & 5.8e-04 & 2.4e-03 & 9.1e-04 & 9.6e-04 \\
             \hline
-            %\cellcolor{myGray} 19 & 1.2e-03 & 4.9e-03 & 2.0e-03 & 2.0e-03 \\
-            %\hline
-            %\cellcolor{myGray} 20 & 2.6e-03 & 1.1e-02 & 4.1e-03 & 4.3e-03 \\
-            %\hline
-            %\cellcolor{myGray} 21 & 6.0e-03 & 2.2e-02 & 9.2e-03 & 9.6e-03 \\
-            %\hline
-            %\cellcolor{myGray} 22 & 1.3e-02 & 4.8e-02 & 2.0e-02 & 2.3e-02 \\
-            %\hline
-            %\cellcolor{myGray} 23 & 2.8e-02 & 9.9e-02 & 4.2e-02 & 4.7e-02 \\
-            %\hline
-            %\cellcolor{myGray} 24 & 6.2e-02 & 2.1e-01 & 8.3e-02 & 9.8e-02 \\
-            %\hline
-            %\cellcolor{myGray} 25 & 1.3e-01 & 4.4e-01 & 1.8e-01 & 2.1e-01 \\
-            %\hline
-        \end{longtable}
+            \cellcolor{myGray} 19 & 1.2e-03 & 4.9e-03 & 2.0e-03 & 2.0e-03 \\
+            \hline
+            \cellcolor{myGray} 20 & 2.6e-03 & 1.1e-02 & 4.1e-03 & 4.3e-03 \\
+            \hline
+            \cellcolor{myGray} 21 & 6.0e-03 & 2.2e-02 & 9.2e-03 & 9.6e-03 \\
+            \hline
+            \cellcolor{myGray} 22 & 1.3e-02 & 4.8e-02 & 2.0e-02 & 2.3e-02 \\
+            \hline
+            \cellcolor{myGray} 23 & 2.8e-02 & 9.9e-02 & 4.2e-02 & 4.7e-02 \\
+            \hline
+            \cellcolor{myGray} 24 & 6.2e-02 & 2.1e-01 & 8.3e-02 & 9.8e-02 \\
+            \hline
+            \cellcolor{myGray} 25 & 1.3e-01 & 4.4e-01 & 1.8e-01 & 2.1e-01 \\
+            \hline
+        \end{tabular}
+        }
     \end{center}
 \end{frame}
 
