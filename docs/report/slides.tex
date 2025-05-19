@@ -135,7 +135,7 @@
         The product $xy$ is represented as:
         \begin{align*}
             (xy)_{lo} &= (r_{hi} \ll 2\cdot k) + (r_{mi} \ll k) + r_{lo}, \\
-            (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) + carry_{lo},
+            (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) \textcolor{white!60!black}{ + carry_{lo}},
         \end{align*}
         such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
     \end{mybox}
@@ -143,19 +143,36 @@
     \pause
     \begin{itemize}
         \item \code{mullo(a,b)}: multiply the $x$-bit integers in $a$ and $b$, producing intermediate $2x$-bit integers, 
-        and store the low $x$ bits of the intermediate integers.
+        and store the \textbf{low} $x$ bits of the intermediate integers.
         \item \code{mulhi(a,b)}: multiply the $x$-bit integers in $a$ and $b$, producing intermediate $2x$-bit integers, 
-        and store the high $x$ bits of the intermediate integers.
+        and store the \textbf{high} $x$ bits of the intermediate integers.
     \end{itemize}
 
     \pause
     \medskip
     \textbf{FLINT} $\longrightarrow$ \code{umul\_ppmm}
+    \begin{table}[h!]
+        \centering
+        \scalebox{0.7}{
+        \begin{tabularx}{0.9\textwidth} { 
+            | >{\centering\arraybackslash}X 
+            | >{\centering\arraybackslash}X
+            | >{\centering\arraybackslash}X 
+            | >{\centering\arraybackslash}X | }
+            \hline
+            \rowcolor{myGray} 
+            Processor & Cascade Lake & IceLake & Zen 4 \\
+            \hline
+            \cellcolor{myGray} Throughput & 1.0 & 1.0 & 1.0 \\
+            \hline
+        \end{tabularx}
+        }
+        %\caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm}.}
+    \end{table}
 
     \pause
     \medskip
     \textbf{AVX512} $\longrightarrow$ \code{\_mm512\_mullo\_epi64}
-
     \begin{table}[h!]
         \centering
         \scalebox{0.7}{
@@ -471,7 +488,7 @@
     \frametitle{Butterfly Fast Fourier Transform}
     \begin{mybox}
     Let $w, n$ be integers, $x,y \in \mathbb{Z}/n\mathbb{Z}$, 
-    the \textit{butterfly FFT} is the in-place transformation: 
+    the \textit{butterfly FFT}\cite{Cooley_Tukey_1965} is the in-place transformation: 
     \[
     (x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n).
     \]
@@ -481,18 +498,18 @@
     \bigskip
     \textbf{Harvey lazy butterfly algorithm\cite{DBLP:journals/corr/abs-1205-2926}:}
 
+    
     \medskip
     For $n < \textcolor{red}{2^B /4}$, $x,y < \textcolor{red}{4n}$, $(w, w_{pre})$,
     \begin{enumerate}
         \item $x \gets \min(x-2n, x)$,
-        \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \code{mulhi})
-        \item $c \gets w\cdot b_i - p_{hi}\cdot n$, \hfill (2 \code{mullo})
+        \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot y = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \code{mulhi})
+        \item $c \gets w\cdot y - p_{hi}\cdot n$, \hfill (2 \code{mullo})
         \item $c \gets \min(c-2n, c)$,
         \item $x\gets x + c$ \\
             $y \gets x - c + 2n$
         \item return $x,y$
     \end{enumerate}
-
 \end{frame}
 
 \begin{frame}
@@ -573,62 +590,74 @@
 \begin{frame}
     \frametitle{FFT with a 50-bit prime modulus}
 
-    \begin{center}
-        \scalebox{0.75}{
-        \begin{tabular}{|r|*{4}{c|}}
-            \hline
-            \rowcolor{myGray}
-            depth & sd\_fft & dft4 & dft4s & dft2s \\
-            \hline
-            \cellcolor{myGray} 3 & 1.5e-08 & 1.4e-08 & 1.5e-08 & 1.5e-08 \\
-            \hline
-            \cellcolor{myGray} 4 & 2.1e-08 & 3.5e-08 & 2.2e-08 & 2.4e-08 \\
-            \hline
-            \cellcolor{myGray} 5 & 2.7e-08 & 8.2e-08 & 5.4e-08 & 5.3e-08 \\
-            \hline
-            \cellcolor{myGray} 6 & 6.2e-08 & 2.0e-07 & 9.7e-08 & 1.1e-07 \\
-            \hline
-            \cellcolor{myGray} 7 & 1.1e-07 & 4.4e-07 & 2.3e-07 & 2.3e-07 \\
-            \hline
-            \cellcolor{myGray} 8 & 2.9e-07 & 1.1e-06 & 4.8e-07 & 5.2e-07 \\
-            \hline
-            \cellcolor{myGray} 9 & 5.6e-07 & 2.3e-06 & 1.1e-06 & 1.1e-06 \\
-            \hline
-            \cellcolor{myGray} 10 & 1.3e-06 & 5.4e-06 & 2.2e-06 & 2.5e-06 \\
-            \hline
-            \cellcolor{myGray} 11 & 2.9e-06 & 1.1e-05 & 5.0e-06 & 5.0e-06 \\
-            \hline
-            \cellcolor{myGray} 12 & 6.1e-06 & 2.5e-05 & 1.0e-05 & 1.1e-05 \\
-            \hline
-            \cellcolor{myGray} 13 & 1.3e-05 & 5.3e-05 & 2.4e-05 & 2.4e-05 \\
-            \hline
-            \cellcolor{myGray} 14 & 2.9e-05 & 1.2e-04 & 4.8e-05 & 5.0e-05 \\
-            \hline
-            \cellcolor{myGray} 15 & 6.1e-05 & 2.4e-04 & 1.0e-04 & 1.1e-04 \\
-            \hline
-            \cellcolor{myGray} 16 & 1.3e-04 & 5.2e-04 & 2.0e-04 & 2.2e-04 \\
-            \hline
-            \cellcolor{myGray} 17 & 2.7e-04 & 1.1e-03 & 4.5e-04 & 4.6e-04 \\
-            \hline
-            \cellcolor{myGray} 18 & 5.8e-04 & 2.4e-03 & 9.1e-04 & 9.6e-04 \\
-            \hline
-            \cellcolor{myGray} 19 & 1.2e-03 & 4.9e-03 & 2.0e-03 & 2.0e-03 \\
-            \hline
-            \cellcolor{myGray} 20 & 2.6e-03 & 1.1e-02 & 4.1e-03 & 4.3e-03 \\
-            \hline
-            \cellcolor{myGray} 21 & 6.0e-03 & 2.2e-02 & 9.2e-03 & 9.6e-03 \\
-            \hline
-            \cellcolor{myGray} 22 & 1.3e-02 & 4.8e-02 & 2.0e-02 & 2.3e-02 \\
-            \hline
-            \cellcolor{myGray} 23 & 2.8e-02 & 9.9e-02 & 4.2e-02 & 4.7e-02 \\
-            \hline
-            \cellcolor{myGray} 24 & 6.2e-02 & 2.1e-01 & 8.3e-02 & 9.8e-02 \\
-            \hline
-            \cellcolor{myGray} 25 & 1.3e-01 & 4.4e-01 & 1.8e-01 & 2.1e-01 \\
-            \hline
-        \end{tabular}
-        }
-    \end{center}
+    \begin{multicols}{2}
+        \begin{center}
+            \scalebox{0.75}{
+            \begin{tabular}{|r|*{3}{c|}}
+                \hline
+                \rowcolor{myGray}
+                depth & sd\_fft & dft4 & dft4s \\
+                \hline
+                \cellcolor{myGray} 3 & 1.5e-08 & 1.4e-08 & 1.5e-08 \\
+                \hline
+                \cellcolor{myGray} 4 & 2.1e-08 & 3.5e-08 & 2.2e-08 \\
+                \hline
+                \cellcolor{myGray} 5 & 2.7e-08 & 8.2e-08 & 5.4e-08 \\
+                \hline
+                \cellcolor{myGray} 6 & 6.2e-08 & 2.0e-07 & 9.7e-08 \\
+                \hline
+                \cellcolor{myGray} 7 & 1.1e-07 & 4.4e-07 & 2.3e-07 \\
+                \hline
+                \cellcolor{myGray} 8 & 2.9e-07 & 1.1e-06 & 4.8e-07 \\
+                \hline
+                \cellcolor{myGray} 9 & 5.6e-07 & 2.3e-06 & 1.1e-06 \\
+                \hline
+                \cellcolor{myGray} 10 & 1.3e-06 & 5.4e-06 & 2.2e-06 \\
+                \hline
+                \cellcolor{myGray} 11 & 2.9e-06 & 1.1e-05 & 5.0e-06 \\
+                \hline
+                \cellcolor{myGray} 12 & 6.1e-06 & 2.5e-05 & 1.0e-05 \\
+                \hline
+                \cellcolor{myGray} 13 & 1.3e-05 & 5.3e-05 & 2.4e-05 \\
+                \hline
+                \cellcolor{myGray} 14 & 2.9e-05 & 1.2e-04 & 4.8e-05 \\
+                \hline
+                \cellcolor{myGray} 15 & 6.1e-05 & 2.4e-04 & 1.0e-04 \\
+                \hline
+                \cellcolor{myGray} 16 & 1.3e-04 & 5.2e-04 & 2.0e-04 \\
+                \hline
+                \cellcolor{myGray} 17 & 2.7e-04 & 1.1e-03 & 4.5e-04 \\
+                \hline
+                \cellcolor{myGray} 18 & 5.8e-04 & 2.4e-03 & 9.1e-04 \\
+                \hline
+                \cellcolor{myGray} 19 & 1.2e-03 & 4.9e-03 & 2.0e-03 \\
+                \hline
+                \cellcolor{myGray} 20 & 2.6e-03 & 1.1e-02 & 4.1e-03 \\
+                \hline
+                \cellcolor{myGray} 21 & 6.0e-03 & 2.2e-02 & 9.2e-03 \\
+                \hline
+                \cellcolor{myGray} 22 & 1.3e-02 & 4.8e-02 & 2.0e-02 \\
+                \hline
+                \cellcolor{myGray} 23 & 2.8e-02 & 9.9e-02 & 4.2e-02 \\
+                \hline
+                %\cellcolor{myGray} 24 & 6.2e-02 & 2.1e-01 & 8.3e-02 \\
+                %\hline
+                %\cellcolor{myGray} 25 & 1.3e-01 & 4.4e-01 & 1.8e-01 \\
+                %\hline
+            \end{tabular}
+            }
+        \end{center}
+    \columnbreak
+
+    \begin{itemize}
+        \item \textbf{texttt{depth}}: value of the depth for the FFT tree with $2^{depth}$ points
+        in an array of length $2^{depth}$,
+        \item \textbf{\texttt{sd\_fft}}: FFT with AVX vectorization based on floating point numbers (up to 50 bits).
+        \item \textbf{\texttt{dft4}}: FFT without AVX vectorization from the pull request\footnote{\url{https://github.com/flintlib/flint/pull/2107}} (up to 62 bits).    
+        \item \textbf{\texttt{dft4s}}: radix-4 FFT with AVX512 vectorization based on integers (up to 62 bits),
+        \item \textbf{\texttt{dft2s}}: radix-2 FFT with AVX512 vectorization based on integers (up to 62 bits).
+    \end{itemize}
+    \end{multicols}
 \end{frame}
 
 \section{Conclusion}
