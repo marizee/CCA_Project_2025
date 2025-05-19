@@ -109,7 +109,7 @@
 \subsection{Long multiplication}
 \begin{frame}
     \frametitle{Long multiplication}
-    Let $x,y$ be two integers of at most 64 bits, $0 < k \leq 32$, we write:
+    Let $x,y$ be two integers of at most 64 bits and $0 < k \leq 32$ a \textit{split bit}, we write:
     \begin{align*}
         x &= x_{hi} \cdot 2^k + x_{lo}, \\
         y &= y_{hi} \cdot 2^k + y_{lo}.
@@ -135,7 +135,7 @@
         The product $xy$ is represented as:
         \begin{align*}
             (xy)_{lo} &= (r_{hi} \ll 2\cdot k) + (r_{mi} \ll k) + r_{lo}, \\
-            (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) \textcolor{white!60!black}{ + carry_{lo}},
+            (xy)_{hi} &= (r_{hi} \gg (64 - (2\cdot k))) + (r_{mi} \gg (64 - k)) \textcolor{white!60!black}{\ +\ carry_{lo}},
         \end{align*}
         such that $xy = (xy)_{hi}\cdot 2^{64} + (xy)_{lo}$.
     \end{mybox}
@@ -148,9 +148,57 @@
         and store the \textbf{high} $x$ bits of the intermediate integers.
     \end{itemize}
 
-    \pause
-    \medskip
-    \textbf{FLINT} $\longrightarrow$ \code{umul\_ppmm}
+    %\pause
+    %\medskip
+    %\textbf{FLINT} $\longrightarrow$ \code{umul\_ppmm}
+    %\begin{table}[h!]
+    %    \centering
+    %    \scalebox{0.7}{
+    %    \begin{tabularx}{0.9\textwidth} { 
+    %        | >{\centering\arraybackslash}X 
+    %        | >{\centering\arraybackslash}X
+    %        | >{\centering\arraybackslash}X 
+    %        | >{\centering\arraybackslash}X | }
+    %        \hline
+    %        \rowcolor{myGray} 
+    %        Processor & Cascade Lake & IceLake & Zen 4 \\
+    %        \hline
+    %        \cellcolor{myGray} Throughput & 1.0 & 1.0 & 1.0 \\
+    %        \hline
+    %    \end{tabularx}
+    %    }
+    %    %\caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm}.}
+    %\end{table}
+
+    %\pause
+    %\medskip
+    %\textbf{AVX512} $\longrightarrow$ \code{\_mm512\_mullo\_epi64}
+    %\begin{table}[h!]
+    %    \centering
+    %    \scalebox{0.7}{
+    %    \begin{tabularx}{0.9\textwidth} { 
+    %        | >{\centering\arraybackslash}X 
+    %        | >{\centering\arraybackslash}X
+    %        | >{\centering\arraybackslash}X 
+    %        | >{\centering\arraybackslash}X | }
+    %        \hline
+    %        \rowcolor{myGray} 
+    %        Processor & Cascade Lake & IceLake & Zen 4 \\
+    %        \hline
+    %        \cellcolor{myGray} Throughput & 1.5 & 3.0 & 1.0 \\
+    %        \hline
+    %    \end{tabularx}
+    %    }
+    %    %\caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm}.}
+    %\end{table}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Retrieve high and low part of the result}
+    \textbf{FLINT} 
+    \begin{itemize}
+        \item \code{umul\_ppmm} $\Longleftrightarrow$ \texttt{mulx}
+    \end{itemize}
     \begin{table}[h!]
         \centering
         \scalebox{0.7}{
@@ -167,12 +215,23 @@
             \hline
         \end{tabularx}
         }
-        %\caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm}.}
+        \caption{Throughputs of the instruction \texttt{mulx r64, r64, r64}.}
     \end{table}
 
     \pause
+    \textbf{AVX2}
+    \begin{itemize}
+        \item \sout{\code{\_mm256\_mulhi\_epi64}}
+        \item \sout{\code{\_mm256\_mullo\_epi64}}
+    \end{itemize}
+
+    \pause
     \medskip
-    \textbf{AVX512} $\longrightarrow$ \code{\_mm512\_mullo\_epi64}
+    \textbf{AVX512} 
+    \begin{itemize}
+        \item \sout{\code{\_mm512\_mulhi\_epi64}}
+        \item \code{\_mm512\_mullo\_epi64}
+    \end{itemize}
     \begin{table}[h!]
         \centering
         \scalebox{0.7}{
@@ -189,7 +248,7 @@
             \hline
         \end{tabularx}
         }
-        %\caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm}.}
+        \caption{Throughputs of the instruction \texttt{vpmullq zmm, zmm, zmm}.}
     \end{table}
 \end{frame}
 
@@ -205,10 +264,13 @@
 
     \pause
     \bigskip
+    \textbf{Shoup algorithm}\cite{Bos_Stam_2021}
+
+    \medskip
     For a vector $b = (b_1,\dots, b_N) \in (\mathbb{Z}/n\mathbb{Z})^N$, we compute 
     $$(w\cdot b_i \mod n) \text{ for each } i\in \{1, \dots, N\}$$
 
-    using \textbf{Shoup algorithm}\cite{Bos_Stam_2021}:
+    as follows: 
     \medskip
     \begin{enumerate}
         \item compute $p_{hi}, p_{lo}$ such that $w_{pre} \cdot b_i = p_{hi}\cdot 2^B + p_{lo}$, \hfill (1 \code{mulhi})
@@ -496,8 +558,7 @@
     
     \pause
     \bigskip
-    \textbf{Harvey lazy butterfly algorithm\cite{DBLP:journals/corr/abs-1205-2926}:}
-
+    \textbf{Implementation of the Harvey \textit{lazy} butterfly algorithm}\cite{DBLP:journals/corr/abs-1205-2926}
     
     \medskip
     For $n < \textcolor{red}{2^B /4}$, $x,y < \textcolor{red}{4n}$, $(w, w_{pre})$,
@@ -513,12 +574,12 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Lazy FFT butterfly with a 60-bit modulus (1)}
+    \frametitle{Harvey FFT butterfly with a 60-bit modulus (1)}
 
     \begin{table}[h!]
         \centering
-        
         % Proc 1: ppti
+        \scalebox{0.8}{
         \begin{tabular}{|r|*{3}{c c|}}
             \hline
             \rowcolor{myGray} 
@@ -535,8 +596,10 @@
             \cellcolor{myGray} AVX512 & 3.87e-07 & 2.1x & 1.56e-06 & 2.0x & 3.17e-05 & 1.7x \\
             \hline
         \end{tabular}
+        }
     
         % Proc 2: groebner
+        \scalebox{0.8}{
         \begin{tabular}{|r|*{3}{c c|}}
             \hline
             \rowcolor{myGray} 
@@ -553,8 +616,10 @@
             \cellcolor{myGray} AVX512 & 2.24e-07 & 3.3x & 9.37e-07 & 3.1x & 1.69e-05 & 2.8x \\
             \hline
         \end{tabular}
+        }
     
         % Proc 3: argiope
+        \scalebox{0.8}{
         \begin{tabular}{|r|*{3}{c c|}}
             \hline
             \rowcolor{myGray}
@@ -571,18 +636,21 @@
             \cellcolor{myGray} AVX512 & 1.44e-07 & 3.5x & 5.80e-07 & 3.5x & 9.12e-06 & 3.7x \\
             \hline
         \end{tabular}
-        %\caption{Timings in seconds and ratios of the Harvey lazy butterfly FFT with a 60-bit modulus.}
+        }
+        \caption{Timings in seconds and ratios of the Harvey FFT butterfly with a 60-bit modulus.}
     \end{table}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Lazy FFT butterfly with a 60-bit modulus (2)}
+    \frametitle{Harvey FFT butterfly with a 60-bit modulus (2)}
 
     \begin{figure}[h!]
         \begin{center}
-            \includegraphics[width=1\textwidth]{lazy-butterfly_argiope.png}
+            \scalebox{0.8}{
+                \includegraphics[width=1\textwidth]{lazy-butterfly_argiope.png}
+            }
         \end{center}
-        %\caption{Timings in seconds of the Harvey lazy butterfly FFT with a 60-bit modulus on a Zen 4 processor.}
+        \caption{Timings in seconds of the Harvey FFT butterfly with a 60-bit modulus on a Zen 4 processor.}
     \end{figure}
 \end{frame}
 
@@ -650,13 +718,13 @@
     \columnbreak
 
     \begin{itemize}
-        \item \textbf{texttt{depth}}: value of the depth for the FFT tree with $2^{depth}$ points
+        \item \textbf{\texttt{depth}}: value of the depth for the FFT tree with $2^{depth}$ points
         in an array of length $2^{depth}$,
         \item \textbf{\texttt{sd\_fft}}: FFT with AVX vectorization based on floating point numbers (up to 50 bits).
         \item \textbf{\texttt{dft4}}: FFT without AVX vectorization from the pull request\footnote{\url{https://github.com/flintlib/flint/pull/2107}} (up to 62 bits).    
         \item \textbf{\texttt{dft4s}}: radix-4 FFT with AVX512 vectorization based on integers (up to 62 bits),
-        \item \textbf{\texttt{dft2s}}: radix-2 FFT with AVX512 vectorization based on integers (up to 62 bits).
     \end{itemize}
+    $\longrightarrow$ speedup factor $\approx 2.2x$
     \end{multicols}
 \end{frame}
 
