@@ -87,13 +87,13 @@
     Goal: Use SIMD instructions to improve performance for some modular arthmetic operations
 
     \begin{itemize}
-        \item Use SIMD from AVX families (AVX2 and AVX512)
+        \item Use SIMD from Advanced Vector eXtensions families (AVX2 and AVX512)
             \begin{itemize}
                 \item Used with Intel intrinsics
                 \item Tested compiler auto-vectorization vs manual vectorization
             \end{itemize}
             % TODO: Reformulate
-        \item uops.info tables give information for SIMD for different processors
+        \item uops.info tables give throughput for SIMD for different processors
     \end{itemize}
     
     \bigskip
@@ -425,7 +425,7 @@
             \cellcolor{myGray} FLINT & 2.40e-07 & 1.0x & 9.29e-07 & 1.0x & 1.59e-05 & 1.0x \\
             \hline
         \end{tabular}
-        %\caption{Timings in seconds and ratios of the modular scalar vector product with a 60-bit modulus.}
+        \caption{Timings in seconds and ratios of the modular scalar vector product with a 60-bit modulus.}
     \end{table}
 \end{frame}
 
@@ -471,6 +471,7 @@
         \centering
         
         % Proc 1: ppti
+            \scalebox{0.80}{
         \begin{tabular}{|r|*{3}{c c|}}
             \hline
             \rowcolor{myGray} 
@@ -488,9 +489,10 @@
             \hline
             \cellcolor{myGray} FLINT & 3.18e-07 & 0.9x & 1.18e-06 & 0.9x & 1.98e-05 & 1.0x \\
             \hline
-        \end{tabular}
+        \end{tabular}}
     
         % Proc 2: groebner
+            \scalebox{0.80}{
         \begin{tabular}{|r|*{3}{c c|}}
             \hline
             \rowcolor{myGray} 
@@ -508,9 +510,10 @@
             \hline
             \cellcolor{myGray} FLINT & 2.87e-07 & 1.4x & 9.58e-07 & 1.6x & 1.77e-05 & 1.4x \\
             \hline
-        \end{tabular}
+        \end{tabular}}
     
         % Proc 3: argiope
+            \scalebox{0.80}{
         \begin{tabular}{|r|*{3}{c c|}}
             \hline
             \rowcolor{myGray}
@@ -528,8 +531,8 @@
             \hline
             \cellcolor{myGray} FLINT & 2.70e-07 & 1.3x & 8.48e-07 & 1.2x & 1.34e-05 & 1.3x \\
             \hline
-        \end{tabular}
-        %\caption{Timings in seconds and ratios of the modular dot product with a 60-bit modulus.}
+        \end{tabular}}
+        \caption{Timings in seconds and ratios of the modular dot product with a 60-bit modulus.}
     \end{table}
 \end{frame}
     
