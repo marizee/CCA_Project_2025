@@ -482,13 +482,13 @@
     \end{figure}
 \end{frame}
 
-\section{Butterfly Fast Fourier Transform}
-\subsection{Harvey lazy butterfly FFT}
+\section{Fast Fourier Transform butterfly}
+\subsection{Harvey lazy FFT butterfly}
 \begin{frame}
-    \frametitle{Butterfly Fast Fourier Transform}
+    \frametitle{Fast Fourier Transform butterfly}
     \begin{mybox}
     Let $w, n$ be integers, $x,y \in \mathbb{Z}/n\mathbb{Z}$, 
-    the \textit{butterfly FFT}\cite{Cooley_Tukey_1965} is the in-place transformation: 
+    the \textit{FFT butterfly}\cite{Cooley_Tukey_1965} is the in-place transformation: 
     \[
     (x,y) \mapsto (x + w\cdot y \mod n,\ x - w\cdot y \mod n).
     \]
@@ -513,7 +513,7 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Lazy butterfly FFT with a 60-bit modulus (1)}
+    \frametitle{Lazy FFT butterfly with a 60-bit modulus (1)}
 
     \begin{table}[h!]
         \centering
@@ -576,7 +576,7 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Lazy butterfly FFT with a 60-bit modulus (2)}
+    \frametitle{Lazy FFT butterfly with a 60-bit modulus (2)}
 
     \begin{figure}[h!]
         \begin{center}
