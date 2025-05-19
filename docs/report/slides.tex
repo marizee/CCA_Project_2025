@@ -642,6 +642,7 @@
         }
         \caption{Timings in seconds and ratios of the Harvey FFT butterfly with a 60-bit modulus.}
     \end{table}
+    $\Longrightarrow$ Speedup factor up to 1.9x with AVX2 and 3.7x with AVX512.
 \end{frame}
 
 \begin{frame}
@@ -727,7 +728,10 @@
         \item \textbf{\texttt{dft4}}: FFT without AVX vectorization from the pull request\footnote{\url{https://github.com/flintlib/flint/pull/2107}} (up to 62 bits).    
         \item \textbf{\texttt{dft4s}}: radix-4 FFT with AVX512 vectorization based on integers (up to 62 bits),
     \end{itemize}
-    $\longrightarrow$ speedup factor $\approx 2.2x$
+    $\Longrightarrow$ speedup factor $\approx 2.2x$
+
+    \medskip
+    \textbf{Intel HEXL}: speedup factor $\approx 2.8$
     \end{multicols}
 \end{frame}
 
